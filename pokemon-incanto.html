@@ -638,7 +638,7 @@ function vSetup(){
    <div class="field"><label for="n0" class="muted">${t('heads')}</label><input type="text" id="n0" maxlength="16" placeholder="${esc(t('player',1))}" value="${esc(ui.names[0])}"></div>
    <div class="field"><label for="n1" class="muted">${t('tails')}</label><input type="text" id="n1" maxlength="16" placeholder="${esc(t('player',2))}" value="${esc(ui.names[1])}"></div></div></section>
   <details class="card remote"><summary><strong>📡 ${t('remote.title')}</strong></summary>${t('remote.body')}</details>
-  <div><button class="btn" data-act="toflip">${t('toflip')}</button></div>`;
+  <div style="display:flex;justify-content:center"><button class="btn" data-act="toflip">${t('toflip')}</button></div>`;
 }
 // Una faccia della moneta: bordo dorato, al centro una Poké Ball (testa) o una Mega Ball (croce).
 function coinFace(testa){
