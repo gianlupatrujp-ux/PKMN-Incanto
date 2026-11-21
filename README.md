@@ -5,10 +5,10 @@ Gioco amatoriale di aste Pokémon per due giocatori: si comprano all'asta 6 Pok�
 
 ## Note legali / Legal notice
 
-**Italiano.** Questo è un gioco amatoriale creato da un fan, **gratuito e senza scopo di lucro**: niente pubblicità, acquisti, donazioni o guadagni di alcun tipo. **Non è un prodotto ufficiale** e non è affiliato, sponsorizzato, approvato o autorizzato da Nintendo, The Pokémon Company, GAME FREAK inc. o Creatures Inc.
+**Italiano.** Questo è un gioco amatoriale creato da un fan, **gratuito e senza scopo di lucro**: niente pubblicità, acquisti, donazioni o guadagni di alcun tipo. **Non è un prodotto ufficiale** e non è affiliato, sponsorizzato, approvato o autorizzato da Nintendo, The Pokémon Company, GAME FREAK inc. o Creatures Inc., né da Pokémon Showdown o Smogon.
 Pokémon e i nomi, le immagini e gli sprite dei Pokémon sono marchi registrati e opere protette dei rispettivi titolari: ©1995–2026 Nintendo / Creatures Inc. / GAME FREAK inc. **Tutti i diritti sono riservati ai rispettivi titolari.** Non si intende violare alcun diritto. Se sei titolare di un diritto e desideri la rimozione di qualsiasi contenuto, apri una segnalazione ("Issue") in questo repository: verrà rimosso subito.
 
-**English.** This is an amateur fan-made game, **free and non-profit**: no ads, purchases, donations or earnings of any kind. It is **not an official product** and is not affiliated with, sponsored, endorsed or approved by Nintendo, The Pokémon Company, GAME FREAK inc. or Creatures Inc.
+**English.** This is an amateur fan-made game, **free and non-profit**: no ads, purchases, donations or earnings of any kind. It is **not an official product** and is not affiliated with, sponsored, endorsed or approved by Nintendo, The Pokémon Company, GAME FREAK inc. or Creatures Inc., nor by Pokémon Showdown or Smogon.
 Pokémon and the names, images and sprites of the Pokémon are trademarks and copyrighted works of their owners: ©1995–2026 Nintendo / Creatures Inc. / GAME FREAK inc. **All rights belong to their respective owners.** No infringement is intended. If you own any rights and want any content removed, please open an Issue in this repository: it will be removed promptly.
 
 ## Crediti / Credits

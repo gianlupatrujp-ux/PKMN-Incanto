@@ -1,5 +1,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Sicurezza: il browser può caricare script, font e immagini solo da questo sito, e contattare solo GitHub (regolamento
+     VGC) e il centralino di PeerJS (modalità online). Niente plugin, niente invio di moduli, niente cambio dell'indirizzo base. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://raw.githubusercontent.com https://0.peerjs.com wss://0.peerjs.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+<!-- Privacy: i siti contattati non ricevono l'indirizzo di questa pagina (che può contenere il codice della stanza) -->
+<meta name="referrer" content="no-referrer">
 <!-- Sito privato tra amici: i motori di ricerca non devono indicizzarlo -->
 <meta name="robots" content="noindex, nofollow, noimageindex, noarchive">
 <meta name="description" content="Gioco amatoriale non ufficiale e senza scopo di lucro / Unofficial non-profit fan game">
@@ -841,7 +846,7 @@ function legalBody(){
   if(ui.lang==='en') return `
    <h3>Unofficial fan game, non-profit</h3>
    <p>Pokémon Incanto is an amateur game made by a fan, for personal use and to play with friends. It is <strong>free and non-profit</strong>: no ads, no purchases, no donations, no earnings of any kind.</p>
-   <p>It is <strong>not an official product</strong> and is not affiliated with, sponsored, endorsed or approved by Nintendo, The Pokémon Company, GAME FREAK inc. or Creatures Inc.</p>
+   <p>It is <strong>not an official product</strong> and is not affiliated with, sponsored, endorsed or approved by Nintendo, The Pokémon Company, GAME FREAK inc. or Creatures Inc. It is also not affiliated with or endorsed by Pokémon Showdown or Smogon, whose public data and formats it uses under their license.</p>
    <h3>Trademarks and copyright</h3>
    <p>Pokémon and the names, images and sprites of the Pokémon are trademarks and copyrighted works of their owners: ©1995–2026 Nintendo / Creatures Inc. / GAME FREAK inc. Pokémon, Pokémon character names, Poké Ball and Great Ball are trademarks of Nintendo, Creatures Inc. and GAME FREAK inc. <strong>All rights belong to their respective owners.</strong> No infringement is intended.</p>
    <p>If you own any rights and want any content removed, please get in touch ${contatto}: it will be removed promptly.</p>
@@ -858,7 +863,7 @@ function legalBody(){
   return `
    <h3>Gioco amatoriale non ufficiale, senza scopo di lucro</h3>
    <p>Pokémon Incanto è un gioco amatoriale creato da un fan, per uso personale e per giocare con gli amici. È <strong>gratuito e senza scopo di lucro</strong>: niente pubblicità, niente acquisti, niente donazioni, nessun guadagno di alcun tipo.</p>
-   <p><strong>Non è un prodotto ufficiale</strong> e non è affiliato, sponsorizzato, approvato o autorizzato da Nintendo, The Pokémon Company, GAME FREAK inc. o Creatures Inc.</p>
+   <p><strong>Non è un prodotto ufficiale</strong> e non è affiliato, sponsorizzato, approvato o autorizzato da Nintendo, The Pokémon Company, GAME FREAK inc. o Creatures Inc. Non è nemmeno affiliato né approvato da Pokémon Showdown o Smogon, di cui usa dati e formati pubblici secondo la loro licenza.</p>
    <h3>Marchi e diritti d'autore</h3>
    <p>Pokémon e i nomi, le immagini e gli sprite dei Pokémon sono marchi registrati e opere protette dei rispettivi titolari: ©1995–2026 Nintendo / Creatures Inc. / GAME FREAK inc. Pokémon, i nomi dei personaggi Pokémon, Poké Ball e Mega Ball sono marchi di Nintendo, Creatures Inc. e GAME FREAK inc. <strong>Tutti i diritti sono riservati ai rispettivi titolari.</strong> Non si intende violare alcun diritto.</p>
    <p>Se sei titolare di un diritto e desideri la rimozione di qualsiasi contenuto, scrivici ${contatto}: verrà rimosso subito.</p>
@@ -901,7 +906,7 @@ ${ui.setupOnline?`  <section class="card"><span class="label">${t('online.name')
   <section class="card"><span class="label">${t('menu.online')}</span>
    <div class="center"><button class="btn big play2" data-act="mkqueue">${t('online.mkqueue')}</button></div>
    <p class="muted" style="font-size:13px;text-align:center">${t('online.randomSub')}<br>${t('online.strangerNote')}</p>
-   <div class="center"><button class="btn ghost" data-act="mkroom">${t('online.friendRoom')}</button></div></section>
+   <div class="center"><button class="btn big ghost" data-act="mkroom">${t('online.friendRoom')}</button></div></section>
   <section class="card"><span class="label">${t('online.haveCode')}</span>
    <div class="row"><div class="field"><label for="joincode" class="muted">${t('online.code')}</label><input type="text" id="joincode" maxlength="8" autocapitalize="characters" autocomplete="off" style="text-transform:uppercase;letter-spacing:.2em;font-weight:700" value="${esc(ui.joinCode||'')}"></div>
    <button class="btn" data-act="onlinejoin" style="align-self:flex-end">${t('online.joinBtn')}</button></div></section>`:`  <section class="card"><span class="label">${t('s5')}</span><div class="row">
@@ -1109,6 +1114,7 @@ function onlineMessage(m){
   const o=ui.online; if(!m||typeof m!=='object') return;
   if(m.t==='bye'){ o.status='left'; ui.askUndo=false; render(); return; }
   if(isHost()){
+    if(m.t==='act'&&!['draw','raise','pass'].includes(m.a)) return; // il guest può solo estrarre, rilanciare e passare
     if(m.t==='hello'){ ui.names[1]=String(m.name||'').slice(0,16); o.status='connected'; broadcast(); render(); }
     else if(m.t==='act'){ const err=hostApply(m.a,m.d||{},1); if(err) onlineSend({t:'err',code:err}); broadcast(); render(); }
     else if(m.t==='undo-req'){ if(ui.game&&canUndo(ui.game)&&!o.undoReq){ o.undoReq={from:1}; broadcast(); render(); } }
@@ -1117,18 +1123,47 @@ function onlineMessage(m){
         o.undoReq=null; broadcast(); render(); } }
   } else {
     if(m.t==='state'){ applyWireState(m); render(); }
-    else if(m.t==='err'){ ui.msg=errText(m.code); render(); }
+    else if(m.t==='err'){ const c=String(m.code||''); if(/^(turn|int|min\|\d{1,3}|max\|\d{1,3})$/.test(c)){ ui.msg=errText(c); render(); } }
     else if(m.t==='full'){ if(o.random){ try{o.peer.destroy();}catch(x){} ui.online=null; findOpponent((o.slot||1)+1); } else { o.status='full'; render(); } }
     else if(m.t==='undo-refused'){ ui.msg=t('online.undoRefused'); render(); }
   }
 }
+// ---------- Sicurezza: tutto ciò che arriva dall'altro dispositivo viene ricostruito con dati fidati ----------
+// I Pokémon sono presi dalla nostra lista per nome (mai i campi ricevuti), i numeri sono forzati in un intervallo,
+// impostazioni e schermate devono essere valori ammessi; tutto il resto viene scartato. Così un avversario che
+// modifica la sua pagina non può inserire testo o codice nella pagina dell'altro.
+const MON_BY_NAME=new Map(POOL.map(m=>[m.name,m]));
+const wInt=(v,min,max,def)=>{ v=Number(v); return Number.isFinite(v)?Math.max(min,Math.min(max,Math.round(v))):def; };
+const wPl=v=>v===1?1:0;
+function wMon(m){ const b=m&&typeof m.name==='string'&&MON_BY_NAME.get(m.name); if(!b) return null;
+  return m.shiny===true&&!SHINY_LOCK.includes(b.name)?Object.assign({},b,{shiny:true}):b; }
+function cleanWireGame(g){
+  if(!g||typeof g!=='object') return null;
+  const arr=v=>Array.isArray(v)?v:[];
+  const teams=[0,1].map(i=>arr(g.teams&&g.teams[i]).slice(0,TEAM_SIZE).map(wMon).filter(Boolean));
+  const history=arr(g.history).slice(0,60).map(h=>{ const mon=wMon(h&&h.mon);
+    return mon&&{n:wInt(h.n,0,999,0),mon,winner:wPl(h.winner),price:wInt(h.price,0,999,1),opener:wPl(h.opener),auto:h.auto===true}; }).filter(Boolean);
+  let auction=null; if(g.auction&&typeof g.auction==='object'){ const mon=wMon(g.auction.mon);
+    if(mon) auction={mon,opener:wPl(g.auction.opener),bid:wInt(g.auction.bid,1,999,1),leader:wPl(g.auction.leader),turn:wPl(g.auction.turn)}; }
+  let last=null; if(g.last&&typeof g.last==='object'){ const mon=wMon(g.last.mon);
+    if(mon) last={mon,winner:wPl(g.last.winner),price:wInt(g.last.price,0,999,1),auto:g.last.auto===true}; }
+  return {format:FORMAT_KEYS.includes(g.format)?g.format:'singolo', mode:MODE_KEYS.includes(g.mode)?g.mode:'classica',
+    tier:POOL_KEYS.includes(g.tier)?g.tier:'tutti', legends:g.legends!==false, startCoins:wInt(g.startCoins,TEAM_SIZE,999,25),
+    coins:[0,1].map(i=>wInt(g.coins&&g.coins[i],0,999,0)), teams, deck:[], deckLen:wInt(g.deckLen,0,5000,0),
+    openerIdx:wPl(g.openerIdx), auction, last, history, over:g.over===true, n:wInt(g.n,0,999,0),
+    speciesClause:g.speciesClause===true, usedDex:[], shinyRate:0, rnd:Math.random, undo:[]};
+}
 function applyWireState(m){
   const o=ui.online, prev=ui.game&&ui.game.auction?ui.game.n+':'+ui.game.auction.bid:'';
-  ui.names=m.names; ui.format=m.settings.format; ui.tier=m.settings.tier; ui.legends=m.settings.legends; ui.mode=m.settings.mode; ui.coins=m.settings.coins;
-  ui.flip=m.flip;
-  ui.game=m.game?Object.assign({},m.game,{undo:[],rnd:Math.random}):null;
-  o.canUndo=m.canUndo; o.undoReq=m.undoReq;
-  if(!(ui.screen==='end'&&m.screen==='game')) ui.screen=m.screen==='setup'?'lobby':m.screen;
+  const s=m.settings&&typeof m.settings==='object'?m.settings:{};
+  ui.names=[0,1].map(i=>String((Array.isArray(m.names)?m.names[i]:'')||'').slice(0,16));
+  ui.format=FORMAT_KEYS.includes(s.format)?s.format:'singolo'; ui.tier=POOL_KEYS.includes(s.tier)?s.tier:'tutti';
+  ui.legends=s.legends!==false; ui.mode=MODE_KEYS.includes(s.mode)?s.mode:'classica'; ui.coins=String(wInt(s.coins,TEAM_SIZE,999,25));
+  ui.flip=m.flip==='testa'||m.flip==='croce'?m.flip:null;
+  ui.game=cleanWireGame(m.game);
+  o.canUndo=m.canUndo===true; o.undoReq=m.undoReq&&(m.undoReq.from===0||m.undoReq.from===1)?{from:m.undoReq.from}:null;
+  const scr=['lobby','flip','game'].includes(m.screen)?m.screen:'lobby';
+  if(!(ui.screen==='end'&&scr==='game')) ui.screen=scr;
   if(!ui.game) ui.setChoice={};
   const now=ui.game&&ui.game.auction?ui.game.n+':'+ui.game.auction.bid:'';
   if(now!==prev) setDraftFromGame();
