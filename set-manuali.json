@@ -1,0 +1,38 @@
+{
+  "_nota": "Set scritti a mano per i Pokémon che non hanno set Random Battle in nessuna generazione. Chiave = nome Showdown (come in pokemon.json). 'doppio' è facoltativo: se manca si usa 'singolo'. Dopo una modifica rilancia: node scarica-set.js (controlla che le mosse siano imparabili).",
+  "Magneton": {
+    "singolo": [{ "ruolo": "Bulky Attacker", "strumento": "Eviolite", "abilita": "Magnet Pull", "tera": "Electric", "evs": { "HP": 252, "SpA": 252, "SpD": 4 }, "natura": "Modest", "mosse": ["Thunderbolt", "Flash Cannon", "Volt Switch", "Thunder Wave"] }],
+    "doppio": [{ "ruolo": "Doubles Bulky Attacker", "strumento": "Eviolite", "abilita": "Magnet Pull", "tera": "Electric", "evs": { "HP": 252, "SpA": 252, "SpD": 4 }, "natura": "Modest", "mosse": ["Thunderbolt", "Flash Cannon", "Electroweb", "Protect"] }]
+  },
+  "Farfetch’d-Galar": {
+    "singolo": [{ "ruolo": "Setup Sweeper", "strumento": "Leek", "abilita": "Scrappy", "tera": "Fighting", "evs": { "HP": 4, "Atk": 252, "Spe": 252 }, "natura": "Jolly", "mosse": ["Swords Dance", "Close Combat", "Brave Bird", "Knock Off"] }],
+    "doppio": [{ "ruolo": "Offensive Protect", "strumento": "Leek", "abilita": "Scrappy", "tera": "Fighting", "evs": { "HP": 4, "Atk": 252, "Spe": 252 }, "natura": "Jolly", "mosse": ["Close Combat", "Brave Bird", "Knock Off", "Protect"] }]
+  },
+  "Haunter": {
+    "singolo": [{ "ruolo": "Fast Attacker", "strumento": "Eviolite", "abilita": "Levitate", "tera": "Ghost", "evs": { "HP": 4, "SpA": 252, "Spe": 252 }, "natura": "Timid", "mosse": ["Shadow Ball", "Sludge Bomb", "Focus Blast", "Will-O-Wisp"] }],
+    "doppio": [{ "ruolo": "Offensive Protect", "strumento": "Eviolite", "abilita": "Levitate", "tera": "Ghost", "evs": { "HP": 4, "SpA": 252, "Spe": 252 }, "natura": "Timid", "mosse": ["Shadow Ball", "Sludge Bomb", "Icy Wind", "Protect"] }]
+  },
+  "Onix": {
+    "singolo": [{ "ruolo": "Bulky Support", "strumento": "Eviolite", "abilita": "Sturdy", "tera": "Rock", "evs": { "HP": 252, "Def": 252, "SpD": 4 }, "natura": "Impish", "mosse": ["Stealth Rock", "Stone Edge", "Earthquake", "Roar"] }],
+    "doppio": [{ "ruolo": "Doubles Support", "strumento": "Eviolite", "abilita": "Sturdy", "tera": "Rock", "evs": { "HP": 252, "Def": 252, "SpD": 4 }, "natura": "Impish", "mosse": ["Rock Slide", "Earthquake", "Stealth Rock", "Protect"] }]
+  },
+  "Togetic": {
+    "singolo": [{ "ruolo": "Bulky Support", "strumento": "Eviolite", "abilita": "Serene Grace", "tera": "Fairy", "evs": { "HP": 252, "Def": 252, "SpD": 4 }, "natura": "Bold", "mosse": ["Dazzling Gleam", "Air Cutter", "Roost", "Thunder Wave"] }],
+    "doppio": [{ "ruolo": "Doubles Support", "strumento": "Eviolite", "abilita": "Serene Grace", "tera": "Fairy", "evs": { "HP": 252, "Def": 252, "SpD": 4 }, "natura": "Bold", "mosse": ["Follow Me", "Tailwind", "Dazzling Gleam", "Protect"] }]
+  },
+  "Unown": {
+    "singolo": [{ "ruolo": "Fast Attacker", "strumento": "Choice Specs", "abilita": "Levitate", "tera": "Psychic", "evs": { "HP": 4, "SpA": 252, "Spe": 252 }, "natura": "Timid", "mosse": ["Hidden Power [Psychic]"] }]
+  },
+  "Sneasel": {
+    "singolo": [{ "ruolo": "Setup Sweeper", "strumento": "Eviolite", "abilita": "Pickpocket", "tera": "Ice", "evs": { "HP": 4, "Atk": 252, "Spe": 252 }, "natura": "Jolly", "mosse": ["Swords Dance", "Triple Axel", "Knock Off", "Ice Shard"] }],
+    "doppio": [{ "ruolo": "Doubles Fast Attacker", "strumento": "Eviolite", "abilita": "Inner Focus", "tera": "Ice", "evs": { "HP": 4, "Atk": 252, "Spe": 252 }, "natura": "Jolly", "mosse": ["Fake Out", "Triple Axel", "Knock Off", "Protect"] }]
+  },
+  "Sneasel-Hisui": {
+    "singolo": [{ "ruolo": "Setup Sweeper", "strumento": "Eviolite", "abilita": "Pickpocket", "tera": "Fighting", "evs": { "HP": 4, "Atk": 252, "Spe": 252 }, "natura": "Jolly", "mosse": ["Swords Dance", "Close Combat", "Gunk Shot", "Quick Attack"] }],
+    "doppio": [{ "ruolo": "Doubles Fast Attacker", "strumento": "Eviolite", "abilita": "Inner Focus", "tera": "Fighting", "evs": { "HP": 4, "Atk": 252, "Spe": 252 }, "natura": "Jolly", "mosse": ["Fake Out", "Close Combat", "Gunk Shot", "Protect"] }]
+  },
+  "Linoone-Galar": {
+    "singolo": [{ "ruolo": "Setup Sweeper", "strumento": "Eviolite", "abilita": "Quick Feet", "tera": "Normal", "evs": { "HP": 4, "Atk": 252, "Spe": 252 }, "natura": "Jolly", "mosse": ["Hone Claws", "Throat Chop", "Gunk Shot", "Seed Bomb"] }],
+    "doppio": [{ "ruolo": "Doubles Support", "strumento": "Eviolite", "abilita": "Gluttony", "tera": "Dark", "evs": { "HP": 252, "Atk": 252, "SpD": 4 }, "natura": "Adamant", "mosse": ["Snarl", "Knock Off", "Throat Chop", "Protect"] }]
+  }
+}

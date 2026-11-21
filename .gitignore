@@ -1,0 +1,11 @@
+# File di lavoro che non vanno pubblicati online
+cache/
+.claude/
+CLAUDE.md
+file-del-progetto.md
+node_modules/
+# Dati intermedi (il gioco usa i file .js generati)
+pokemon.json
+set.json
+riepilogo.txt
+riepilogo-set.txt

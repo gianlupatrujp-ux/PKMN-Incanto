@@ -1,0 +1,10 @@
+{
+  "_nota": "Specie NON completamente evolute che vuoi comunque nel gioco. Scrivi il nome inglese minuscolo come in PokéAPI (es. porygon2, mr-mime). Dopo averla modificata rilancia lo script.",
+  "specie": [
+    "chansey", "scyther", "bisharp", "onix",
+    "porygon2", "dusclops", "rhydon", "magneton", "sneasel",
+    "gligar", "piloswine", "haunter", "dragonair", "togetic",
+    "mr-mime", "farfetchd", "corsola", "linoone", "qwilfish", "primeape",
+    "dunsparce", "girafarig", "stantler", "ursaring", "basculin", "duraludon"
+  ]
+}

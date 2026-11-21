@@ -1,0 +1,804 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Sito privato tra amici: i motori di ricerca non devono indicizzarlo -->
+<meta name="robots" content="noindex, nofollow, noimageindex, noarchive">
+<meta name="description" content="Gioco amatoriale non ufficiale e senza scopo di lucro / Unofficial non-profit fan game">
+<title>Pokémon Incanto</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<!-- Font ospitati in locale (scarica-font.js): nessuna richiesta ai server di Google -->
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+/* Layout: tavolo d'asta a due paddle (giocatore 1 corallo, giocatore 2 blu), lotto al centro, storico sotto. */
+:root{
+  --bg:#F1F3F7; --surface:#FFFFFF; --ink:#142033; --muted:#5B6878; --line:#D6DDE7;
+  --p1:#D93F2B; --p1-soft:#FBE7E3; --p2:#2358D6; --p2-soft:#E3EBFC;
+  --ok:#1B7F52; --ok-soft:#DFF3E9; --warn:#9A5B00; --warn-soft:#FBEFD6; --err:#B3261E;
+  --font-display:'Space Grotesk','Helvetica Neue',Arial,sans-serif;
+  --font-body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1520; --surface:#162131; --ink:#E8EDF5; --muted:#9AA8BA; --line:#2A384B;
+  --p1:#FF7A66; --p1-soft:#3B1F1B; --p2:#7BA0FF; --p2-soft:#1C2B4B;
+  --ok:#52C98E; --ok-soft:#173A2B; --warn:#E5B050; --warn-soft:#3A2D12; --err:#FF8A80; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#0E1520; --surface:#162131; --ink:#E8EDF5; --muted:#9AA8BA; --line:#2A384B;
+  --p1:#FF7A66; --p1-soft:#3B1F1B; --p2:#7BA0FF; --p2-soft:#1C2B4B;
+  --ok:#52C98E; --ok-soft:#173A2B; --warn:#E5B050; --warn-soft:#3A2D12; --err:#FF8A80; color-scheme:dark;}
+*{box-sizing:border-box}
+body{font:15px/1.5 var(--font-body);background:var(--bg);color:var(--ink);
+  padding-block:20px 84px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance;line-height:1.15}
+h1{font-size:clamp(26px,5vw,38px);letter-spacing:-.01em}
+h2{font-size:18px}h3{font-size:15px}
+p{margin:0}
+.muted{color:var(--muted)}
+.brand{display:flex;flex-direction:column;gap:6px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.label{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.opt{font:inherit;text-align:left;color:var(--ink);background:var(--bg);border:2px solid var(--line);border-radius:10px;padding:12px;cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.opt strong{font-family:var(--font-display);font-size:16px}
+.opt span{font-size:13px;color:var(--muted)}
+.opt.sm{padding:6px 16px;flex-direction:row}
+.opt .cnt{font:600 12px var(--font-body);color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:1px 8px;margin-left:4px;vertical-align:middle}
+.opt[aria-pressed="true"]{border-color:var(--ink);background:var(--surface);box-shadow:inset 0 0 0 1px var(--ink)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--p2);outline-offset:2px}
+.btn{font:600 15px var(--font-body);border:0;border-radius:10px;padding:12px 18px;cursor:pointer;background:var(--ink);color:var(--bg)}
+.btn.ghost{background:transparent;color:var(--ink);border:2px solid var(--line)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.field{display:flex;flex-direction:column;gap:4px;flex:1 1 180px;min-width:0}
+input[type=text],input[type=number]{font:inherit;color:var(--ink);background:var(--bg);border:2px solid var(--line);border-radius:8px;padding:10px;width:100%;min-width:0}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font-size:12px;font-weight:600;padding:3px 10px;border-radius:99px;background:var(--bg);border:1px solid var(--line)}
+.tchip{font-size:13px;font-weight:600;padding:4px 12px;border-radius:99px}
+.players{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pl{border-radius:12px;border:2px solid var(--line);background:var(--surface);padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.pl.i0{--c:var(--p1);--cs:var(--p1-soft)} .pl.i1{--c:var(--p2);--cs:var(--p2-soft)}
+.pl.turn{border-color:var(--c);background:var(--cs)}
+.pl .top{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}
+.pl .nm{font-family:var(--font-display);font-weight:700;color:var(--c);overflow-wrap:anywhere}
+.coins{font-family:var(--font-display);font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+.coins small{font-size:12px;font-weight:500;color:var(--muted);margin-left:4px;font-family:var(--font-body)}
+.slots{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
+.slot{aspect-ratio:1;border-radius:6px;border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;overflow:hidden}
+.team{display:flex;gap:4px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--c);color:var(--bg);align-self:flex-start}
+.lot{align-items:center;text-align:center;padding:20px 16px}
+.face{display:flex;flex-direction:column;align-items:center;gap:8px}
+.ball{width:104px;height:104px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:26px;border:3px solid var(--ink);position:relative;font-variant-numeric:tabular-nums}
+.ball.q{background:var(--bg);color:var(--muted)}
+/* Sprite: nella pallina (più grande), nelle caselle della squadra e nelle etichette finali */
+.ball.sp{width:150px;height:150px}
+/* Shiny: bordo dorato che brilla, scritta e etichetta */
+.ball.shiny{border-color:#E8B923;box-shadow:0 0 0 4px rgba(232,185,35,.35),0 0 22px 4px rgba(255,214,90,.55);animation:shine 1.8s ease-in-out infinite}
+@keyframes shine{50%{box-shadow:0 0 0 6px rgba(232,185,35,.5),0 0 34px 8px rgba(255,214,90,.8)}}
+.shinyban{font-family:var(--font-display);font-weight:700;font-size:18px;color:#B8860B;background:linear-gradient(90deg,#FFF6D5,#FFE48A,#FFF6D5);padding:6px 16px;border-radius:99px;border:2px solid #E8B923}
+.chip.shinychip{background:#FFE48A;color:#5A4300;border-color:#E8B923}
+@media (prefers-reduced-motion:reduce){.ball.shiny{animation:none}}
+.ball img{max-width:150px;max-height:140px;object-fit:contain;filter:drop-shadow(0 3px 4px rgba(0,0,0,.3))}
+.ball img+span,.slot img+span{display:none}
+.slot img{width:100%;height:100%;object-fit:contain;padding:1px}
+.tchip.mon{display:inline-flex;align-items:center;gap:6px;padding-left:6px}
+.tchip img.mini{width:30px;height:30px;object-fit:contain;margin:-6px 0}
+.big{font-family:var(--font-display);font-size:clamp(34px,8vw,52px);font-weight:700;line-height:1}
+.bid{font-family:var(--font-display);font-size:40px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+.note{padding:10px 12px;border-radius:8px;font-size:14px;background:var(--bg);border:1px solid var(--line);text-align:left;width:100%}
+.note.ok{background:var(--ok-soft);border-color:transparent;color:var(--ok)}
+.note.warn{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
+.err{color:var(--err);font-size:14px;font-weight:600}
+.bidrow{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:flex-end;width:100%}
+.bidrow .field{max-width:150px;flex:0 1 150px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+.scroll{overflow-x:auto}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+td.n{font-variant-numeric:tabular-nums}
+.teams{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+pre{margin:0;padding:12px;background:var(--bg);border:1px solid var(--line);border-radius:8px;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;max-height:420px;overflow:auto}
+.fmtline{font-size:14px;padding:8px 12px;border-radius:8px;background:var(--bg);border:1px solid var(--line);border-left:4px solid #8E3FD6}
+.setlist{display:flex;flex-direction:column;gap:10px}
+.setrow{display:flex;flex-direction:column;gap:3px;font-size:14px;min-width:0}
+.setrow select{font:inherit;font-size:13px;color:var(--ink);background:var(--bg);border:2px solid var(--line);border-radius:8px;padding:7px 8px;width:100%;min-width:0}
+select:focus-visible{outline:3px solid var(--p2);outline-offset:2px}
+/* Duello d'asta: a sinistra giocatore 1, a destra giocatore 2, al centro l'offerta con la freccia verso chi sta vincendo */
+.lot.lead0{border-top:6px solid var(--p1)} .lot.lead1{border-top:6px solid var(--p2)}
+.duel{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;width:100%;align-items:stretch}
+.side{--c:var(--p1);--cs:var(--p1-soft);border:2px dashed var(--line);border-radius:12px;padding:10px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:0}
+.side.i1{--c:var(--p2);--cs:var(--p2-soft)}
+.side .who{font-family:var(--font-display);font-weight:700;font-size:17px;color:var(--c);overflow-wrap:anywhere}
+.side .st{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 10px;border-radius:99px;display:inline-flex;align-items:center;gap:6px}
+.side .sm{font-size:12px}
+.side.lead{border:2px solid var(--c);background:var(--cs)}
+.side.lead .st{background:var(--c);color:var(--bg)}
+.side.turn .st{color:var(--c);border:2px solid var(--c)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--c);animation:pulse 1.1s ease-in-out infinite}
+.pot{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:0 4px}
+.pot.i0{--c:var(--p1)} .pot.i1{--c:var(--p2)}
+.pot .bid{color:var(--c)}
+.pot .arrow{font-size:22px;color:var(--c);line-height:1}
+.note.turn{border-left:5px solid var(--c)} .note.i0{--c:var(--p1)} .note.i1{--c:var(--p2)}
+.note .who{color:var(--c)}
+.btn.pc{background:var(--c);color:var(--bg)} .btn.pc.i0{--c:var(--p1)} .btn.pc.i1{--c:var(--p2)}
+.tag.out{background:transparent;color:var(--c);box-shadow:inset 0 0 0 1.5px var(--c)}
+.pl.turn{animation:ring 1.6s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(.55);opacity:.5}}
+@keyframes ring{50%{box-shadow:0 0 0 4px var(--cs)}}
+/* Moneta: testa = Poké Ball (giocatore 1), croce = Mega Ball (giocatore 2) */
+.coinwrap{perspective:700px;display:flex;justify-content:center}
+.coin3d{width:150px;height:150px;position:relative;transform-style:preserve-3d}
+.coin3d svg{position:absolute;inset:0;width:100%;height:100%;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.coin3d .back{transform:rotateY(180deg)}
+.coin3d.c{transform:rotateY(180deg)}
+.coin3d.t.spin{animation:spinT 1.3s cubic-bezier(.15,.6,.3,1) both}
+.coin3d.c.spin{animation:spinC 1.3s cubic-bezier(.15,.6,.3,1) both}
+@keyframes spinT{from{transform:translateY(0) rotateY(0)}40%{transform:translateY(-36px) rotateY(900deg)}to{transform:translateY(0) rotateY(1800deg)}}
+@keyframes spinC{from{transform:translateY(0) rotateY(0)}40%{transform:translateY(-36px) rotateY(990deg)}to{transform:translateY(0) rotateY(1980deg)}}
+.reveal{animation:fade .35s 1.25s both}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}}
+.sides{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.sides .chip.i0{color:var(--p1);border-color:var(--p1)} .sides .chip.i1{color:var(--p2);border-color:var(--p2)}
+/* Schermata iniziale: "Pokémon" giallo bordato di blu, "Incanto" viola in stile fantasy, Vivillon bianco dietro */
+.title{min-height:calc(100vh - 70px);min-height:calc(100dvh - 70px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;text-align:center;position:relative;overflow:hidden}
+.logo{position:relative;display:flex;flex-direction:column;align-items:center;padding:66px 10px 40px}
+.logo .viv{position:absolute;left:50%;top:50%;width:min(430px,92vw);transform:translate(-50%,-55%);z-index:0;opacity:.95;animation:flutter 5s ease-in-out infinite}
+.logo .viv .wing{transform-box:fill-box;animation:flap 2.6s ease-in-out infinite}
+.logo .viv .wing.l{transform-origin:right center} .logo .viv .wing.r{transform-origin:left center}
+/* --vy: altezza di Vivillon rispetto al titolo (su schermi larghi "Pokémon" è più grande, quindi Vivillon sale di più) */
+.logo img.vivspr{--vy:-101%;width:156px;height:156px;transform:translate(-42%,var(--vy));animation-name:flutterspr}
+@keyframes flutterspr{50%{transform:translate(-42%,calc(var(--vy) - 5%))}}
+@media (min-width:520px){.logo img.vivspr{--vy:-112%}}
+@media (min-width:700px){.logo img.vivspr{--vy:-122%}}
+/* Nuvola sotto "Incanto": sta davanti a "Pokémon" (lo copre un po') e dietro a "Incanto"; si muove piano */
+.incwrap{position:relative;z-index:2;display:flex;justify-content:center}
+.incwrap .incanto{z-index:1}
+.cloud{position:absolute;left:50%;top:50%;width:135%;max-width:470px;z-index:0;pointer-events:none;transform:translate(-50%,-50%);animation:drift 7s ease-in-out infinite}
+.cloud.back{width:108%;opacity:.55;animation:drift2 9s ease-in-out infinite}
+@keyframes drift{50%{transform:translate(calc(-50% + 12px),-54%)}}
+@keyframes drift2{50%{transform:translate(calc(-50% - 16px),-60%)}}
+@media (prefers-reduced-motion:reduce){.cloud{animation:none}}
+@keyframes flutter{50%{transform:translate(-50%,-58%)}}
+@keyframes flap{50%{transform:scaleX(.9)}}
+.poke{position:relative;z-index:1;font-family:'Luckiest Guy','Arial Black',Impact,sans-serif;font-size:clamp(54px,15vw,116px);line-height:.95;letter-spacing:.02em;
+  color:#FFCB05;-webkit-text-stroke:clamp(5px,1.4vw,9px) #2A6BC0;paint-order:stroke fill;text-shadow:0 6px 0 #1B3E80,0 10px 18px rgba(0,0,0,.35);transform:rotate(-3deg)}
+.incanto{position:relative;z-index:1;font-family:'Cinzel Decorative',Georgia,'Times New Roman',serif;font-weight:900;font-size:clamp(34px,9vw,70px);line-height:1.05;letter-spacing:.06em;
+  color:#8E3FD6;-webkit-text-stroke:1.5px #4A1882;paint-order:stroke fill;text-shadow:0 0 18px rgba(180,120,255,.55),0 3px 0 #3A1168;margin-top:6px}
+.title .menu{display:flex;flex-direction:column;gap:12px;width:min(300px,100%);position:relative;z-index:1}
+.title .menu .btn{font-size:18px;padding:15px 20px}
+.btn.play{background:#8E3FD6;color:#fff}
+.title .credit{font-size:12px;color:var(--muted);max-width:460px}
+.langs{display:flex;gap:8px;justify-content:center;position:relative;z-index:1}
+.linkbtn{font:inherit;font-weight:600;color:var(--ink);background:none;border:0;padding:0;text-decoration:underline;cursor:pointer}
+.modal a{color:var(--p2)}
+/* Tasto Regole sempre disponibile */
+.rulesbtn{position:fixed;right:max(14px,env(safe-area-inset-right,0px));bottom:max(14px,env(safe-area-inset-bottom,0px));z-index:5;font:600 14px var(--font-body);
+  display:flex;align-items:center;gap:6px;padding:10px 14px;border-radius:99px;border:2px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+.rulesbtn b{display:inline-flex;width:20px;height:20px;border-radius:50%;background:#8E3FD6;color:#fff;align-items:center;justify-content:center;font-size:13px}
+.modal.rules{max-width:560px;max-height:min(86vh,760px);overflow:auto}
+.rules h3{font-family:var(--font-display);font-size:15px;margin-top:4px}
+.rules ul,.rules ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:14px}
+.rules .note{font-size:14px}
+.backlink{align-self:flex-start}
+@media (prefers-reduced-motion:reduce){.logo .viv,.logo .viv .wing{animation:none}}
+/* Tasto Esci e finestra di conferma */
+.topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.btn.sm{padding:8px 14px;font-size:14px}
+.modal-bg{position:fixed;inset:0;background:rgba(10,16,26,.6);display:flex;align-items:center;justify-content:center;padding:16px;z-index:10;animation:fade .15s both}
+.modal{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;max-width:400px;width:100%;display:flex;flex-direction:column;gap:14px;box-shadow:0 12px 40px rgba(0,0,0,.35)}
+.modal .row{justify-content:flex-end}
+.btn.danger{background:var(--err);color:var(--bg)}
+@media (prefers-reduced-motion:reduce){.coin3d.spin,.reveal,.dot,.pl.turn,.modal-bg{animation:none}}
+@media (max-width:480px){.duel{gap:6px}.side{padding:8px 4px}.side .who{font-size:15px}.side .st{font-size:10px;padding:2px 6px}}
+@media (max-width:480px){.coins{font-size:22px}.pl{padding:10px}.slot{font-size:9px}.slots{grid-template-columns:repeat(3,1fr)}}
+</style>
+
+<div class="wrap" id="app"></div>
+
+<script src="pokemon-data.js"></script>
+<script src="set-data.js"></script>
+<script src="sprite-data.js"></script>
+<script>
+/*CORE-START*/
+const TEAM_SIZE = 6, START_COINS = 25;
+// Elenco completo generato da scarica-pokemon.js (file pokemon-data.js, caricato prima di questo script).
+// Ogni Pokémon: name (nome Showdown), display (nome da mostrare), dex, type, type2, color, form (regione o null).
+function buildPool(data){
+  return data.map(p=>({name:p.name, display:p.display||p.name, dex:p.dex, type:p.types[0], type2:p.types[1]||null,
+    color:p.color, form:p.form||null, legendary:!!p.legendary, mythical:!!p.mythical, tier:p.tier||'?', champions:!!p.champions}));
+}
+const POOL = typeof POKEMON_DATA!=='undefined' ? buildPool(POKEMON_DATA) : [];
+
+function shuffle(a, rnd){ rnd = rnd || Math.random; const r=a.slice();
+  for(let i=r.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); const t=r[i]; r[i]=r[j]; r[j]=t; } return r; }
+// Gruppi di Pokémon in gioco, in base ai tier National Dex di Showdown. Ogni gruppo è legale nel formato indicato.
+// "champions": solo i Pokémon presenti in Pokémon Champions (flag champions dei dati).
+const POOL_TIERS={ tutti:null, ou:['OU','UUBL'], uu:['UU','RUBL'], champions:null };
+function filterPool(pool, o){
+  const tier=o.tier||'tutti', t=POOL_TIERS[tier];
+  return pool.filter(m=>(!t||t.includes(m.tier)) && (tier!=='champions'||m.champions) && (o.legends!==false || !(m.legendary||m.mythical)));
+}
+// Doppio Champions: regolamento VGC attuale di Showdown. Valore salvato da scarica-set.js (SHOWDOWN_INFO),
+// aggiornato all'apertura del gioco se c'è internet (trovaVgcChampions sul testo di config/formats.ts).
+let CHAMP_VGC=(typeof SHOWDOWN_INFO!=='undefined'&&SHOWDOWN_INFO.champVgc)||'[Gen 9 Champions] VGC 2026 Reg M-C';
+function trovaVgcChampions(testo){
+  for(const b of testo.split(/\n\t\{\n/)){
+    const n=b.match(/name: "(\[Gen 9 Champions\] VGC \d{4} Reg [A-Za-z-]+)"/);
+    if(n&&!/searchShow: false/.test(b)) return n[1];
+  }
+  return null;
+}
+// Formato di Showdown dove giocare la squadra
+function showdownFormat(format, tier){
+  if(tier==='champions') return format==='doppio' ? CHAMP_VGC : '[Gen 9 Champions] OU';
+  if(format==='doppio') return '[Gen 9] Doubles Custom Game';
+  return ({tutti:'[Gen 9] National Dex AG', ou:'[Gen 9] National Dex', uu:'[Gen 9] National Dex UU'})[tier||'tutti'];
+}
+function newGame(o){
+  return { format:o.format, mode:o.mode, tier:o.tier||'tutti', legends:o.legends!==false, startCoins:o.coins||START_COINS, coins:[o.coins||START_COINS,o.coins||START_COINS], teams:[[],[]],
+    deck:shuffle(o.pool,o.rnd), openerIdx:o.firstOpener, auction:null, last:null, history:[], over:false, n:0,
+    // Species Clause dei formati OU/UU/Champions: una sola forma per numero di Pokédex (es. non Tauros e Tauros di Paldea)
+    speciesClause:['ou','uu','champions'].includes(o.tier), usedDex:[],
+    // Probabilità che un Pokémon estratto sia shiny (cromatico): 1 su 512
+    shinyRate:o.shinyRate!=null?o.shinyRate:SHINY_RATE, rnd:o.rnd||Math.random };
+}
+const SHINY_RATE=1/512;
+// Pokémon che su Showdown non possono essere shiny (solo da eventi non shiny, o mosse che lo impediscono):
+// trovati con il validatore ufficiale il 21/11/2026. Per loro non si estrae mai la versione shiny.
+const SHINY_LOCK=['Spinda','Victini','Keldeo','Hoopa','Volcanion','Magearna','Marshadow','Zeraora','Urshifu','Zarude',
+  'Glastrier','Spectrier','Calyrex','Walking Wake','Iron Leaves','Okidogi','Munkidori','Fezandipiti','Ogerpon',
+  'Gouging Fire','Raging Bolt','Iron Boulder','Iron Crown','Terapagos','Pecharunt'];
+function isFull(s,p){ return s.teams[p].length>=TEAM_SIZE; }
+// Tetto: monete possedute meno 1 per ogni altro Pokémon ancora da comprare.
+function maxBid(s,p){ return s.coins[p] - (TEAM_SIZE - s.teams[p].length - 1); }
+function award(s, mon, winner, price, opener, auto){
+  s.coins[winner]-=price; s.teams[winner].push(mon);
+  s.last={mon:mon,winner:winner,price:price,auto:!!auto};
+  s.history.push({n:++s.n,mon:mon,winner:winner,price:price,opener:opener,auto:!!auto});
+  s.auction=null; s.openerIdx=1-opener;
+  if(isFull(s,0)&&isFull(s,1)) s.over=true;
+}
+function startAuction(s){
+  if(s.over||s.auction) return;
+  if(isFull(s,0)&&isFull(s,1)){ s.over=true; return; }
+  let mon=s.deck.pop();
+  if(s.speciesClause){ while(s.usedDex.includes(mon.dex)&&s.deck.length) mon=s.deck.pop(); s.usedDex.push(mon.dex); }
+  if(s.rnd()<s.shinyRate && !SHINY_LOCK.includes(mon.name)) mon=Object.assign({},mon,{shiny:true}); // copia, così il Pokémon del pool resta normale
+  const op=s.openerIdx, other=1-op;
+  if(isFull(s,op)) return award(s,mon,other,1,op,true);
+  if(isFull(s,other)) return award(s,mon,op,1,op,true);
+  s.auction={mon:mon,opener:op,bid:1,leader:op,turn:other};
+}
+function raise(s,p,amount){
+  const a=s.auction;
+  // Errori come codici (l'interfaccia li traduce): 'turn', 'int', 'min|<offerta>', 'max|<tetto>'
+  if(!a||a.turn!==p) return 'turn';
+  if(!Number.isInteger(amount)) return 'int';
+  if(amount<=a.bid) return 'min|'+a.bid;
+  if(amount>maxBid(s,p)) return 'max|'+maxBid(s,p);
+  a.bid=amount; a.leader=p; a.turn=1-p; return null;
+}
+function pass(s,p){
+  const a=s.auction;
+  if(!a||a.turn!==p) return 'turn';
+  award(s,a.mon,a.leader,a.bid,a.opener,false); return null;
+}
+// Set per Showdown, generati da scarica-set.js (file set-data.js, facoltativo: senza, l'export contiene solo i nomi).
+const SETS = typeof SET_DATA!=='undefined' ? SET_DATA : {};
+function setsFor(mon, format, tier){ let v=SETS[mon.name]; if(v&&tier==='champions') v=v.champions; return v ? (v[format]||v.singolo||[]) : []; }
+// In Champions vale la "Item Clause": due Pokémon della stessa squadra non possono avere lo stesso strumento.
+const ITEM_ALT=['Leftovers','Sitrus Berry','Life Orb','Focus Sash','Choice Scarf','Expert Belt','Shell Bell','Lum Berry','Mental Herb','White Herb','Scope Lens','Black Glasses'];
+const EV_ORDER=['HP','Atk','Def','SpA','SpD','Spe'];
+function setText(mon, s){
+  const evs=EV_ORDER.filter(k=>s.evs&&s.evs[k]).map(k=>s.evs[k]+' '+k).join(' / ');
+  return [mon.name+(s.strumento?' @ '+s.strumento:''), 'Ability: '+s.abilita, (s.shiny||mon.shiny)?'Shiny: Yes':null, s.tera?'Tera Type: '+s.tera:null,
+    evs?'EVs: '+evs:null, s.natura?s.natura+' Nature':null, ...s.mosse.map(x=>'- '+x)].filter(Boolean).join('\n');
+}
+// choice: { nomePokémon: indice del set scelto } (predefinito il primo)
+// tier: nel gruppo UU si usa la versione "basso" del set (senza Drizzle, Drought, Light Clay, vietati lì)
+// Set effettivi della squadra (con la versione per UU e la regola dello strumento unico di Champions applicate)
+function teamSets(team, format, choice, tier){
+  choice=choice||{};
+  const basso=tier==='uu', usati=new Set();
+  return team.map(m=>{ const ss=setsFor(m,format||'singolo',tier); let s=ss[choice[m.name]]||ss[0];
+    if(s&&basso&&s.basso) s=Object.assign({},s,s.basso);
+    if(s&&tier==='champions'){
+      if(usati.has(s.strumento)) s=Object.assign({},s,{strumento:ITEM_ALT.find(x=>!usati.has(x))});
+      usati.add(s.strumento);
+    }
+    return s||null; });
+}
+function exportText(team, format, choice, tier){
+  const ss=teamSets(team, format, choice, tier);
+  return team.map((m,i)=>ss[i]?setText(m,ss[i]):m.name).join('\n\n');
+}
+/*CORE-END*/
+// ===================== Lingua =====================
+// Tutti i testi dell'interfaccia, in italiano e inglese. t('chiave', ...valori) restituisce il testo nella lingua scelta.
+// I nomi di Pokémon, mosse, strumenti e abilità restano in inglese: sono quelli che usa Pokémon Showdown.
+const CONTACT_URL='https://github.com/gianlupatrujp-ux/PKMN-Incanto/issues';  // segnalazioni e richieste di rimozione
+const I18N={
+ it:{
+  'lang':'Lingua','menu.play':'Gioca','menu.rules':'Regolamento','menu.legal':'Note legali',
+  'credit':'Gioco amatoriale non ufficiale, gratuito e senza scopo di lucro. Pokémon e tutti i nomi e le immagini collegati sono marchi registrati e proprietà di Nintendo, Creatures Inc., GAME FREAK inc. e The Pokémon Company.',
+  'back':'← Menu','setup.sub':n=>`Asta a due, 6 Pokémon da comprare a testa, estratti tra ${n} Pokémon.`,
+  'setup.nodata':'Elenco dei Pokémon non trovato: il file <strong>pokemon-data.js</strong> deve stare nella stessa cartella di questa pagina. Si crea con <code>node scarica-pokemon.js</code>.',
+  's1':'1. Formato','s2':'2. Pokémon in gioco','s3':"3. Modalità d'asta",'s4':'4. Monete a testa','s5':'5. Giocatori',
+  'fmt.singolo':['Singolo','Un Pokémon per lato in campo.'],'fmt.doppio':['Doppio','Due Pokémon per lato in campo.'],
+  'pool.tutti':['Tutti','Ogni Pokémon del gioco.'],'pool.ou':['Tier OU','Solo i più forti usati in OU.'],
+  'pool.uu':['Tier UU','Forti ma un gradino sotto.'],'pool.champions':['Pokémon Champions','Solo quelli del gioco Pokémon Champions, con le Megaevoluzioni.'],
+  'poolName.tutti':'Tutti i Pokémon','poolName.ou':'Tier OU','poolName.uu':'Tier UU','poolName.champions':'Pokémon Champions',
+  'legends':'Leggendari e misteriosi:','yes':'Sì','no':'No','noLegends':', senza leggendari',
+  'playOn':f=>`Su Showdown si gioca in <strong>${f}</strong>`,'fmtNote':' (si portano 6 Pokémon e se ne scelgono 4, livello 50)',
+  'mode.classica':['Classica','Il Pokémon è mostrato: si sa esattamente chi è.'],'mode.tipo':['Per tipo','Si dichiara solo il tipo primario.'],
+  'mode.numero':['Per numero','Si conosce solo il numero di Pokédex.'],'mode.colore':['Per colore','Si dichiara solo il colore del Pokémon.'],
+  'modeChip':m=>'Asta '+m.toLowerCase(),
+  'coins':'Monete','coinsHelp':'Predefinito 25. Minimo 6, cioè 1 moneta per ogni Pokémon.','heads':'Testa','tails':'Croce',
+  'toflip':'Vai al lancio della moneta','err.coins':n=>`Inserisci un numero intero di monete tra ${n} e 999.`,
+  'err.pool':n=>`Con queste scelte ci sono troppo pochi Pokémon per due squadre da ${n}.`,
+  'player':i=>'Giocatore '+i,
+  'flip.title':'Chi apre?','flip.sub':"Chi vince il lancio apre la prima asta, poi l'apertura si alterna.",
+  'flip.heads':n=>`Testa · Poké Ball → ${n}`,'flip.tails':n=>`Croce · Mega Ball → ${n}`,'coin.heads':'TESTA','coin.tails':'CROCE',
+  'coin.aria':f=>f?'Moneta: '+f:'Moneta da lanciare',
+  'flip.result':(f,n,c)=>`È uscito <strong>${f}</strong>: <strong style="color:var(--${c})">${n}</strong> apre la prima asta con l'offerta obbligatoria di 1 moneta.`,
+  'flip.begin':'Inizia le aste','flip.toss':'Lancia la moneta',
+  'exit':'Esci','leading':b=>`★ Sta vincendo a ${b}`,'yourTurn':'Tocca a te','canBid':n=>`Può offrire fino a ${n}`,
+  'coinsWord':n=>n===1?'moneta':'monete','auctionN':(n,o)=>`Asta ${n} · apre ${o}`,'winning':'★ Sta vincendo','offers':b=>`offre ${b}`,
+  'raiseOrPass':n=>`rilancia fino a ${n} o passa`,'onlyPass':'può solo passare','potAria':(b,n)=>`Offerta attuale ${b}, di ${n}`,
+  'turnNote':(p,a,b,l,bid)=>`Tocca a <strong class="who">${p}</strong>. Puoi rilanciare da ${a} a ${b}, oppure passare: il Pokémon va a <strong>${l}</strong> per ${bid}.`,
+  'turnNoteCap':(p,cap,l)=>`Tocca a <strong class="who">${p}</strong>. Non puoi rilanciare (tetto ${cap}): puoi solo passare, e il Pokémon va a <strong>${l}</strong>.`,
+  'newBid':n=>`Nuova offerta di ${n}`,'raise':'Rilancia','pass':'Passa','resultN':n=>`Esito asta ${n}`,
+  'won':(w,m,p,auto)=>`<strong>${w}</strong> si aggiudica ${m} per ${p} ${p===1?'moneta':'monete'}${auto?" (l'avversario ha già la squadra completa)":''}.`,
+  'ready':'Pronti','readyText':n=>`Il gioco estrae un Pokémon a caso. ${n} apre con 1 moneta.`,
+  'seeTeams':'Vedi le squadre','next':'Prossima asta','first':'Estrai il primo Pokémon',
+  'hist':'Aste concluse','col.winner':'Vincitore','col.price':'Prezzo','col.opener':'Apriva',
+  'shinyBan':'✨ Pokémon shiny! ✨','formOf':f=>'Forma di '+f,'colorChip':c=>'Colore '+c,'no':'N.','primaryType':'Tipo primario','dexNumber':'Numero di Pokédex','color':'Colore',
+  'endTitle':'Squadre complete','spent':(s,l)=>`${s} spese · ${l} avanzate`,'setsLabel':'Set di ogni Pokémon','noSet':'nessun set: solo il nome',
+  'textLabel':'Testo per Pokémon Showdown','fmtLine':'Formato da scegliere su Showdown:','copy':'Copia testo',
+  'copied':f=>'Copiato. Formato: '+f,'selected':'Selezionato: copia con Ctrl+C',
+  'endIntro':(dbl,f,custom,note)=>`Set pronti per il ${dbl?'doppio':'singolo'}, presi dalle Random Battle di Pokémon Showdown. Dove ci sono più set puoi sceglierli dal menu. Su Showdown: Teambuilder, nuova squadra, "Import from text", incolla. Formato: <strong>${f}</strong>${custom?' (sfida diretta: non controlla le squadre, quindi accetta tutto)':', dove queste squadre sono valide'}${note}.`,
+  'noSetsFile':'File set-data.js non trovato: il testo contiene solo i nomi. Si crea con: node scarica-set.js','again':'Nuova partita',
+  'exit.title':'Uscire dalla partita?','exit.desc':'La partita in corso andrà persa: squadre, monete e aste fatte finora. Tornerai al menu iniziale, dove restano le impostazioni scelte.',
+  'cancel':'Annulla','exit.confirm':'Esci dalla partita','rulesBtn':'Regole','rulesAria':'Apri il regolamento','close':'Chiudi',
+  'err.turn':'Non è il tuo turno','err.int':'Inserisci un numero intero','err.min':b=>"L'offerta deve superare "+b,'err.max':n=>'Puoi offrire al massimo '+n,
+  'rolePrefix':'Mega, ',
+ },
+ en:{
+  'lang':'Language','menu.play':'Play','menu.rules':'Rules','menu.legal':'Legal notice',
+  'credit':'Unofficial fan-made game, free and non-profit. Pokémon and all related names and images are trademarks and property of Nintendo, Creatures Inc., GAME FREAK inc. and The Pokémon Company.',
+  'back':'← Menu','setup.sub':n=>`Two-player auction: buy 6 Pokémon each, drawn from ${n} Pokémon.`,
+  'setup.nodata':'Pokémon list not found: the file <strong>pokemon-data.js</strong> must be in the same folder as this page. Create it with <code>node scarica-pokemon.js</code>.',
+  's1':'1. Battle format','s2':'2. Pokémon pool','s3':'3. Auction mode','s4':'4. Coins per player','s5':'5. Players',
+  'fmt.singolo':['Singles','One Pokémon per side on the field.'],'fmt.doppio':['Doubles','Two Pokémon per side on the field.'],
+  'pool.tutti':['All','Every Pokémon in the game.'],'pool.ou':['OU tier','Only the strongest, used in OU.'],
+  'pool.uu':['UU tier','Strong, one step below.'],'pool.champions':['Pokémon Champions','Only those in Pokémon Champions, with Mega Evolutions.'],
+  'poolName.tutti':'All Pokémon','poolName.ou':'OU tier','poolName.uu':'UU tier','poolName.champions':'Pokémon Champions',
+  'legends':'Legendaries and Mythicals:','yes':'Yes','no':'No','noLegends':', no legendaries',
+  'playOn':f=>`On Showdown, play in <strong>${f}</strong>`,'fmtNote':' (bring 6 Pokémon, pick 4, level 50)',
+  'mode.classica':['Classic','The Pokémon is shown: you know exactly who it is.'],'mode.tipo':['By type','Only the primary type is revealed.'],
+  'mode.numero':['By number','Only the Pokédex number is revealed.'],'mode.colore':['By color',"Only the Pokémon's color is revealed."],
+  'modeChip':m=>m+' auction',
+  'coins':'Coins','coinsHelp':'Default 25. Minimum 6, i.e. 1 coin per Pokémon.','heads':'Heads','tails':'Tails',
+  'toflip':'Go to the coin toss','err.coins':n=>`Enter a whole number of coins between ${n} and 999.`,
+  'err.pool':n=>`With these choices there are too few Pokémon for two teams of ${n}.`,
+  'player':i=>'Player '+i,
+  'flip.title':'Who opens?','flip.sub':'The toss winner opens the first auction, then the opener alternates.',
+  'flip.heads':n=>`Heads · Poké Ball → ${n}`,'flip.tails':n=>`Tails · Great Ball → ${n}`,'coin.heads':'HEADS','coin.tails':'TAILS',
+  'coin.aria':f=>f?'Coin: '+f:'Coin to toss',
+  'flip.result':(f,n,c)=>`It's <strong>${f}</strong>: <strong style="color:var(--${c})">${n}</strong> opens the first auction with the mandatory 1-coin bid.`,
+  'flip.begin':'Start the auctions','flip.toss':'Toss the coin',
+  'exit':'Exit','leading':b=>`★ Winning at ${b}`,'yourTurn':'Your turn','canBid':n=>`Can bid up to ${n}`,
+  'coinsWord':n=>n===1?'coin':'coins','auctionN':(n,o)=>`Auction ${n} · opened by ${o}`,'winning':'★ Winning','offers':b=>`bids ${b}`,
+  'raiseOrPass':n=>`raise up to ${n} or pass`,'onlyPass':'can only pass','potAria':(b,n)=>`Current bid ${b}, by ${n}`,
+  'turnNote':(p,a,b,l,bid)=>`<strong class="who">${p}</strong>'s turn. You can raise from ${a} to ${b}, or pass: the Pokémon goes to <strong>${l}</strong> for ${bid}.`,
+  'turnNoteCap':(p,cap,l)=>`<strong class="who">${p}</strong>'s turn. You can't raise (cap ${cap}): you can only pass, and the Pokémon goes to <strong>${l}</strong>.`,
+  'newBid':n=>`${n}'s new bid`,'raise':'Raise','pass':'Pass','resultN':n=>`Auction ${n} result`,
+  'won':(w,m,p,auto)=>`<strong>${w}</strong> wins ${m} for ${p} ${p===1?'coin':'coins'}${auto?" (the opponent's team is already full)":''}.`,
+  'ready':'Ready','readyText':n=>`The game draws a random Pokémon. ${n} opens with 1 coin.`,
+  'seeTeams':'See the teams','next':'Next auction','first':'Draw the first Pokémon',
+  'hist':'Finished auctions','col.winner':'Winner','col.price':'Price','col.opener':'Opener',
+  'shinyBan':'✨ Shiny Pokémon! ✨','formOf':f=>f+' form','colorChip':c=>'Color: '+c,'no':'No.','primaryType':'Primary type','dexNumber':'Pokédex number','color':'Color',
+  'endTitle':'Teams complete','spent':(s,l)=>`${s} spent · ${l} left`,'setsLabel':'Set for each Pokémon','noSet':'no set: name only',
+  'textLabel':'Text for Pokémon Showdown','fmtLine':'Format to choose on Showdown:','copy':'Copy text',
+  'copied':f=>'Copied. Format: '+f,'selected':'Selected: copy with Ctrl+C',
+  'endIntro':(dbl,f,custom,note)=>`Sets ready for ${dbl?'doubles':'singles'}, taken from Pokémon Showdown's Random Battles. Where there are several sets, pick one from the menu. On Showdown: Teambuilder, new team, "Import from text", paste. Format: <strong>${f}</strong>${custom?' (direct challenge: it does not check teams, so anything goes)':', where these teams are legal'}${note}.`,
+  'noSetsFile':'File set-data.js not found: the text only contains names. Create it with: node scarica-set.js','again':'New game',
+  'exit.title':'Leave the game?','exit.desc':'The current game will be lost: teams, coins and auctions so far. You will go back to the start menu, where your settings are kept.',
+  'cancel':'Cancel','exit.confirm':'Leave the game','rulesBtn':'Rules','rulesAria':'Open the rules','close':'Close',
+  'err.turn':'Not your turn','err.int':'Enter a whole number','err.min':b=>'The bid must be higher than '+b,'err.max':n=>'You can bid at most '+n,
+  'rolePrefix':'Mega, ',
+ }
+};
+const LANGS=[['it','Italiano'],['en','English']];
+function detectLang(){
+  try{const s=localStorage.getItem('incanto-lang'); if(s&&I18N[s]) return s;}catch(e){}
+  return /^it\b/i.test(navigator.language||'')?'it':'en';
+}
+const t=(k,...a)=>{const v=(I18N[ui.lang]||I18N.it)[k]; return typeof v==='function'?v(...a):(v===undefined?k:v);};
+// Errore della logica (codice) -> testo
+const errText=c=>{const [k,n]=String(c).split('|'); return n!==undefined?t('err.'+k,n):t('err.'+k);};
+
+const TYPE_COLORS={normal:'#A8A77A',fire:'#EE8130',water:'#6390F0',electric:'#F7D02C',grass:'#7AC74C',ice:'#96D9D6',fighting:'#C22E28',
+  poison:'#A33EA1',ground:'#E2BF65',flying:'#A98FF3',psychic:'#F95587',bug:'#A6B91A',rock:'#B6A136',ghost:'#735797',dragon:'#6F35FC',
+  dark:'#705746',steel:'#B7B7CE',fairy:'#D685AD'};
+const TYPE_NAMES={
+  it:{normal:'Normale',fire:'Fuoco',water:'Acqua',electric:'Elettro',grass:'Erba',ice:'Ghiaccio',fighting:'Lotta',poison:'Veleno',ground:'Terra',
+    flying:'Volo',psychic:'Psico',bug:'Coleottero',rock:'Roccia',ghost:'Spettro',dragon:'Drago',dark:'Buio',steel:'Acciaio',fairy:'Folletto'},
+  en:{normal:'Normal',fire:'Fire',water:'Water',electric:'Electric',grass:'Grass',ice:'Ice',fighting:'Fighting',poison:'Poison',ground:'Ground',
+    flying:'Flying',psychic:'Psychic',bug:'Bug',rock:'Rock',ghost:'Ghost',dragon:'Dragon',dark:'Dark',steel:'Steel',fairy:'Fairy'}};
+const typeName=k=>(TYPE_NAMES[ui.lang]||TYPE_NAMES.it)[k];
+const COLOR_HEX={red:'#E4533F',blue:'#3E78E0',yellow:'#F2C21B',green:'#4DAA55',black:'#2B2B33',brown:'#94673D',purple:'#8E55C4',gray:'#8D95A0',white:'#F1F1F1',pink:'#F28FB4'};
+const COLOR_NAMES={it:{red:'rosso',blue:'blu',yellow:'giallo',green:'verde',black:'nero',brown:'marrone',purple:'viola',gray:'grigio',white:'bianco',pink:'rosa'},
+  en:{red:'red',blue:'blue',yellow:'yellow',green:'green',black:'black',brown:'brown',purple:'purple',gray:'gray',white:'white',pink:'pink'}};
+const colorName=k=>(COLOR_NAMES[ui.lang]||COLOR_NAMES.it)[k];
+const MODE_KEYS=['classica','tipo','numero','colore'], FORMAT_KEYS=['singolo','doppio'], POOL_KEYS=['tutti','ou','uu','champions'];
+const fmtNote=(format,tier)=>tier==='champions'&&format==='doppio'?t('fmtNote'):'';
+
+const $app=document.getElementById('app');
+const ui={screen:'title',lang:'it',format:'singolo',tier:'tutti',legends:true,mode:'classica',coins:'25',names:['',''],flip:null,game:null,draft:'',msg:'',setChoice:{}};
+ui.lang=detectLang();
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pad=n=>String(n).padStart(3,'0');
+function ink(hex){const h=hex.replace('#','');const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);
+  return (0.299*r+0.587*g+0.114*b)>150?'#142033':'#FFFFFF';}
+const tchip=k=>`<span class="tchip" style="background:${TYPE_COLORS[k]};color:${ink(TYPE_COLORS[k])}">${typeName(k)}</span>`;
+// Nome del giocatore: se il campo è vuoto si usa "Giocatore 1"/"Player 1" nella lingua scelta
+const name=i=>esc(ui.names[i]||t('player',i+1));
+const formOf=m=>m.form;
+const disp=m=>esc(m.display)+(m.shiny?' ✨':'');
+const tchips=m=>tchip(m.type)+(m.type2?tchip(m.type2):'');
+
+// Il colore Pokédex si mostra solo nella modalità per colore; nelle altre i Pokémon usano uno stile neutro.
+const colorStyle=(m,mode)=>{if(mode!=='colore')return 'background:var(--bg);color:var(--ink)';const c=COLOR_HEX[m.color];return `background:${c};color:${ink(c)}`;};
+// Sprite animati scaricati da scarica-sprite.js (sprite-data.js). Se manca il file o l'immagine non si carica,
+// resta visibile il numero di Pokédex. Gli shiny usano la cartella "-shiny" (sprites/ani-shiny, sprites/gen5-shiny),
+// con ripiego sullo sprite normale.
+const SPRITES=typeof SPRITE_DATA!=='undefined'?SPRITE_DATA:{};
+const shinyPath=p=>p.replace(/^sprites\/(ani|gen5)\//,(x,d)=>'sprites/'+d+'-shiny/');
+const spr=(m,cls)=>{const p=SPRITES[m.name]; if(!p) return '';
+  if(m.shiny) return `<img class="${cls||''}" src="${esc(shinyPath(p))}" alt="" data-local="${esc(p)}" onerror="if(this.dataset.local){this.src=this.dataset.local;this.dataset.local='';}else this.remove();">`;
+  return `<img class="${cls||''}" src="${esc(p)}" alt="" onerror="this.remove()">`;};
+function ball(m,mode){return `<div class="ball sp${m.shiny?' shiny':''}" style="${colorStyle(m,mode)}" aria-hidden="true">${spr(m)}<span>${pad(m.dex)}</span></div>`;}
+function face(m,mode,reveal){
+  if(reveal||mode==='classica') return `<div class="face">${m.shiny?`<div class="shinyban" role="status">${t('shinyBan')}</div>`:''}${ball(m,mode)}<h2>${disp(m)}</h2><div class="chips">${m.shiny?'<span class="chip shinychip">✨ Shiny</span>':''}${tchips(m)}${formOf(m)?`<span class="chip">${t('formOf',formOf(m))}</span>`:''}${mode==='colore'?`<span class="chip">${t('colorChip',colorName(m.color))}</span>`:''}<span class="chip">${t('no')} ${pad(m.dex)}</span></div></div>`;
+  if(mode==='tipo') return `<div class="face"><div class="ball q">?</div><span class="label">${t('primaryType')}</span><span class="tchip" style="font-size:24px;padding:8px 24px;background:${TYPE_COLORS[m.type]};color:${ink(TYPE_COLORS[m.type])}">${typeName(m.type)}</span></div>`;
+  if(mode==='numero') return `<div class="face"><div class="ball q">?</div><span class="label">${t('dexNumber')}</span><div class="big">${t('no')} ${pad(m.dex)}</div></div>`;
+  const c=COLOR_HEX[m.color];
+  return `<div class="face"><div class="ball" style="background:${c};border-color:var(--ink)" aria-hidden="true"></div><span class="label">${t('color')}</span><div class="big">${colorName(m.color)}</div></div>`;
+}
+
+// Vivillon bianco disegnato in SVG (riserva se manca lo sprite)
+const VIV_WING=`<g class="wing l">
+  <path d="M196 128C170 70 110 30 60 40C25 48 22 95 40 125C55 150 120 168 196 158Z" fill="#FAFBFF" stroke="#8E9AB0" stroke-width="3"/>
+  <circle cx="92" cy="76" r="19" fill="#D6DEEB"/><circle cx="66" cy="108" r="11" fill="#B7C3D6"/><circle cx="140" cy="112" r="22" fill="#E8EDF5"/>
+  <circle cx="122" cy="70" r="8" fill="#8E9AB0"/><circle cx="160" cy="140" r="7" fill="#B7C3D6"/>
+  <path d="M196 165C160 175 105 200 90 240C80 268 115 285 140 270C165 255 190 215 196 180Z" fill="#FAFBFF" stroke="#8E9AB0" stroke-width="3"/>
+  <circle cx="125" cy="238" r="14" fill="#D6DEEB"/><circle cx="106" cy="258" r="7" fill="#8E9AB0"/><circle cx="160" cy="205" r="9" fill="#E8EDF5"/></g>`;
+const VIVILLON=`<svg class="viv" viewBox="0 0 400 300" aria-hidden="true">
+  ${VIV_WING}<g transform="translate(400,0) scale(-1,1)">${VIV_WING}</g>
+  <path d="M194 96C186 76 176 62 166 54M206 96C214 76 224 62 234 54" fill="none" stroke="#3A3A48" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="165" cy="53" r="5" fill="#3A3A48"/><circle cx="235" cy="53" r="5" fill="#3A3A48"/>
+  <ellipse cx="200" cy="160" rx="11" ry="56" fill="#3A3A48"/><circle cx="200" cy="100" r="15" fill="#3A3A48"/>
+  <circle cx="194" cy="97" r="3" fill="#F2F4F8"/><circle cx="206" cy="97" r="3" fill="#F2F4F8"/></svg>`;
+// Nuvola in stile cartone animato: tanti "sbuffi" tondi, base in ombra lilla-azzurra, parte alta bianca
+// con piccoli riflessi e qualche curva interna che separa gli sbuffi.
+// Forma bassa e larga (come la prima versione), così copre poco "Pokémon".
+const PUFFS=[[48,108,22],[88,92,30],[136,76,38],[194,66,44],[254,70,40],[308,84,34],[352,102,24],[204,100,34],[144,102,30],[282,102,30]];
+const CLOUD=cls=>{
+  const circ=(dy,dr,fill)=>PUFFS.map(([x,y,r])=>`<circle cx="${x}" cy="${y+dy}" r="${r+dr}" fill="${fill}"/>`).join('');
+  return `<svg class="cloud ${cls}" viewBox="0 0 400 150" aria-hidden="true"><defs>
+   <linearGradient id="cw${cls}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".7" stop-color="#F7F8FF"/><stop offset="1" stop-color="#E9ECFA"/></linearGradient>
+   <filter id="cf${cls}" x="-5%" y="-10%" width="110%" height="130%"><feGaussianBlur stdDeviation=".7"/></filter></defs>
+   <g filter="url(#cf${cls})">
+    <g>${circ(4,3,'#B9BFE6')}<rect x="48" y="102" width="304" height="30" rx="15" fill="#B9BFE6"/></g>
+    <g>${circ(0,0,'#D3D8F3')}<rect x="48" y="97" width="304" height="30" rx="15" fill="#D3D8F3"/></g>
+    <g>${circ(-6,-3,'url(#cw'+cls+')')}</g>
+    <g fill="none" stroke="#D9DDF4" stroke-width="3" stroke-linecap="round">
+     <path d="M104 104q22 10 44 2"/><path d="M174 100q28 13 58 2"/><path d="M262 102q22 10 42 0"/><path d="M158 60q12-13 30-15"/></g>
+    <g fill="#FFFFFF"><ellipse cx="190" cy="27" rx="18" ry="6" opacity=".95"/><ellipse cx="128" cy="46" rx="12" ry="4.5"/><ellipse cx="252" cy="36" rx="13" ry="5"/></g>
+   </g></svg>`;
+};
+function vTitle(){
+  // Vivillon bianco: lo sprite animato se c'è, altrimenti il disegno SVG
+  const viv=SPRITES['vivillon-icysnow']?`<img class="viv vivspr" src="${esc(SPRITES['vivillon-icysnow'])}" alt="" onerror="this.outerHTML=VIVILLON">`:VIVILLON;
+  return `<section class="title"><div class="logo">${viv}<div class="poke">Pokémon</div><div class="incwrap">${CLOUD('back')}${CLOUD('')}<div class="incanto">Incanto</div></div></div>
+   <div class="langs" role="group" aria-label="${t('lang')}">${LANGS.map(([k,n])=>`<button class="opt sm" data-act="lang" data-v="${k}" aria-pressed="${ui.lang===k}" lang="${k}"><strong>${n}</strong></button>`).join('')}</div>
+   <div class="menu"><button class="btn play" data-act="play">${t('menu.play')}</button><button class="btn ghost" data-act="rules">${t('menu.rules')}</button></div>
+   <p class="credit">${t('credit')} <button class="linkbtn" data-act="legal">${t('menu.legal')}</button></p></section>`;
+}
+// Regolamento (testo lungo: uno per lingua)
+function rulesBody(){
+  const F=s=>`<strong>${s}</strong>`;
+  if(ui.lang==='en') return `
+   <p>Two players buy <strong>6 Pokémon each</strong> at auction with coins, then play their teams on Pokémon Showdown.</p>
+   <h3>1. Before starting</h3>
+   <ul><li>Choose <strong>Singles or Doubles</strong>, which <strong>Pokémon</strong> can be drawn (all, only the OU or UU tier, or only those in Pokémon Champions; with or without legendaries), the <strong>auction mode</strong>, the <strong>coins</strong> per player (usually 25) and the names.</li>
+   <li>Coin toss: <strong>heads</strong> (Poké Ball) is player 1, <strong>tails</strong> (Great Ball) is player 2. The winner opens the first auction, then players take turns opening.</li></ul>
+   <h3>2. The auction</h3>
+   <ol><li>The game draws a random Pokémon (each Pokémon comes up only once).</li>
+   <li>The opener must bid <strong>1 coin</strong>.</li>
+   <li>Taking turns, you can <strong>raise</strong> (by at least 1) or <strong>pass</strong>.</li>
+   <li>As soon as someone passes, the Pokémon goes to the highest bidder, who pays that amount.</li></ol>
+   <div class="note"><strong>Cap:</strong> you can bid at most your coins minus 1 for each other Pokémon you still need, so you can always complete your team. With 25 coins, the cap on the first Pokémon is 20.</div>
+   <h3>3. Auction modes</h3>
+   <ul><li><strong>Classic:</strong> you see the Pokémon.</li><li><strong>By type:</strong> you only see the primary type.</li>
+   <li><strong>By number:</strong> you only see the Pokédex number.</li><li><strong>By color:</strong> you only see the Pokédex color.</li></ul>
+   <p class="muted" style="font-size:14px">In the "blind" modes the Pokémon is revealed when the auction ends. Every Pokémon drawn has a 1 in 512 chance of being shiny.</p>
+   <h3>4. End of the game</h3>
+   <ul><li>If one player completes 6 Pokémon first, the other takes every following Pokémon for 1 coin until they reach 6.</li>
+   <li>At the end each Pokémon has a full set (item, ability, EVs, nature, moves): if there are several, pick one from the menu.</li></ul>
+   <h3>5. Playing on Showdown</h3>
+   <ul><li>Press <strong>Copy text</strong>, then on Pokémon Showdown: Teambuilder → new team → <strong>Import from text</strong> → paste.</li>
+   <li><strong>Singles</strong> format: with "All" ${F('[Gen 9] National Dex AG')}; with a tier ${F('[Gen 9] National Dex')} (OU) or ${F('National Dex UU')}. Teams are legal there: the sets were checked with Showdown's validator.</li>
+   <li><strong>Doubles</strong> format: ${F('[Gen 9] Doubles Custom Game')}, used by challenging the other player directly. It does not check teams, so it accepts them all.</li>
+   <li><strong>Pokémon Champions</strong>: singles in ${F('[Gen 9 Champions] OU')}, doubles in the current VGC regulation, today ${F(CHAMP_VGC)} (the game checks it on Showdown each time it opens): bring 6 Pokémon and pick 4, all at level 50. Sets follow Champions rules: no Tera, "Stat Points" instead of EVs, a different item for each Pokémon and, when available, a set with the Mega Stone.</li>
+   <li>The right format is also shown in the settings and at the end of the game. Note: plain "[Gen 9] Anything Goes", without National Dex, rejects Pokémon that are not in Scarlet/Violet.</li></ul>`;
+  return `
+   <p>Due giocatori comprano all'asta <strong>6 Pokémon a testa</strong> con le monete, poi giocano le squadre su Pokémon Showdown.</p>
+   <h3>1. Prima di iniziare</h3>
+   <ul><li>Scegliete <strong>Singolo o Doppio</strong>, quali <strong>Pokémon</strong> possono uscire (tutti, solo un tier OU o UU, oppure solo quelli di Pokémon Champions; con o senza leggendari), la <strong>modalità d'asta</strong>, le <strong>monete</strong> a testa (di solito 25) e i nomi.</li>
+   <li>Lancio della moneta: <strong>testa</strong> (Poké Ball) è il giocatore 1, <strong>croce</strong> (Mega Ball) il giocatore 2. Chi vince apre la prima asta, poi si apre a turno.</li></ul>
+   <h3>2. L'asta</h3>
+   <ol><li>Il gioco estrae un Pokémon a caso (ogni Pokémon esce una volta sola).</li>
+   <li>Chi apre offre per forza <strong>1 moneta</strong>.</li>
+   <li>A turno potete <strong>rilanciare</strong> (almeno 1 in più) oppure <strong>passare</strong>.</li>
+   <li>Appena uno passa, il Pokémon va a chi ha l'offerta più alta, che paga quella cifra.</li></ol>
+   <div class="note"><strong>Tetto:</strong> puoi offrire al massimo le tue monete meno 1 per ogni altro Pokémon che ti manca, così puoi sempre completare la squadra. Con 25 monete, al primo Pokémon il massimo è 20.</div>
+   <h3>3. Le modalità d'asta</h3>
+   <ul><li><strong>Classica:</strong> vedete il Pokémon.</li><li><strong>Per tipo:</strong> vedete solo il tipo primario.</li>
+   <li><strong>Per numero:</strong> vedete solo il numero del Pokédex.</li><li><strong>Per colore:</strong> vedete solo il colore del Pokédex.</li></ul>
+   <p class="muted" style="font-size:14px">Nelle modalità "al buio" il Pokémon si rivela a fine asta. Ogni Pokémon estratto ha 1 probabilità su 512 di essere shiny.</p>
+   <h3>4. Fine partita</h3>
+   <ul><li>Se un giocatore completa i 6 Pokémon prima, l'altro prende ogni Pokémon successivo a 1 moneta finché arriva a 6.</li>
+   <li>Alla fine ogni Pokémon ha un set completo (strumento, abilità, EV, natura, mosse): se ce ne sono più di uno lo scegli dal menu.</li></ul>
+   <h3>5. Giocare su Showdown</h3>
+   <ul><li>Premi <strong>Copia testo</strong>, poi su Pokémon Showdown: Teambuilder → nuova squadra → <strong>Import from text</strong> → incolla.</li>
+   <li>Formato in <strong>singolo</strong>: con "Tutti" ${F('[Gen 9] National Dex AG')}; con un tier ${F('[Gen 9] National Dex')} (OU) o ${F('National Dex UU')}. Le squadre sono valide lì: i set sono stati controllati con il validatore di Showdown.</li>
+   <li>Formato in <strong>doppio</strong>: ${F('[Gen 9] Doubles Custom Game')}, da usare sfidando direttamente l'altro giocatore. Non controlla le squadre, quindi le accetta tutte.</li>
+   <li><strong>Pokémon Champions</strong>: singolo in ${F('[Gen 9 Champions] OU')}, doppio nel regolamento VGC attuale, oggi ${F(CHAMP_VGC)} (il gioco lo controlla su Showdown a ogni apertura): si portano 6 Pokémon e se ne scelgono 4, tutti a livello 50. I set seguono le regole di Champions: niente Tera, "Stat Points" al posto degli EV, strumenti diversi per ogni Pokémon e, quando c'è, un set con la Megapietra.</li>
+   <li>Il formato giusto è scritto anche nelle impostazioni e a fine partita. Attenzione: il semplice "[Gen 9] Anything Goes", senza National Dex, rifiuta i Pokémon che non sono in Scarlatto/Violetto.</li></ul>`;
+}
+// Note legali, crediti e privacy (una versione per lingua)
+function legalBody(){
+  const contatto=CONTACT_URL
+    ?(ui.lang==='en'?`through the <a href="${esc(CONTACT_URL)}" target="_blank" rel="noopener">project page</a>`:`tramite la <a href="${esc(CONTACT_URL)}" target="_blank" rel="noopener">pagina del progetto</a>`)
+    :(ui.lang==='en'?'through the project page':'tramite la pagina del progetto');
+  const L=(u,s)=>`<a href="${u}" target="_blank" rel="noopener">${s}</a>`;
+  if(ui.lang==='en') return `
+   <h3>Unofficial fan game, non-profit</h3>
+   <p>Pokémon Incanto is an amateur game made by a fan, for personal use and to play with friends. It is <strong>free and non-profit</strong>: no ads, no purchases, no donations, no earnings of any kind.</p>
+   <p>It is <strong>not an official product</strong> and is not affiliated with, sponsored, endorsed or approved by Nintendo, The Pokémon Company, GAME FREAK inc. or Creatures Inc.</p>
+   <h3>Trademarks and copyright</h3>
+   <p>Pokémon and the names, images and sprites of the Pokémon are trademarks and copyrighted works of their owners: ©1995–2026 Nintendo / Creatures Inc. / GAME FREAK inc. Pokémon, Pokémon character names, Poké Ball and Great Ball are trademarks of Nintendo, Creatures Inc. and GAME FREAK inc. <strong>All rights belong to their respective owners.</strong> No infringement is intended.</p>
+   <p>If you own any rights and want any content removed, please get in touch ${contatto}: it will be removed promptly.</p>
+   <h3>Credits</h3>
+   <ul><li>Game data, sets and battle formats: ${L('https://github.com/smogon/pokemon-showdown','Pokémon Showdown')} (© Guangcong Luo and contributors, MIT License).</li>
+   <li>Pokémon list and data: ${L('https://pokeapi.co','PokéAPI')}.</li>
+   <li>Sprites: from ${L('https://play.pokemonshowdown.com','Pokémon Showdown')}; images © Nintendo / Creatures Inc. / GAME FREAK inc. Some sprites were created by community artists (Smogon Sprite Project): credit to them.</li>
+   <li>Fonts: Inter, Space Grotesk and Cinzel Decorative (SIL Open Font License 1.1), Luckiest Guy (Apache License 2.0). License files are in the <code>fonts</code> folder.</li></ul>
+   <h3>Privacy</h3>
+   <p>The game uses <strong>no cookies</strong>, has no accounts and does not collect or send personal data. Games stay in your browser; only the chosen language is saved (in the browser's local storage).</p>
+   <p>The site is hosted by GitHub Pages (GitHub, Inc.), which may log visitors' IP addresses for security: see ${L('https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement','GitHub\'s privacy statement')}. When it opens, the game reads Showdown's public list of formats from GitHub (raw.githubusercontent.com) to show the current VGC regulation. No other external service is contacted. The site is not indexed by search engines.</p>`;
+  return `
+   <h3>Gioco amatoriale non ufficiale, senza scopo di lucro</h3>
+   <p>Pokémon Incanto è un gioco amatoriale creato da un fan, per uso personale e per giocare con gli amici. È <strong>gratuito e senza scopo di lucro</strong>: niente pubblicità, niente acquisti, niente donazioni, nessun guadagno di alcun tipo.</p>
+   <p><strong>Non è un prodotto ufficiale</strong> e non è affiliato, sponsorizzato, approvato o autorizzato da Nintendo, The Pokémon Company, GAME FREAK inc. o Creatures Inc.</p>
+   <h3>Marchi e diritti d'autore</h3>
+   <p>Pokémon e i nomi, le immagini e gli sprite dei Pokémon sono marchi registrati e opere protette dei rispettivi titolari: ©1995–2026 Nintendo / Creatures Inc. / GAME FREAK inc. Pokémon, i nomi dei personaggi Pokémon, Poké Ball e Mega Ball sono marchi di Nintendo, Creatures Inc. e GAME FREAK inc. <strong>Tutti i diritti sono riservati ai rispettivi titolari.</strong> Non si intende violare alcun diritto.</p>
+   <p>Se sei titolare di un diritto e desideri la rimozione di qualsiasi contenuto, scrivici ${contatto}: verrà rimosso subito.</p>
+   <h3>Crediti</h3>
+   <ul><li>Dati di gioco, set e formati di lotta: ${L('https://github.com/smogon/pokemon-showdown','Pokémon Showdown')} (© Guangcong Luo e collaboratori, licenza MIT).</li>
+   <li>Elenco e dati dei Pokémon: ${L('https://pokeapi.co','PokéAPI')}.</li>
+   <li>Sprite: da ${L('https://play.pokemonshowdown.com','Pokémon Showdown')}; immagini © Nintendo / Creatures Inc. / GAME FREAK inc. Alcuni sprite sono opera di artisti della community (Smogon Sprite Project), a cui va il merito.</li>
+   <li>Font: Inter, Space Grotesk e Cinzel Decorative (SIL Open Font License 1.1), Luckiest Guy (Apache License 2.0). I file di licenza sono nella cartella <code>fonts</code>.</li></ul>
+   <h3>Privacy</h3>
+   <p>Il gioco <strong>non usa cookie</strong>, non ha account e non raccoglie né invia dati personali. Le partite restano nel tuo browser; viene salvata solo la lingua scelta (nella memoria locale del browser).</p>
+   <p>Il sito è ospitato da GitHub Pages (GitHub, Inc.), che per motivi di sicurezza può registrare l'indirizzo IP dei visitatori: vedi ${L('https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement','l\'informativa privacy di GitHub')}. All'apertura il gioco legge da GitHub (raw.githubusercontent.com) l'elenco pubblico dei formati di Showdown, per indicare il regolamento VGC aggiornato. Nessun altro servizio esterno viene contattato. Il sito non è indicizzato dai motori di ricerca.</p>`;
+}
+function vModal(kind){
+  const title=kind==='legal'?t('menu.legal'):t('menu.rules'), body=kind==='legal'?legalBody():rulesBody();
+  return `<div class="modal-bg" data-act="closemodal"><div class="modal rules" role="dialog" aria-modal="true" aria-labelledby="rlT">
+   <div class="topbar"><h2 id="rlT">${title}</h2><button class="btn ghost sm" data-act="closemodal" id="rlClose">${t('close')}</button></div>
+   ${body}
+   ${kind==='rules'?`<p class="muted" style="font-size:13px"><button class="linkbtn" data-act="legal">${t('menu.legal')}</button></p>`:''}
+   </div></div>`;
+}
+function vSetup(){
+  const opt=(act,k,cur,lbl)=>`<button class="opt" data-act="${act}" data-v="${k}" aria-pressed="${cur===k}"><strong>${lbl[0]}</strong><span>${lbl[1]}</span></button>`;
+  return `<button class="btn ghost sm backlink" data-act="menu">${t('back')}</button>
+  <header class="brand"><h1>Pokémon Incanto</h1>
+  <p class="muted">${t('setup.sub',POOL.length)}</p></header>
+  ${POOL.length<TEAM_SIZE*2?`<div class="note warn" role="alert">${t('setup.nodata')}</div>`:''}
+  <section class="card"><span class="label">${t('s1')}</span><div class="opts">${FORMAT_KEYS.map(k=>opt('fmt',k,ui.format,t('fmt.'+k))).join('')}</div></section>
+  <section class="card"><span class="label">${t('s2')}</span><div class="opts">${POOL_KEYS.map(k=>{const n=filterPool(POOL,{tier:k,legends:ui.legends}).length, l=t('pool.'+k);
+    return `<button class="opt" data-act="tier" data-v="${k}" aria-pressed="${ui.tier===k}"><strong>${l[0]} <span class="cnt">${n}</span></strong><span>${l[1]}</span></button>`;}).join('')}</div>
+   <div class="row"><span class="muted" style="font-size:14px">${t('legends')}</span>
+    <span style="display:flex;gap:8px"><button class="opt sm" data-act="legends" data-v="1" aria-pressed="${ui.legends}"><strong>${t('yes')}</strong></button>
+    <button class="opt sm" data-act="legends" data-v="0" aria-pressed="${!ui.legends}"><strong>${t('no')}</strong></button></span></div>
+   <p class="muted" style="font-size:13px">${t('playOn',showdownFormat(ui.format,ui.tier))}${fmtNote(ui.format,ui.tier)}.</p></section>
+  <section class="card"><span class="label">${t('s3')}</span><div class="opts">${MODE_KEYS.map(k=>opt('mode',k,ui.mode,t('mode.'+k))).join('')}</div></section>
+  <section class="card"><span class="label">${t('s4')}</span><div class="row"><div class="field" style="max-width:160px"><label for="coins" class="muted">${t('coins')}</label><input type="number" id="coins" inputmode="numeric" min="6" max="999" step="1" value="${esc(ui.coins)}"></div><p class="muted" style="font-size:13px;flex:1 1 220px">${t('coinsHelp')}</p></div>${ui.msg?`<div class="err" role="alert">${esc(ui.msg)}</div>`:''}</section>
+  <section class="card"><span class="label">${t('s5')}</span><div class="row">
+   <div class="field"><label for="n0" class="muted">${t('heads')}</label><input type="text" id="n0" maxlength="16" placeholder="${esc(t('player',1))}" value="${esc(ui.names[0])}"></div>
+   <div class="field"><label for="n1" class="muted">${t('tails')}</label><input type="text" id="n1" maxlength="16" placeholder="${esc(t('player',2))}" value="${esc(ui.names[1])}"></div></div></section>
+  <div><button class="btn" data-act="toflip">${t('toflip')}</button></div>`;
+}
+// Una faccia della moneta: bordo dorato, al centro una Poké Ball (testa) o una Mega Ball (croce).
+function coinFace(testa){
+  const id=testa?'goldT':'goldC', top=testa?'#E3350D':'#2F6FD8';
+  const patches=testa?'':`<path d="M34 41q6-11 18-15l3 8q-9 3-13 11z" fill="#E3350D"/><path d="M86 41q-6-11-18-15l-3 8q9 3 13 11z" fill="#E3350D"/>`;
+  return `<svg viewBox="0 0 120 120" class="${testa?'front':'back'}" aria-hidden="true">
+   <defs><radialGradient id="${id}" cx="38%" cy="32%" r="75%"><stop offset="0" stop-color="#FFF3B8"/><stop offset=".5" stop-color="#F2C14E"/><stop offset="1" stop-color="#A86F12"/></radialGradient></defs>
+   <circle cx="60" cy="60" r="58" fill="url(#${id})" stroke="#7A520E" stroke-width="2"/>
+   <circle cx="60" cy="60" r="51" fill="none" stroke="#7A520E" stroke-width="1.2" opacity=".7"/>
+   <path d="M26 54a34 34 0 0 1 68 0z" fill="${top}"/>${patches}
+   <path d="M26 54a34 34 0 0 0 68 0z" fill="#FAFAFA"/>
+   <rect x="26" y="50.5" width="68" height="7" fill="#1B1B1F"/>
+   <circle cx="60" cy="54" r="34" fill="none" stroke="#1B1B1F" stroke-width="3.5"/>
+   <circle cx="60" cy="54" r="10" fill="#1B1B1F"/><circle cx="60" cy="54" r="6" fill="#FAFAFA"/>
+   <text x="60" y="104" text-anchor="middle" font-family="Space Grotesk,Arial,sans-serif" font-weight="700" font-size="11" letter-spacing="2" fill="#5A3C08">${testa?t('coin.heads'):t('coin.tails')}</text></svg>`;
+}
+function vFlip(){
+  const f=ui.flip, cls=f==='testa'?'t spin':f==='croce'?'c spin':'t';
+  const fName=f==='testa'?t('heads').toLowerCase():f==='croce'?t('tails').toLowerCase():'';
+  return `<header class="brand"><h1>${t('flip.title')}</h1><p class="muted">${t('flip.sub')}</p></header>
+  <section class="card lot"><div class="sides"><span class="chip i0">${t('flip.heads',name(0))}</span><span class="chip i1">${t('flip.tails',name(1))}</span></div>
+  <div class="coinwrap"><div class="coin3d ${cls}" role="img" aria-label="${esc(t('coin.aria',fName))}">${coinFace(true)}${coinFace(false)}</div></div>
+  ${f?`<div class="reveal" style="display:flex;flex-direction:column;gap:12px;align-items:center"><p>${t('flip.result',fName,f==='testa'?name(0):name(1),f==='testa'?'p1':'p2')}</p>
+  <button class="btn" data-act="begin">${t('flip.begin')}</button></div>`:`<button class="btn" data-act="flip">${t('flip.toss')}</button>`}</section>`;
+}
+function vPlayer(i,g){
+  const a=g.auction, tm=g.teams[i];
+  const slots=Array.from({length:TEAM_SIZE},(_,k)=>{const m=tm[k];
+    return m?`<div class="slot" style="${colorStyle(m,g.mode)};border-style:solid;border-color:var(--ink)" title="${disp(m)}">${spr(m)}<span>${pad(m.dex)}</span></div>`:`<div class="slot"></div>`;}).join('');
+  const lead=a&&a.leader===i?`<span class="tag">${t('leading',a.bid)}</span>`:a&&a.turn===i?`<span class="tag out">${t('yourTurn')}</span>`:'';
+  const cap=a&&!isFull(g,i)?`<span class="muted" style="font-size:13px">${t('canBid',maxBid(g,i))}</span>`:'';
+  return `<div class="pl i${i}${a&&a.turn===i?' turn':''}"><div class="top"><span class="nm">${name(i)}</span><span class="chip">${tm.length}/${TEAM_SIZE}</span></div>
+   <div class="coins">${g.coins[i]}<small>${t('coinsWord',g.coins[i])}</small></div>${cap}${lead}
+   <div class="slots">${slots}</div><div class="team">${tm.map(m=>disp(m)).join(' · ')||'&nbsp;'}</div></div>`;
+}
+function vGame(){
+  const g=ui.game,a=g.auction;
+  const mode=t('mode.'+g.mode)[0], fmt=t('fmt.'+g.format)[0];
+  let lot='', lotCls='';
+  if(a){
+    const p=a.turn, lo=maxBid(g,p), can=lo>a.bid;
+    const side=i=>a.leader===i
+      ?`<div class="side i${i} lead"><span class="who">${name(i)}</span><span class="st">${t('winning')}</span><span class="muted sm">${t('offers',a.bid)}</span></div>`
+      :`<div class="side i${i} turn"><span class="who">${name(i)}</span><span class="st"><i class="dot"></i>${t('yourTurn')}</span><span class="muted sm">${can?t('raiseOrPass',lo):t('onlyPass')}</span></div>`;
+    lotCls=' lead'+a.leader;
+    lot=`<span class="label">${t('auctionN',g.n+1,name(a.opener))}</span>${face(a.mon,g.mode,false)}
+     <div class="duel">${side(0)}<div class="pot i${a.leader}" aria-label="${esc(t('potAria',a.bid,ui.names[a.leader]||t('player',a.leader+1)))}"><span class="arrow" aria-hidden="true">${a.leader===0?'◀':'▶'}</span><div class="bid">${a.bid}</div><span class="muted sm">${t('coinsWord',a.bid)}</span></div>${side(1)}</div>
+     <div class="note turn i${p} ${can?'':'warn'}">${can?t('turnNote',name(p),a.bid+1,lo,name(a.leader),a.bid):t('turnNoteCap',name(p),lo,name(a.leader))}</div>
+     ${ui.msg?`<div class="err" role="alert">${esc(ui.msg)}</div>`:''}
+     <div class="bidrow">${can?`<div class="field"><label for="draft" class="muted">${t('newBid',name(p))}</label><input type="number" id="draft" inputmode="numeric" min="${a.bid+1}" max="${lo}" step="1" value="${esc(ui.draft)}"></div><button class="btn pc i${p}" data-act="raise">${t('raise')}</button>`:''}
+     <button class="btn ghost" data-act="pass">${t('pass')}</button></div>`;
+  } else {
+    const l=g.last;
+    if(l) lot=`<span class="label">${t('resultN',g.n)}</span>${face(l.mon,g.mode,true)}
+      <div class="note ok">${t('won',name(l.winner),disp(l.mon),l.price,l.auto)}</div>`;
+    else lot=`<span class="label">${t('ready')}</span><p>${t('readyText',name(g.openerIdx))}</p>`;
+    lot+= g.over?`<button class="btn" data-act="finish">${t('seeTeams')}</button>`:`<button class="btn" data-act="draw">${l?t('next'):t('first')}</button>`;
+  }
+  const hist=g.history.length?`<section class="card"><h3>${t('hist')}</h3><div class="scroll"><table><thead><tr><th>#</th><th>Pokémon</th><th>${t('col.winner')}</th><th>${t('col.price')}</th><th>${t('col.opener')}</th></tr></thead><tbody>${
+    g.history.slice().reverse().map(h=>`<tr><td class="n">${h.n}</td><td>${disp(h.mon)}</td><td>${name(h.winner)}</td><td class="n">${h.price}</td><td>${name(h.opener)}</td></tr>`).join('')}</tbody></table></div></section>`:'';
+  return `<div class="topbar"><header class="brand"><h1>Pokémon Incanto</h1><div class="chips"><span class="chip">${fmt}</span><span class="chip">${t('poolName.'+g.tier)}${g.legends?'':t('noLegends')}</span><span class="chip">${t('modeChip',mode)}</span></div></header>
+   <button class="btn ghost sm" data-act="askexit">${t('exit')}</button></div>
+   <div class="players">${vPlayer(0,g)}${vPlayer(1,g)}</div>
+   <section class="card lot${lotCls}">${lot}</section>${hist}`;
+}
+// Ruoli dei set: in italiano tradotti, in inglese i nomi originali di Showdown
+const ROLES={'Fast Attacker':'Attaccante veloce','Bulky Attacker':'Attaccante resistente','Setup Sweeper':'Si potenzia e attacca',
+  'Bulky Setup':'Si potenzia, resistente','Fast Bulky Setup':'Si potenzia, veloce e resistente','Bulky Support':'Supporto resistente',
+  'Fast Support':'Supporto veloce','Wallbreaker':'Sfondamuri','Tera Blast user':'Con Teracolpo','AV Pivot':'Con Corpetto Assalto',
+  'Staller':'Logoramento','Offensive Protect':'Offensivo con Protezione','Doubles Bulky Attacker':'Attaccante resistente',
+  'Doubles Setup Sweeper':'Si potenzia e attacca','Bulky Protect':'Resistente con Protezione','Doubles Support':'Supporto',
+  'Choice Item user':'Con strumento Scelta','Doubles Wallbreaker':'Sfondamuri','Doubles Fast Attacker':'Attaccante veloce',
+  'Doubles Bulky Setup':'Si potenzia, resistente'};
+const roleOne=r=>ui.lang==='en'?r.replace(/^Doubles /,''):(ROLES[r]||r);
+const roleName=r=>r.startsWith('Mega: ')?t('rolePrefix')+roleOne(r.slice(6)).toLowerCase():roleOne(r);
+const itemOf=(s,g)=>(g.tier==='uu'&&s.basso&&s.basso.strumento)||s.strumento;
+function setPicker(m,g,eff){
+  const ss=setsFor(m,g.format,g.tier), cur=ui.setChoice[m.name]||0;
+  if(!ss.length) return `<div class="setrow"><strong>${disp(m)}</strong><span class="muted">${t('noSet')}</span></div>`;
+  if(ss.length===1) return `<div class="setrow"><strong>${disp(m)}</strong><span class="muted">${esc(roleName(ss[0].ruolo))} · ${esc(eff?eff.strumento:itemOf(ss[0],g))}</span></div>`;
+  return `<div class="setrow"><label for="set-${esc(m.name)}"><strong>${disp(m)}</strong></label><select id="set-${esc(m.name)}" data-setfor="${esc(m.name)}">${
+    ss.map((s,k)=>`<option value="${k}"${k===cur?' selected':''}>Set ${k+1}: ${esc(roleName(s.ruolo))} · ${esc(k===cur&&eff?eff.strumento:itemOf(s,g))}</option>`).join('')}</select></div>`;
+}
+function vEnd(){
+  const g=ui.game;
+  const blocks=[0,1].map(i=>{const spent=g.startCoins-g.coins[i];
+    return `<section class="card pl i${i}" style="border-color:var(--c)"><div class="top"><h2 class="nm">${name(i)}</h2><span class="chip">${t('spent',spent,g.coins[i])}</span></div>
+     <div class="chips">${g.teams[i].map(m=>`<span class="tchip mon" style="${colorStyle(m,g.mode)};box-shadow:inset 0 0 0 1px var(--line)">${spr(m,'mini')}${disp(m)}</span>`).join('')}</div>
+     <div class="muted" style="font-size:13px">${g.teams[i].map(m=>disp(m)+' ('+typeName(m.type)+(m.type2?'/'+typeName(m.type2):'')+')').join(' · ')}</div>
+     <span class="label">${t('setsLabel')}</span><div class="setlist">${(eff=>g.teams[i].map((m,j)=>setPicker(m,g,eff[j])).join(''))(teamSets(g.teams[i],g.format,ui.setChoice,g.tier))}</div>
+     <span class="label">${t('textLabel')}</span>
+     <div class="fmtline">${t('fmtLine')} <strong>${showdownFormat(g.format,g.tier)}</strong>${fmtNote(g.format,g.tier)}</div><pre id="ex${i}">${esc(exportText(g.teams[i],g.format,ui.setChoice,g.tier))}</pre>
+     <div class="row"><button class="btn ghost" data-act="copy" data-i="${i}">${t('copy')}</button><span class="muted" id="cp${i}" aria-live="polite"></span></div></section>`;}).join('');
+  const intro=Object.keys(SETS).length
+    ?t('endIntro',g.format==='doppio',showdownFormat(g.format,g.tier),g.format==='doppio'&&g.tier!=='champions',fmtNote(g.format,g.tier))
+    :t('noSetsFile');
+  return `<header class="brand"><h1>${t('endTitle')}</h1><p class="muted">${intro}</p></header>
+   <div class="teams">${blocks}</div><div><button class="btn" data-act="again">${t('again')}</button></div>`;
+}
+function vExit(){
+  return `<div class="modal-bg" data-act="noexit"><div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="exT" aria-describedby="exD">
+   <h2 id="exT">${t('exit.title')}</h2>
+   <p id="exD" class="muted">${t('exit.desc')}</p>
+   <div class="row"><button class="btn ghost" data-act="noexit" id="exNo">${t('cancel')}</button><button class="btn danger" data-act="exit">${t('exit.confirm')}</button></div></div></div>`;
+}
+function render(){
+  document.documentElement.lang=ui.lang;
+  const modal=ui.askExit||ui.modal;
+  $app.innerHTML=({title:vTitle,setup:vSetup,flip:vFlip,game:vGame,end:vEnd})[ui.screen]()
+    +(ui.screen!=='title'&&!modal?`<button class="rulesbtn" data-act="rules" aria-label="${t('rulesAria')}"><b aria-hidden="true">?</b>${t('rulesBtn')}</button>`:'')
+    +(ui.askExit?vExit():'')+(ui.modal?vModal(ui.modal):'');
+  if(ui.askExit) document.getElementById('exNo').focus();
+  else if(ui.modal) document.getElementById('rlClose').focus();
+}
+
+function act(a,d){
+  const g=ui.game;
+  if(a==='fmt'){ui.format=d.v;}
+  else if(a==='lang'){ui.lang=d.v; try{localStorage.setItem('incanto-lang',d.v);}catch(e){} ui.msg='';}
+  else if(a==='tier'){ui.tier=d.v;}
+  else if(a==='legends'){ui.legends=d.v==='1';}
+  else if(a==='mode'){ui.mode=d.v;}
+  else if(a==='toflip'){const c=Number(ui.coins);
+    if(!Number.isInteger(c)||c<TEAM_SIZE||c>999){ui.msg=t('err.coins',TEAM_SIZE);}
+    else if(filterPool(POOL,{tier:ui.tier,legends:ui.legends}).length<TEAM_SIZE*2){ui.msg=t('err.pool',TEAM_SIZE);}
+    else{ui.msg='';ui.screen='flip';ui.flip=null;}}
+  else if(a==='flip'){ui.flip=Math.random()<0.5?'testa':'croce';}
+  else if(a==='begin'){ui.game=newGame({format:ui.format,mode:ui.mode,coins:Number(ui.coins),tier:ui.tier,legends:ui.legends,
+    pool:filterPool(POOL,{tier:ui.tier,legends:ui.legends}),firstOpener:ui.flip==='testa'?0:1});ui.screen='game';ui.msg='';ui.setChoice={};}
+  else if(a==='draw'){startAuction(g);ui.msg='';ui.draft=g.auction?String(g.auction.bid+1):'';}
+  else if(a==='raise'){const p=g.auction.turn;const err=raise(g,p,parseInt(ui.draft,10));ui.msg=err?errText(err):'';
+    if(!err){ui.draft=String(Math.min(g.auction.bid+1,Math.max(maxBid(g,g.auction.turn),g.auction.bid+1)));}}
+  else if(a==='pass'){pass(g,g.auction.turn);ui.msg='';}
+  else if(a==='finish'){ui.screen='end';}
+  else if(a==='again'){ui.screen='setup';ui.game=null;ui.flip=null;ui.msg='';}
+  else if(a==='askexit'){ui.askExit=true;}
+  else if(a==='noexit'){ui.askExit=false;}
+  else if(a==='play'){ui.screen='setup';ui.msg='';}
+  else if(a==='menu'){ui.screen='title';ui.msg='';}
+  else if(a==='rules'){ui.modal='rules';}
+  else if(a==='legal'){ui.modal='legal';}
+  else if(a==='closemodal'){ui.modal=null;}
+  else if(a==='exit'){ui.askExit=false;ui.screen='setup';ui.game=null;ui.flip=null;ui.msg='';ui.draft='';}
+  else if(a==='copy'){const i=+d.i,tx=exportText(g.teams[i],g.format,ui.setChoice,g.tier),out=document.getElementById('cp'+i);
+    const fb=()=>{const r=document.createRange();r.selectNodeContents(document.getElementById('ex'+i));const s=getSelection();s.removeAllRanges();s.addRange(r);out.textContent=t('selected');};
+    try{navigator.clipboard.writeText(tx).then(()=>{out.textContent=t('copied',showdownFormat(g.format,g.tier));},fb);}catch(e){fb();}
+    return;}
+  render();
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');
+  if(b&&b.classList.contains('modal-bg')&&e.target!==b) return; // clic dentro una finestra: non la chiude
+  if(b&&!b.disabled)act(b.dataset.act,b.dataset);});
+document.addEventListener('change',e=>{
+  const n=e.target.dataset&&e.target.dataset.setfor;
+  if(n!==undefined){ui.setChoice[n]=+e.target.value;const y=scrollY;render();scrollTo(0,y);const s=document.getElementById('set-'+n);if(s)s.focus();}});
+document.addEventListener('input',e=>{
+  if(e.target.id==='n0')ui.names[0]=e.target.value;
+  if(e.target.id==='n1')ui.names[1]=e.target.value;
+  if(e.target.id==='draft')ui.draft=e.target.value;
+  if(e.target.id==='coins')ui.coins=e.target.value;});
+document.addEventListener('keydown',e=>{
+  if(ui.modal&&e.key==='Escape'){e.preventDefault();act('closemodal',{});return;}
+  if(ui.askExit&&e.key==='Escape'){e.preventDefault();act('noexit',{});return;}
+  if((ui.askExit||ui.modal)&&e.key==='Tab'){const b=[...document.querySelectorAll('.modal button, .modal a')],i=b.indexOf(document.activeElement);
+    e.preventDefault();b[(i+(e.shiftKey?-1:1)+b.length)%b.length].focus();return;}
+  if(e.key==='Enter'&&e.target.id==='draft'){e.preventDefault();act('raise',{});}});
+
+render();
+// All'apertura, se c'è internet, controlla su Showdown qual è il regolamento VGC di Champions attuale
+// (legge il testo dei formati, senza eseguire niente). Senza internet resta il valore salvato.
+(async()=>{
+  try{
+    const ctl=new AbortController(); setTimeout(()=>ctl.abort(),8000);
+    const r=await fetch('https://raw.githubusercontent.com/smogon/pokemon-showdown/master/config/formats.ts',{signal:ctl.signal,cache:'no-store'});
+    if(!r.ok) return;
+    const nuovo=trovaVgcChampions(await r.text());
+    if(nuovo&&nuovo!==CHAMP_VGC){CHAMP_VGC=nuovo; if(!ui.askExit) render();}
+  }catch(e){}
+})();
+</script>
