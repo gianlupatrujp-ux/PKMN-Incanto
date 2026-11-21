@@ -17,7 +17,9 @@ Pokémon and the names, images and sprites of the Pokémon are trademarks and co
 - Elenco dei Pokémon / Pokémon list: [PokéAPI](https://pokeapi.co).
 - Sprite: da / from [Pokémon Showdown](https://play.pokemonshowdown.com); immagini / images © Nintendo / Creatures Inc. / GAME FREAK inc.; alcuni sprite sono di artisti della community / some sprites by community artists (Smogon Sprite Project).
 - Font: Inter, Space Grotesk, Cinzel Decorative (SIL Open Font License 1.1), Luckiest Guy (Apache License 2.0); licenze in / licenses in `fonts/LICENZE`.
+- Modalità online / Online mode: [PeerJS](https://peerjs.com) (© Michelle Bu and Eric Zhang, MIT License); licenza in / license in `lib/PEERJS-LICENSE.txt`.
 
 ## Privacy
 
 Il gioco non usa cookie, non ha account e non raccoglie dati personali. / The game uses no cookies, has no accounts and collects no personal data.
+Nella modalità online i due browser si collegano direttamente (si scambiano l'indirizzo IP) tramite il server pubblico di PeerJS. / In online mode the two browsers connect directly (exchanging IP addresses) via the public PeerJS server.
