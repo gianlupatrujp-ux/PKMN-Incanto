@@ -179,6 +179,7 @@ details.remote ol{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:c
 /* Tasto Esci e finestra di conferma */
 .topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
 .btn.sm{padding:8px 14px;font-size:14px}
+.topbtns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .modal-bg{position:fixed;inset:0;background:rgba(10,16,26,.6);display:flex;align-items:center;justify-content:center;padding:16px;z-index:10;animation:fade .15s both}
 .modal{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;max-width:400px;width:100%;display:flex;flex-direction:column;gap:14px;box-shadow:0 12px 40px rgba(0,0,0,.35)}
 .modal .row{justify-content:flex-end}
@@ -348,7 +349,9 @@ function newGame(o){
     // Species Clause dei formati OU/UU/Champions: una sola forma per numero di Pokédex (es. non Tauros e Tauros di Paldea)
     speciesClause:['ou','uu','champions'].includes(o.tier), usedDex:[],
     // Probabilità che un Pokémon estratto sia shiny (cromatico): 1 su 512
-    shinyRate:o.shinyRate!=null?o.shinyRate:SHINY_RATE, rnd:o.rnd||Math.random };
+    shinyRate:o.shinyRate!=null?o.shinyRate:SHINY_RATE, rnd:o.rnd||Math.random,
+    // Annullamento: "fotografie" dello stato all'inizio di ogni asta manuale (vedi undoLast)
+    undo:[] };
 }
 const SHINY_RATE=1/512;
 // Pokémon che su Showdown non possono essere shiny (solo da eventi non shiny, o mosse che lo impediscono):
@@ -376,6 +379,21 @@ function startAuction(s){
   if(isFull(s,op)) return award(s,mon,other,1,op,true);
   if(isFull(s,other)) return award(s,mon,op,1,op,true);
   s.auction={mon:mon,opener:op,bid:1,leader:op,turn:other};
+  s.undo.push(snapshot(s)); // stato all'inizio di questa asta (Pokémon già estratto, offerta 1)
+}
+// Copia dello stato senza la pila degli annullamenti e senza la funzione casuale
+function snapshot(s){ const c=Object.assign({},s); delete c.undo; delete c.rnd; return JSON.stringify(c); }
+// Si può annullare l'ultima asta conclusa se non era automatica (a 1 moneta con l'avversario già al completo)
+function canUndo(s){ const h=s.history[s.history.length-1]; return !!h && !h.auto && s.undo.length>=(s.auction?2:1); }
+// Annulla l'ultima asta conclusa: torna al momento in cui era iniziata (stesso Pokémon, offerta 1, monete e squadre di
+// prima). Se nel frattempo era già stato estratto il Pokémon successivo, anche quello torna nel mazzo.
+function undoLast(s){
+  if(!canUndo(s)) return false;
+  if(s.auction) s.undo.pop();          // scarta l'asta appena aperta
+  const snap=s.undo.pop();
+  Object.assign(s, JSON.parse(snap));
+  s.undo.push(snap);                   // l'asta riaperta resta annullabile come le altre
+  return true;
 }
 function raise(s,p,amount){
   const a=s.auction;
@@ -470,6 +488,9 @@ const I18N={
   'cancel':'Annulla','exit.confirm':'Esci dalla partita','rulesBtn':'Regole','rulesAria':'Apri il regolamento','close':'Chiudi',
   'err.turn':'Non è il tuo turno','err.int':'Inserisci un numero intero','err.min':b=>"L'offerta deve superare "+b,'err.max':n=>'Puoi offrire al massimo '+n,
   'rolePrefix':'Mega, ',
+  'undo':'↶ Annulla asta','undo.title':"Annullare l'ultima asta?",
+  'undo.desc':(m,w,p)=>`<strong>${m}</strong> torna all'asta da capo e <strong>${w}</strong> riavrà ${p===1?'la sua moneta':'le sue '+p+' monete'}. L'asta ricomincia con l'offerta di 1 moneta.`,
+  'undo.next':' Anche il Pokémon appena estratto torna nel mazzo.','undo.confirm':"Annulla l'asta",'undo.back':'Torna alla partita',
   'remote.title':'Giocare a distanza (finché non c\'è la modalità online)',
   'remote.body':`<ol><li>Uno di voi apre il gioco e <strong>condivide lo schermo</strong> in videochiamata (Discord, WhatsApp, Meet…).</li>
    <li>L'altro dice a voce quando <strong>rilancia</strong> o <strong>passa</strong>: chi condivide preme i pulsanti per entrambi.</li>
@@ -521,6 +542,9 @@ const I18N={
   'cancel':'Cancel','exit.confirm':'Leave the game','rulesBtn':'Rules','rulesAria':'Open the rules','close':'Close',
   'err.turn':'Not your turn','err.int':'Enter a whole number','err.min':b=>'The bid must be higher than '+b,'err.max':n=>'You can bid at most '+n,
   'rolePrefix':'Mega, ',
+  'undo':'↶ Undo auction','undo.title':'Undo the last auction?',
+  'undo.desc':(m,w,p)=>`<strong>${m}</strong> goes back to auction from the start and <strong>${w}</strong> gets back ${p===1?'their coin':'their '+p+' coins'}. The auction restarts with a 1-coin bid.`,
+  'undo.next':' The Pokémon just drawn also goes back into the deck.','undo.confirm':'Undo the auction','undo.back':'Back to the game',
   'remote.title':'Playing remotely (until online mode is ready)',
   'remote.body':`<ol><li>One of you opens the game and <strong>shares the screen</strong> on a video call (Discord, WhatsApp, Meet…).</li>
    <li>The other says out loud when they <strong>raise</strong> or <strong>pass</strong>: whoever shares presses the buttons for both.</li>
@@ -873,7 +897,7 @@ function vGame(){
   const hist=g.history.length?`<section class="card"><h3>${t('hist')}</h3><div class="scroll"><table><thead><tr><th>#</th><th>Pokémon</th><th>${t('col.winner')}</th><th>${t('col.price')}</th><th>${t('col.opener')}</th></tr></thead><tbody>${
     g.history.slice().reverse().map(h=>`<tr><td class="n">${h.n}</td><td>${disp(h.mon)}</td><td>${name(h.winner)}</td><td class="n">${h.price}</td><td>${name(h.opener)}</td></tr>`).join('')}</tbody></table></div></section>`:'';
   return `<div class="topbar"><header class="brand"><h1><span class="h-poke">Pokémon</span> <span class="h-inc">Incanto</span></h1><div class="chips"><span class="chip">${fmt}</span><span class="chip">${t('poolName.'+g.tier)}${g.legends?'':t('noLegends')}</span><span class="chip">${t('modeChip',mode)}</span></div></header>
-   <button class="btn ghost sm" data-act="askexit">${t('exit')}</button></div>
+   <div class="topbtns"><button class="btn ghost sm" data-act="askundo"${canUndo(g)?'':' disabled'}>${t('undo')}</button><button class="btn ghost sm" data-act="askexit">${t('exit')}</button></div></div>
    <div class="players">${vPlayer(0,g)}${vPlayer(1,g)}</div>
    <section class="card lot${lotCls}">${lot}</section>${hist}`;
 }
@@ -912,6 +936,13 @@ function vEnd(){
    <div class="note remote">📡 ${t('remote.end')}</div>
    <div class="teams">${blocks}</div><div class="center"><button class="btn big" data-act="again">${t('again')}</button></div>`;
 }
+function vUndo(){
+  const g=ui.game, h=g.history[g.history.length-1];
+  return `<div class="modal-bg" data-act="noundo"><div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="unT" aria-describedby="unD">
+   <h2 id="unT">${t('undo.title')}</h2>
+   <p id="unD" class="muted">${t('undo.desc',disp(h.mon),name(h.winner),h.price)}${g.auction?t('undo.next'):''}</p>
+   <div class="row"><button class="btn ghost" data-act="noundo" id="unNo">${t('undo.back')}</button><button class="btn danger" data-act="undo">${t('undo.confirm')}</button></div></div></div>`;
+}
 function vExit(){
   return `<div class="modal-bg" data-act="noexit"><div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="exT" aria-describedby="exD">
    <h2 id="exT">${t('exit.title')}</h2>
@@ -920,11 +951,12 @@ function vExit(){
 }
 function render(){
   document.documentElement.lang=ui.lang;
-  const modal=ui.askExit||ui.modal;
+  const modal=ui.askExit||ui.modal||ui.askUndo;
   $app.innerHTML=({title:vTitle,setup:vSetup,flip:vFlip,game:vGame,end:vEnd})[ui.screen]()
     +(ui.screen!=='title'&&!modal?`<button class="rulesbtn" data-act="rules" aria-label="${t('rulesAria')}"><b aria-hidden="true">?</b>${t('rulesBtn')}</button>`:'')
-    +(ui.askExit?vExit():'')+(ui.modal?vModal(ui.modal):'');
+    +(ui.askExit?vExit():'')+(ui.askUndo?vUndo():'')+(ui.modal?vModal(ui.modal):'');
   if(ui.askExit) document.getElementById('exNo').focus();
+  else if(ui.askUndo) document.getElementById('unNo').focus();
   else if(ui.modal) document.getElementById('rlClose').focus();
 }
 
@@ -949,6 +981,9 @@ function act(a,d){
   else if(a==='finish'){ui.screen='end';}
   else if(a==='again'){ui.screen='setup';ui.game=null;ui.flip=null;ui.msg='';}
   else if(a==='askexit'){ui.askExit=true;}
+  else if(a==='askundo'){if(g&&canUndo(g)) ui.askUndo=true;}
+  else if(a==='noundo'){ui.askUndo=false;}
+  else if(a==='undo'){ui.askUndo=false; if(undoLast(g)){ui.msg='';ui.draft=g.auction?String(g.auction.bid+1):'';}}
   else if(a==='noexit'){ui.askExit=false;}
   else if(a==='play'){ui.screen='setup';ui.msg='';}
   else if(a==='menu'){ui.screen='title';ui.msg='';}
@@ -976,7 +1011,8 @@ document.addEventListener('input',e=>{
 document.addEventListener('keydown',e=>{
   if(ui.modal&&e.key==='Escape'){e.preventDefault();act('closemodal',{});return;}
   if(ui.askExit&&e.key==='Escape'){e.preventDefault();act('noexit',{});return;}
-  if((ui.askExit||ui.modal)&&e.key==='Tab'){const b=[...document.querySelectorAll('.modal button, .modal a')],i=b.indexOf(document.activeElement);
+  if(ui.askUndo&&e.key==='Escape'){e.preventDefault();act('noundo',{});return;}
+  if((ui.askExit||ui.modal||ui.askUndo)&&e.key==='Tab'){const b=[...document.querySelectorAll('.modal button, .modal a')],i=b.indexOf(document.activeElement);
     e.preventDefault();b[(i+(e.shiftKey?-1:1)+b.length)%b.length].focus();return;}
   if(e.key==='Enter'&&e.target.id==='draft'){e.preventDefault();act('raise',{});}});
 
