@@ -355,7 +355,7 @@ const I18N={
   'ready':'Pronti','readyText':n=>`Il gioco estrae un Pokémon a caso. ${n} apre con 1 moneta.`,
   'seeTeams':'Vedi le squadre','next':'Prossima asta','first':'Estrai il primo Pokémon',
   'hist':'Aste concluse','col.winner':'Vincitore','col.price':'Prezzo','col.opener':'Apriva',
-  'shinyBan':'✨ Pokémon shiny! ✨','formOf':f=>'Forma di '+f,'colorChip':c=>'Colore '+c,'no':'N.','primaryType':'Tipo primario','dexNumber':'Numero di Pokédex','color':'Colore',
+  'shinyBan':'✨ Pokémon shiny! ✨','formOf':f=>'Forma di '+f,'colorChip':c=>'Colore '+c,'dexNo':'N.','primaryType':'Tipo primario','dexNumber':'Numero di Pokédex','color':'Colore',
   'endTitle':'Squadre complete','spent':(s,l)=>`${s} spese · ${l} avanzate`,'setsLabel':'Set di ogni Pokémon','noSet':'nessun set: solo il nome',
   'textLabel':'Testo per Pokémon Showdown','fmtLine':'Formato da scegliere su Showdown:','copy':'Copia testo',
   'copied':f=>'Copiato. Formato: '+f,'selected':'Selezionato: copia con Ctrl+C',
@@ -406,7 +406,7 @@ const I18N={
   'ready':'Ready','readyText':n=>`The game draws a random Pokémon. ${n} opens with 1 coin.`,
   'seeTeams':'See the teams','next':'Next auction','first':'Draw the first Pokémon',
   'hist':'Finished auctions','col.winner':'Winner','col.price':'Price','col.opener':'Opener',
-  'shinyBan':'✨ Shiny Pokémon! ✨','formOf':f=>f+' form','colorChip':c=>'Color: '+c,'no':'No.','primaryType':'Primary type','dexNumber':'Pokédex number','color':'Color',
+  'shinyBan':'✨ Shiny Pokémon! ✨','formOf':f=>f+' form','colorChip':c=>'Color: '+c,'dexNo':'No.','primaryType':'Primary type','dexNumber':'Pokédex number','color':'Color',
   'endTitle':'Teams complete','spent':(s,l)=>`${s} spent · ${l} left`,'setsLabel':'Set for each Pokémon','noSet':'no set: name only',
   'textLabel':'Text for Pokémon Showdown','fmtLine':'Format to choose on Showdown:','copy':'Copy text',
   'copied':f=>'Copied. Format: '+f,'selected':'Selected: copy with Ctrl+C',
@@ -475,9 +475,9 @@ const spr=(m,cls)=>{const p=SPRITES[m.name]; if(!p) return '';
   return `<img class="${cls||''}" src="${esc(p)}" alt="" onerror="this.remove()">`;};
 function ball(m,mode){return `<div class="ball sp${m.shiny?' shiny':''}" style="${colorStyle(m,mode)}" aria-hidden="true">${spr(m)}<span>${pad(m.dex)}</span></div>`;}
 function face(m,mode,reveal){
-  if(reveal||mode==='classica') return `<div class="face">${m.shiny?`<div class="shinyban" role="status">${t('shinyBan')}</div>`:''}${ball(m,mode)}<h2>${disp(m)}</h2><div class="chips">${m.shiny?'<span class="chip shinychip">✨ Shiny</span>':''}${tchips(m)}${formOf(m)?`<span class="chip">${t('formOf',formOf(m))}</span>`:''}${mode==='colore'?`<span class="chip">${t('colorChip',colorName(m.color))}</span>`:''}<span class="chip">${t('no')} ${pad(m.dex)}</span></div></div>`;
+  if(reveal||mode==='classica') return `<div class="face">${m.shiny?`<div class="shinyban" role="status">${t('shinyBan')}</div>`:''}${ball(m,mode)}<h2>${disp(m)}</h2><div class="chips">${m.shiny?'<span class="chip shinychip">✨ Shiny</span>':''}${tchips(m)}${formOf(m)?`<span class="chip">${t('formOf',formOf(m))}</span>`:''}${mode==='colore'?`<span class="chip">${t('colorChip',colorName(m.color))}</span>`:''}<span class="chip">${t('dexNo')} ${pad(m.dex)}</span></div></div>`;
   if(mode==='tipo') return `<div class="face"><div class="ball q">?</div><span class="label">${t('primaryType')}</span><span class="tchip" style="font-size:24px;padding:8px 24px;background:${TYPE_COLORS[m.type]};color:${ink(TYPE_COLORS[m.type])}">${typeName(m.type)}</span></div>`;
-  if(mode==='numero') return `<div class="face"><div class="ball q">?</div><span class="label">${t('dexNumber')}</span><div class="big">${t('no')} ${pad(m.dex)}</div></div>`;
+  if(mode==='numero') return `<div class="face"><div class="ball q">?</div><span class="label">${t('dexNumber')}</span><div class="big">${t('dexNo')} ${pad(m.dex)}</div></div>`;
   const c=COLOR_HEX[m.color];
   return `<div class="face"><div class="ball" style="background:${c};border-color:var(--ink)" aria-hidden="true"></div><span class="label">${t('color')}</span><div class="big">${colorName(m.color)}</div></div>`;
 }
