@@ -885,11 +885,11 @@ function vSetup(){
   <section class="card"><span class="label">${t('s3')}</span><div class="opts">${MODE_KEYS.map(k=>opt('mode',k,ui.mode,t('mode.'+k))).join('')}</div></section>
   <section class="card"><span class="label">${t('s4')}</span><div class="row"><div class="field" style="max-width:160px"><label for="coins" class="muted">${t('coins')}</label><input type="number" id="coins" inputmode="numeric" min="6" max="999" step="1" value="${esc(ui.coins)}"></div><p class="muted" style="font-size:13px;flex:1 1 220px">${t('coinsHelp')}</p></div>${ui.msg?`<div class="err" role="alert">${esc(ui.msg)}</div>`:''}</section>
 ${ui.setupOnline?`  <section class="card"><span class="label">${t('online.name')}</span><div class="field"><input type="text" id="n0" maxlength="16" placeholder="${esc(t('player',1))}" value="${esc(ui.names[0])}"></div></section>
-  <div class="center"><button class="btn big" data-act="mkroom">${t('online.mkroom')}</button></div>`:`  <section class="card"><span class="label">\${t('s5')}</span><div class="row">
-   <div class="field"><label for="n0" class="muted">\${t('heads')}</label><input type="text" id="n0" maxlength="16" placeholder="\${esc(t('player',1))}" value="\${esc(ui.names[0])}"></div>
-   <div class="field"><label for="n1" class="muted">\${t('tails')}</label><input type="text" id="n1" maxlength="16" placeholder="\${esc(t('player',2))}" value="\${esc(ui.names[1])}"></div></div></section>
-  <details class="card remote"><summary><strong>📡 \${t('remote.title')}</strong></summary>\${t('remote.body')}</details>
-  <div class="center"><button class="btn big" data-act="toflip">\${t('toflip')}</button></div>`}`;
+  <div class="center"><button class="btn big" data-act="mkroom">${t('online.mkroom')}</button></div>`:`  <section class="card"><span class="label">${t('s5')}</span><div class="row">
+   <div class="field"><label for="n0" class="muted">${t('heads')}</label><input type="text" id="n0" maxlength="16" placeholder="${esc(t('player',1))}" value="${esc(ui.names[0])}"></div>
+   <div class="field"><label for="n1" class="muted">${t('tails')}</label><input type="text" id="n1" maxlength="16" placeholder="${esc(t('player',2))}" value="${esc(ui.names[1])}"></div></div></section>
+  <details class="card remote"><summary><strong>📡 ${t('remote.title')}</strong></summary>${t('remote.body')}</details>
+  <div class="center"><button class="btn big" data-act="toflip">${t('toflip')}</button></div>`}`;
 }
 // Una faccia della moneta: bordo dorato, al centro una Poké Ball (testa) o una Mega Ball (croce).
 function coinFace(testa){
