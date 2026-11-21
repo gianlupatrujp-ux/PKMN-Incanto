@@ -142,14 +142,6 @@ select:focus-visible{outline:3px solid var(--p2);outline-offset:2px}
 /* Schermata iniziale: "Pokémon" giallo bordato di blu, "Incanto" viola in stile fantasy, Vivillon bianco dietro */
 .title{min-height:calc(100vh - 70px);min-height:calc(100dvh - 70px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;text-align:center;position:relative;overflow:hidden}
 .logo{position:relative;display:flex;flex-direction:column;align-items:center;padding:66px 10px 40px}
-.logo .viv{position:absolute;left:50%;top:50%;width:min(430px,92vw);transform:translate(-50%,-55%);z-index:0;opacity:.95;animation:flutter 5s ease-in-out infinite}
-.logo .viv .wing{transform-box:fill-box;animation:flap 2.6s ease-in-out infinite}
-.logo .viv .wing.l{transform-origin:right center} .logo .viv .wing.r{transform-origin:left center}
-/* --vy: altezza di Vivillon rispetto al titolo (su schermi larghi "Pokémon" è più grande, quindi Vivillon sale di più) */
-.logo img.vivspr{--vy:-101%;width:156px;height:156px;transform:translate(-36%,var(--vy));animation-name:flutterspr}
-@keyframes flutterspr{50%{transform:translate(-36%,calc(var(--vy) - 5%))}}
-@media (min-width:520px){.logo img.vivspr{--vy:-112%}}
-@media (min-width:700px){.logo img.vivspr{--vy:-122%}}
 /* Nuvola sotto "Incanto": sta davanti a "Pokémon" (lo copre un po') e dietro a "Incanto"; si muove piano */
 .incwrap{position:relative;z-index:2;display:flex;justify-content:center}
 .incwrap .incanto{z-index:1}
@@ -158,8 +150,6 @@ select:focus-visible{outline:3px solid var(--p2);outline-offset:2px}
 @keyframes drift{50%{transform:translate(calc(-50% + 12px),-54%)}}
 @keyframes drift2{50%{transform:translate(calc(-50% - 16px),-60%)}}
 @media (prefers-reduced-motion:reduce){.cloud{animation:none}}
-@keyframes flutter{50%{transform:translate(-50%,-58%)}}
-@keyframes flap{50%{transform:scaleX(.9)}}
 .poke{position:relative;z-index:1;font-family:'Luckiest Guy','Arial Black',Impact,sans-serif;font-size:clamp(54px,15vw,116px);line-height:.95;letter-spacing:.02em;
   color:#FFCB05;-webkit-text-stroke:clamp(5px,1.4vw,9px) #2A6BC0;paint-order:stroke fill;text-shadow:0 6px 0 #1B3E80,0 10px 18px rgba(0,0,0,.35);transform:rotate(-3deg)}
 .incanto{position:relative;z-index:1;font-family:'Cinzel Decorative',Georgia,'Times New Roman',serif;font-weight:900;font-size:clamp(34px,9vw,70px);line-height:1.05;letter-spacing:.06em;
@@ -186,7 +176,6 @@ details.remote ol{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:c
 .rules ul,.rules ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:14px}
 .rules .note{font-size:14px}
 .backlink{align-self:flex-start}
-@media (prefers-reduced-motion:reduce){.logo .viv,.logo .viv .wing{animation:none}}
 /* Tasto Esci e finestra di conferma */
 .topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
 .btn.sm{padding:8px 14px;font-size:14px}
@@ -197,6 +186,119 @@ details.remote ol{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:c
 @media (prefers-reduced-motion:reduce){.coin3d.spin,.reveal,.dot,.pl.turn,.modal-bg{animation:none}}
 @media (max-width:480px){.duel{gap:6px}.side{padding:8px 4px}.side .who{font-size:15px}.side .st{font-size:10px;padding:2px 6px}}
 @media (max-width:480px){.coins{font-size:22px}.pl{padding:10px}.slot{font-size:9px}.slots{grid-template-columns:repeat(3,1fr)}}
+﻿
+/* ===== Tema "stile Pokémon": colori Poké Ball, riquadri e pulsanti come nei giochi (approvato dall'utente) ===== */
+:root,:root[data-theme="light"]{
+  --bg:#F6F1E4; --surface:#FFFFFF; --ink:#1F2A44; --muted:#56627A; --line:#2B3A63;
+  --p1:#E3350D; --p1-soft:#FDE3DC; --p2:#2A75BB; --p2-soft:#DDEBFA;
+  --ok:#2E8B3E; --ok-soft:#E1F4E3; --warn:#9A5B00; --warn-soft:#FFF1CC; --err:#C21F1F;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#F6F1E4; --surface:#FFFFFF; --ink:#1F2A44; --muted:#56627A; --line:#2B3A63;
+  --p1:#E3350D; --p1-soft:#FDE3DC; --p2:#2A75BB; --p2-soft:#DDEBFA;
+  --ok:#2E8B3E; --ok-soft:#E1F4E3; --warn:#9A5B00; --warn-soft:#FFF1CC; --err:#C21F1F; color-scheme:light;}}
+/* Sfondo crema con un leggero motivo di Poké Ball e una fascia rossa in alto, come un Pokédex */
+body{background-color:#F6F1E4;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='%232B3A63' stroke-opacity='.06' stroke-width='4'%3E%3Ccircle cx='30' cy='30' r='18'/%3E%3Cpath d='M12 30h36'/%3E%3Ccircle cx='30' cy='30' r='5'/%3E%3Ccircle cx='90' cy='90' r='18'/%3E%3Cpath d='M72 90h36'/%3E%3Ccircle cx='90' cy='90' r='5'/%3E%3C/g%3E%3C/svg%3E");
+  border-top:10px solid #E3350D;box-shadow:inset 0 4px 0 #1F2A44}
+/* Riquadri come le finestre di dialogo dei giochi */
+.card,.pl{background:#fff;border:3px solid var(--line);border-radius:14px;box-shadow:inset 0 0 0 3px #fff,inset 0 0 0 5px #D9E2F2,0 5px 0 var(--line)}
+.pl.turn{background:var(--cs);box-shadow:inset 0 0 0 3px #fff,inset 0 0 0 5px var(--c),0 5px 0 var(--line)}
+/* Etichette delle sezioni: linguette rosse stile Pokédex */
+.label{align-self:flex-start;background:#E3350D;color:#fff;padding:4px 12px;border-radius:99px;border:2px solid var(--line);letter-spacing:.08em}
+.lot .label{align-self:center}
+/* Titoli nello stile del logo (bordo più sottile perché sono più piccoli del titolo iniziale) */
+.brand h1,.brand h1.nm{font-family:'Luckiest Guy','Arial Black',sans-serif;color:#FFCB05;font-size:clamp(30px,7vw,44px);-webkit-text-stroke:3px #2A6BC0;paint-order:stroke fill;text-shadow:0 3px 0 #1B3E80;letter-spacing:.03em;line-height:1.1}
+h2,h3{color:var(--ink)}
+/* Pulsanti come i menu dei giochi: bordo spesso, ombra "a gradino" che si schiaccia al clic */
+.btn{background:#E3350D;color:#fff;border:3px solid var(--line);box-shadow:0 4px 0 var(--line);transition:transform .05s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--line)}
+.btn.ghost{background:#fff;color:var(--ink);border:3px solid var(--line)}
+.btn.play{background:#E3350D}
+.btn.pc.i1{--c:#2A75BB} .btn.danger{background:#C21F1F}
+.opt{background:#fff;border:3px solid var(--line);box-shadow:0 3px 0 var(--line);position:relative}
+.opt[aria-pressed="true"]{background:#FFF6D1;border-color:var(--line);box-shadow:0 3px 0 var(--line),inset 0 0 0 2px #FFCB05}
+.opt[aria-pressed="true"] strong::before{content:'▶ ';color:#E3350D}
+.chip{background:#fff;border:2px solid var(--line)}
+input[type=text],input[type=number],.setrow select{background:#fff;border:3px solid var(--line)}
+.ball{border-width:4px;border-color:var(--line);box-shadow:0 4px 0 var(--line)}
+.note{background:#fff;border:2px solid var(--line)}
+.note.ok{background:#E1F4E3;border:2px solid #2E8B3E;color:#1E5E29}
+.fmtline{background:#FFF6D1;border:2px solid var(--line);border-left:6px solid #E3350D}
+pre{background:#F2F5FB;border:2px solid var(--line)}
+.rulesbtn{border:3px solid var(--line);box-shadow:0 3px 0 var(--line)}
+.modal{border:4px solid var(--line);box-shadow:inset 0 0 0 3px #fff,inset 0 0 0 5px #D9E2F2,0 6px 0 var(--line)}
+th{color:var(--ink)}
+/* Pagina a filo dei bordi: niente margine, così la fascia rossa arriva da un lato all'altro */
+html,body{margin:0}
+/* Schermata iniziale: alone di cielo azzurro che sfuma fino a sparire, senza bordi netti */
+.title{background:radial-gradient(closest-side,#FFFFFF 0%,#DDF0FF 45%,rgba(221,240,255,.5) 75%,rgba(221,240,255,0) 100%)}
+/* Titolo delle altre schermate: "Pokémon" come il logo, "Incanto" viola in Cinzel come nella schermata iniziale */
+.brand h1 .h-inc{font-family:'Cinzel Decorative',Georgia,serif;font-weight:900;color:#8E3FD6;-webkit-text-stroke:1.5px #4A1882;
+  text-shadow:0 0 12px rgba(180,120,255,.5),0 2px 0 #3A1168;letter-spacing:.05em;font-size:.82em}
+.title .credit{color:#56627A}
+
+/* ===== Scena d'asta animata della schermata iniziale (ciclo di 6 secondi; il colpo arriva al 50%) ===== */
+.scene{position:relative;width:min(270px,72vw);margin:0 auto -6px;z-index:0}
+.title .logo{padding-top:4px}
+.title{gap:18px}
+.scene svg{width:100%;height:auto;display:block;overflow:visible}
+/* raggi che ruotano lentamente */
+.s-burst{transform-box:view-box;transform-origin:120px 105px;animation:sburst 24s linear infinite}
+@keyframes sburst{to{transform:rotate(360deg)}}
+/* scintille che brillano */
+.s-spark{transform-box:fill-box;transform-origin:center;animation:sspark 2.8s ease-in-out infinite}
+@keyframes sspark{0%,100%{opacity:.15;transform:scale(.5)}50%{opacity:1;transform:scale(1)}}
+/* carta che fluttua e sobbalza al colpo */
+.s-card{transform-box:fill-box;transform-origin:50% 60%;animation:scard 6s ease-in-out infinite}
+@keyframes scard{0%,100%{transform:translateY(0) rotate(-3deg)}25%{transform:translateY(-5px) rotate(2deg)}45%{transform:translateY(-2px) rotate(-1deg)}
+  50%{transform:translateY(3px) rotate(0) scale(.97)}54%{transform:translateY(-6px) rotate(0) scale(1.04)}60%{transform:translateY(-2px) rotate(-1deg) scale(1)}75%{transform:translateY(-4px) rotate(2deg)}}
+/* riflesso olografico che scorre sulla carta */
+.s-holo{animation:sholo 6s ease-in-out infinite}
+@keyframes sholo{0%,55%{transform:skewX(-18deg) translateX(-60px)}80%,100%{transform:skewX(-18deg) translateX(170px)}}
+/* martelletto: alzato, carica, colpo sulla base, rimbalzo */
+.s-gavel{transform-origin:0 0;animation:sgavel 6s cubic-bezier(.45,0,.6,1) infinite}
+@keyframes sgavel{0%,40%{transform:rotate(34deg)}46%{transform:rotate(52deg)}50%{transform:rotate(0)}53%{transform:rotate(8deg)}56%{transform:rotate(0)}60%{transform:rotate(3deg)}64%{transform:rotate(0)}74%,100%{transform:rotate(34deg)}}
+/* lampo dell'impatto */
+.s-flash{transform-origin:196px 176px;opacity:0;transform-box:fill-box;transform-origin:center;animation:sflash 6s ease-out infinite}
+@keyframes sflash{0%,49%{opacity:0;transform:scale(.2)}50%{opacity:.95;transform:scale(.6)}58%{opacity:0;transform:scale(2.2)}100%{opacity:0}}
+/* monete che schizzano fuori dalla carta e ricadono */
+.s-coin{opacity:0;transform-box:fill-box;transform-origin:center}
+.s-coin.k1{animation:sk1 6s ease-out infinite}.s-coin.k2{animation:sk2 6s ease-out infinite}.s-coin.k3{animation:sk3 6s ease-out infinite}
+.s-coin.k4{animation:sk4 6s ease-out infinite}.s-coin.k5{animation:sk5 6s ease-out infinite}
+@keyframes sk1{0%,50%{opacity:0;transform:translate(0,0) scale(.4)}52%{opacity:1}64%{transform:translate(-70px,-60px) scale(1) rotate(-120deg)}80%{opacity:1}92%,100%{opacity:0;transform:translate(-86px,30px) rotate(-240deg)}}
+@keyframes sk2{0%,50%{opacity:0;transform:translate(0,0) scale(.4)}52%{opacity:1}64%{transform:translate(-34px,-88px) scale(1) rotate(90deg)}80%{opacity:1}92%,100%{opacity:0;transform:translate(-44px,10px) rotate(200deg)}}
+@keyframes sk3{0%,50%{opacity:0;transform:translate(0,0) scale(.4)}52%{opacity:1}64%{transform:translate(6px,-98px) scale(1) rotate(150deg)}80%{opacity:1}92%,100%{opacity:0;transform:translate(8px,0) rotate(300deg)}}
+@keyframes sk4{0%,50%{opacity:0;transform:translate(0,0) scale(.4)}52%{opacity:1}64%{transform:translate(46px,-80px) scale(1) rotate(-80deg)}80%{opacity:1}92%,100%{opacity:0;transform:translate(58px,20px) rotate(-200deg)}}
+@keyframes sk5{0%,50%{opacity:0;transform:translate(0,0) scale(.4)}52%{opacity:1}64%{transform:translate(-92px,-20px) scale(1) rotate(60deg)}80%{opacity:1}92%,100%{opacity:0;transform:translate(-110px,50px) rotate(160deg)}}
+/* timbro "AGGIUDICATO!" che cala sulla carta */
+.s-stamp{position:absolute;left:50%;top:66%;font-family:'Luckiest Guy','Arial Black',sans-serif;font-size:clamp(18px,5.4vw,26px);letter-spacing:.04em;
+  color:#E3350D;background:rgba(255,255,255,.92);border:4px solid #E3350D;border-radius:10px;padding:4px 12px 2px;white-space:nowrap;
+  box-shadow:0 0 0 3px #fff,0 4px 10px rgba(0,0,0,.25);opacity:0;transform:translate(calc(-62% + var(--sx,0px)),calc(-50% + var(--sy,0px))) rotate(var(--sr,-14deg)) scale(calc(1.8 * var(--ss,1)));animation:sstamp 6s ease-out infinite}
+@keyframes sstamp{0%,49%{opacity:0;transform:translate(calc(-62% + var(--sx,0px)),calc(-50% + var(--sy,0px))) rotate(var(--sr,-14deg)) scale(calc(1.8 * var(--ss,1)))}52%{opacity:1;transform:translate(calc(-62% + var(--sx,0px)),calc(-50% + var(--sy,0px))) rotate(var(--sr,-14deg)) scale(calc(.92 * var(--ss,1)))}
+  55%,84%{opacity:1;transform:translate(calc(-62% + var(--sx,0px)),calc(-50% + var(--sy,0px))) rotate(var(--sr,-14deg)) scale(var(--ss,1))}92%,100%{opacity:0;transform:translate(calc(-62% + var(--sx,0px)),calc(-50% + var(--sy,0px))) rotate(var(--sr,-14deg)) scale(var(--ss,1))}}
+/* Rivelazione del lotto: il "?" lascia il posto allo sprite */
+.s-mon{opacity:0;transition:opacity .2s}
+.s-q{transition:opacity .2s}
+.scene.revealed .s-mon{opacity:1}
+.scene.revealed .s-q{opacity:0}
+/* Shiny: la carta si illumina d'oro e pulsa, esplode una raffica di scintille e compare "SHINY!" */
+.scene.is-shiny .s-card{filter:drop-shadow(0 0 6px #FFE066) drop-shadow(0 0 16px #FFC21A);animation:scard 6s ease-in-out infinite,sglow .7s ease-in-out infinite alternate}
+@keyframes sglow{from{filter:drop-shadow(0 0 4px #FFE066) drop-shadow(0 0 10px #FFC21A)}to{filter:drop-shadow(0 0 10px #FFF3A0) drop-shadow(0 0 26px #FFB300)}}
+.sb{opacity:0;transform-box:fill-box;transform-origin:center}
+.scene.is-shiny .sb{animation:sburstout 1.1s ease-out infinite}
+.scene.is-shiny .sb1,.scene.is-shiny .sb3,.scene.is-shiny .sb5,.scene.is-shiny .sb7{animation-delay:.25s}
+@keyframes sburstout{0%{opacity:0;transform:translate(0,0) scale(.3)}25%{opacity:1}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1.6) rotate(45deg)}}
+@media (prefers-reduced-motion:reduce){.scene.is-shiny .s-card,.scene.is-shiny .sb{animation:none}}
+@media (prefers-reduced-motion:reduce){.s-burst,.s-spark,.s-card,.s-holo,.s-gavel,.s-flash,.s-coin,.s-stamp{animation:none}.s-stamp{display:none}}
+
+/* stelline che brillano sulla carta quando è shiny */
+.tw{opacity:0;transform-box:fill-box;transform-origin:center}
+.scene.is-shiny .tw{animation:stw 1.2s ease-in-out infinite}
+.scene.is-shiny .tw1{animation-delay:.3s}.scene.is-shiny .tw2{animation-delay:.6s}.scene.is-shiny .tw3{animation-delay:.9s}.scene.is-shiny .tw4{animation-delay:.45s}.scene.is-shiny .tw5{animation-delay:.75s}
+@keyframes stw{0%,100%{opacity:0;transform:scale(.3) rotate(0)}50%{opacity:1;transform:scale(1.3) rotate(45deg)}}
+@media (prefers-reduced-motion:reduce){.scene.is-shiny .tw{animation:none;opacity:.8}}
 </style>
 
 <div class="wrap" id="app"></div>
@@ -485,19 +587,6 @@ function face(m,mode,reveal){
   return `<div class="face"><div class="ball" style="background:${c};border-color:var(--ink)" aria-hidden="true"></div><span class="label">${t('color')}</span><div class="big">${colorName(m.color)}</div></div>`;
 }
 
-// Vivillon bianco disegnato in SVG (riserva se manca lo sprite)
-const VIV_WING=`<g class="wing l">
-  <path d="M196 128C170 70 110 30 60 40C25 48 22 95 40 125C55 150 120 168 196 158Z" fill="#FAFBFF" stroke="#8E9AB0" stroke-width="3"/>
-  <circle cx="92" cy="76" r="19" fill="#D6DEEB"/><circle cx="66" cy="108" r="11" fill="#B7C3D6"/><circle cx="140" cy="112" r="22" fill="#E8EDF5"/>
-  <circle cx="122" cy="70" r="8" fill="#8E9AB0"/><circle cx="160" cy="140" r="7" fill="#B7C3D6"/>
-  <path d="M196 165C160 175 105 200 90 240C80 268 115 285 140 270C165 255 190 215 196 180Z" fill="#FAFBFF" stroke="#8E9AB0" stroke-width="3"/>
-  <circle cx="125" cy="238" r="14" fill="#D6DEEB"/><circle cx="106" cy="258" r="7" fill="#8E9AB0"/><circle cx="160" cy="205" r="9" fill="#E8EDF5"/></g>`;
-const VIVILLON=`<svg class="viv" viewBox="0 0 400 300" aria-hidden="true">
-  ${VIV_WING}<g transform="translate(400,0) scale(-1,1)">${VIV_WING}</g>
-  <path d="M194 96C186 76 176 62 166 54M206 96C214 76 224 62 234 54" fill="none" stroke="#3A3A48" stroke-width="3" stroke-linecap="round"/>
-  <circle cx="165" cy="53" r="5" fill="#3A3A48"/><circle cx="235" cy="53" r="5" fill="#3A3A48"/>
-  <ellipse cx="200" cy="160" rx="11" ry="56" fill="#3A3A48"/><circle cx="200" cy="100" r="15" fill="#3A3A48"/>
-  <circle cx="194" cy="97" r="3" fill="#F2F4F8"/><circle cx="206" cy="97" r="3" fill="#F2F4F8"/></svg>`;
 // Nuvola in stile cartone animato: tanti "sbuffi" tondi, base in ombra lilla-azzurra, parte alta bianca
 // con piccoli riflessi e qualche curva interna che separa gli sbuffi.
 // Forma bassa e larga (come la prima versione), così copre poco "Pokémon".
@@ -516,10 +605,91 @@ const CLOUD=cls=>{
     <g fill="#FFFFFF"><ellipse cx="190" cy="27" rx="18" ry="6" opacity=".95"/><ellipse cx="128" cy="46" rx="12" ry="4.5"/><ellipse cx="252" cy="36" rx="13" ry="5"/></g>
    </g></svg>`;
 };
+// ===== Scena d'asta animata della schermata iniziale (tutto disegno originale: carta-lotto misteriosa, raggi stile anime, martelletto, monete) =====
+const LOT_N=1+Math.floor(Math.random()*151);
+function SCENE(){
+  const sold=ui.lang==='en'?'SOLD!':'AGGIUDICATO!', lot=(ui.lang==='en'?'LOT No. ':'LOTTO N. ')+LOT_N;
+  // raggi di velocità attorno al centro della carta
+  const rays=Array.from({length:18},(_,i)=>`<path d="M120 105L${(120+170*Math.cos((i*20-4)*Math.PI/180)).toFixed(1)} ${(105+170*Math.sin((i*20-4)*Math.PI/180)).toFixed(1)}L${(120+170*Math.cos((i*20+4)*Math.PI/180)).toFixed(1)} ${(105+170*Math.sin((i*20+4)*Math.PI/180)).toFixed(1)}Z" fill="${i%2?'#FFD54A':'#FFB13B'}"/>`).join('');
+  // scintilla a 4 punte
+  const star=(x,y,s,d)=>`<path class="s-spark" style="animation-delay:${d}s" d="M${x} ${y-s}Q${x+s*.18} ${y-s*.18} ${x+s} ${y}Q${x+s*.18} ${y+s*.18} ${x} ${y+s}Q${x-s*.18} ${y+s*.18} ${x-s} ${y}Q${x-s*.18} ${y-s*.18} ${x} ${y-s}Z" fill="#FFFFFF" stroke="#F2C14E" stroke-width="1"/>`;
+  const coin=(c,x,y)=>`<g class="s-coin ${c}"><circle cx="${x}" cy="${y}" r="8" fill="#F2C14E" stroke="#7A520E" stroke-width="2"/><circle cx="${x}" cy="${y}" r="4.5" fill="none" stroke="#C9921E" stroke-width="1.5"/></g>`;
+  return `<div class="scene" aria-hidden="true"><svg viewBox="0 0 240 215">
+   <defs>
+    <linearGradient id="sGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFF1A8"/><stop offset=".45" stop-color="#F2C14E"/><stop offset="1" stop-color="#B07A12"/></linearGradient>
+    <linearGradient id="sPanel" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7B3FD6"/><stop offset="1" stop-color="#2A6BC0"/></linearGradient>
+    <pattern id="sStripes" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><rect width="10" height="10" fill="none"/><rect width="4" height="10" fill="#FFFFFF" opacity=".08"/></pattern>
+    <linearGradient id="sHolo" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <clipPath id="sCardClip"><rect x="67" y="40" width="86" height="124" rx="6"/></clipPath>
+    <radialGradient id="sFade" cx="50%" cy="50%" r="50%"><stop offset=".55" stop-color="#fff" stop-opacity="1"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+    <mask id="sRayMask"><rect x="0" y="0" width="240" height="215" fill="url(#sFade)"/></mask>
+   </defs>
+   <!-- raggi stile anime che ruotano piano, sfumati ai bordi -->
+   <g mask="url(#sRayMask)" opacity=".55"><g class="s-burst">${rays}</g></g>
+   ${star(36,46,9,0)}${star(206,36,7,.8)}${star(30,150,6,1.6)}${star(214,128,8,2.2)}${star(170,22,5,1.1)}
+   <!-- carta-lotto misteriosa -->
+   <g class="s-card">
+    <rect x="60" y="33" width="100" height="138" rx="10" fill="url(#sGold)" stroke="#6B4A0A" stroke-width="2.5"/>
+    <rect x="67" y="40" width="86" height="124" rx="6" fill="url(#sPanel)"/>
+    <rect x="67" y="40" width="86" height="124" rx="6" fill="url(#sStripes)"/>
+    <circle cx="110" cy="92" r="30" fill="#FFFFFF" stroke="#F2C14E" stroke-width="4"/>
+    <circle cx="110" cy="92" r="23" fill="none" stroke="#E8DDF8" stroke-width="2" stroke-dasharray="3 4"/>
+    <text class="s-q" x="110" y="107" text-anchor="middle" font-family="Luckiest Guy,Arial Black,sans-serif" font-size="40" fill="#7B3FD6" stroke="#3A1168" stroke-width="1.5">?</text>
+    <image class="s-mon" x="76" y="58" width="68" height="68" href=""/>
+    <path d="M110 128l3 6 6.5 1-4.7 4.6 1.1 6.4-5.9-3.1-5.9 3.1 1.1-6.4-4.7-4.6 6.5-1z" fill="#FFD54A" stroke="#7A520E" stroke-width="1"/>
+    <rect x="72" y="146" width="76" height="14" rx="4" fill="#1F2A44" opacity=".85"/>
+    <text x="110" y="156.5" text-anchor="middle" font-family="Space Grotesk,Arial,sans-serif" font-weight="700" font-size="9" fill="#FFE48A" letter-spacing="1" class="s-lot">${esc(lot)}</text>
+    ${[[78,52,5],[140,58,6],[132,128,4.5],[84,120,5.5],[110,48,4],[146,104,4]].map(([x,y,s],i)=>`<path class="tw tw${i}" d="M${x} ${y-s}Q${x+s*.2} ${y-s*.2} ${x+s} ${y}Q${x+s*.2} ${y+s*.2} ${x} ${y+s}Q${x-s*.2} ${y+s*.2} ${x-s} ${y}Q${x-s*.2} ${y-s*.2} ${x} ${y-s}Z" fill="#FFFDE8"/>`).join('')}
+    <g clip-path="url(#sCardClip)"><rect class="s-holo" x="20" y="20" width="40" height="170" fill="url(#sHolo)" transform="skewX(-18)"/></g>
+   </g>
+   <!-- base del martelletto e lampo del colpo -->
+   <ellipse cx="196" cy="186" rx="26" ry="8" fill="#7A4518" stroke="#4A2A0C" stroke-width="2"/>
+   <rect x="172" y="176" width="48" height="10" rx="4" fill="#9B5E2A" stroke="#4A2A0C" stroke-width="2"/>
+   <circle class="s-flash" cx="196" cy="170" r="16" fill="#FFFFFF"/>
+   <!-- martelletto: ruota attorno alla fine del manico -->
+   <!-- martelletto: il punto di rotazione è la fine del manico (dove lo terrebbe la mano).
+        Nel momento del colpo il manico è orizzontale e la testa è verticale: la sua faccia piatta batte sulla base. -->
+   <g transform="translate(244 158)"><g class="s-gavel">
+    <rect x="-44" y="-3.5" width="46" height="7" rx="3.5" fill="#8A5528" stroke="#4A2A0C" stroke-width="1.6"/>
+    <circle cx="1" cy="0" r="5" fill="#6E4220" stroke="#4A2A0C" stroke-width="1.4"/>
+    <rect x="-57" y="-17" width="18" height="34" rx="5" fill="#A0652E" stroke="#4A2A0C" stroke-width="2"/>
+    <rect x="-58.5" y="-19" width="21" height="6" rx="2.5" fill="#E2B064" stroke="#4A2A0C" stroke-width="1.3"/>
+    <rect x="-58.5" y="13" width="21" height="6" rx="2.5" fill="#E2B064" stroke="#4A2A0C" stroke-width="1.3"/>
+   </g></g>
+   <!-- scintille dello shiny: esplodono attorno alla carta -->
+   <g class="s-shinyburst">${[[-62,-70],[0,-92],[62,-70],[78,0],[62,72],[0,92],[-62,72],[-78,0]].map(([dx,dy],i)=>`<path class="sb sb${i}" style="--dx:${dx}px;--dy:${dy}px" d="M110 95Q112 101 118 103Q112 105 110 111Q108 105 102 103Q108 101 110 95Z" fill="#FFF6B8" stroke="#F2B705" stroke-width="1"/>`).join('')}</g>
+   ${coin('k1',110,110)}${coin('k2',110,110)}${coin('k3',110,110)}${coin('k4',110,110)}${coin('k5',110,110)}
+  </svg><div class="s-stamp">${esc(sold)}</div></div>`;
+}
+// Ciclo della scena (solo schermata iniziale): a ogni colpo di martelletto la carta cambia faccia e resta così fino al
+// colpo successivo, alternando "?" e un Pokémon a caso della nostra lista;
+// ogni 5° Pokémon rivelato è shiny (4 normali, poi 1 shiny). A ogni giro cambia anche il numero del lotto.
+function sceneCycle(scene){
+  clearTimeout(scene._t1); clearTimeout(scene._t2);
+  const st=scene.querySelector('.s-stamp'), rnd=(a,b)=>a+Math.random()*(b-a);
+  if(st){ st.style.setProperty('--sx',rnd(-26,26).toFixed(0)+'px'); st.style.setProperty('--sy',rnd(-16,12).toFixed(0)+'px');
+    st.style.setProperty('--sr',rnd(-20,9).toFixed(0)+'deg'); st.style.setProperty('--ss',Math.random()<.3?(Math.random()<.5?.8:1.18):1); }
+  const lotEl=scene.querySelector('.s-lot');
+  if(lotEl) lotEl.textContent=(ui.lang==='en'?'LOT No. ':'LOTTO N. ')+(1+Math.floor(Math.random()*999));
+  scene._n=(scene._n||0)+1;
+  const mostra=scene._n%2===0; // giri pari: Pokémon; giri dispari: "?"
+  scene._t1=setTimeout(()=>{
+    if(!mostra){ scene.classList.remove('revealed','is-shiny'); return; }
+    scene._p=(scene._p||0)+1;
+    const cands=POOL.filter(m=>SPRITES[m.name]);
+    const shiny=scene._p%5===0;
+    const pool=shiny?cands.filter(m=>!SHINY_LOCK.includes(m.name)):cands;
+    const m=pool[Math.floor(Math.random()*pool.length)];
+    scene.querySelector('.s-mon').setAttribute('href', shiny?shinyPath(SPRITES[m.name]):SPRITES[m.name]);
+    scene.classList.add('revealed'); scene.classList.toggle('is-shiny',shiny);
+  },3000);
+}
+// Il ciclo riparte a ogni giro dell'animazione della carta (anche dopo che la pagina viene ridisegnata)
+['animationstart','animationiteration'].forEach(ev=>document.addEventListener(ev,e=>{
+  if(e.animationName==='scard'){ const sc=e.target.closest&&e.target.closest('.scene'); if(sc) sceneCycle(sc); }
+}));
 function vTitle(){
-  // Vivillon bianco: lo sprite animato se c'è, altrimenti il disegno SVG
-  const viv=SPRITES['vivillon-icysnow']?`<img class="viv vivspr" src="${esc(SPRITES['vivillon-icysnow'])}" alt="" onerror="this.outerHTML=VIVILLON">`:VIVILLON;
-  return `<section class="title"><div class="logo">${viv}<div class="poke">Pokémon</div><div class="incwrap">${CLOUD('back')}${CLOUD('')}<div class="incanto">Incanto</div></div></div>
+  return `<section class="title">${SCENE()}<div class="logo"><div class="poke">Pokémon</div><div class="incwrap">${CLOUD('back')}${CLOUD('')}<div class="incanto">Incanto</div></div></div>
    <div class="langs" role="group" aria-label="${t('lang')}">${LANGS.map(([k,n])=>`<button class="opt sm" data-act="lang" data-v="${k}" aria-pressed="${ui.lang===k}" lang="${k}"><strong>${n}</strong></button>`).join('')}</div>
    <div class="menu"><button class="btn play" data-act="play">${t('menu.play')}</button><button class="btn ghost" data-act="rules">${t('menu.rules')}</button></div>
    <p class="credit">${t('credit')} <button class="linkbtn" data-act="legal">${t('menu.legal')}</button></p></section>`;
@@ -625,7 +795,7 @@ function vModal(kind){
 function vSetup(){
   const opt=(act,k,cur,lbl)=>`<button class="opt" data-act="${act}" data-v="${k}" aria-pressed="${cur===k}"><strong>${lbl[0]}</strong><span>${lbl[1]}</span></button>`;
   return `<button class="btn ghost sm backlink" data-act="menu">${t('back')}</button>
-  <header class="brand"><h1>Pokémon Incanto</h1>
+  <header class="brand"><h1><span class="h-poke">Pokémon</span> <span class="h-inc">Incanto</span></h1>
   <p class="muted">${t('setup.sub',POOL.length)}</p></header>
   ${POOL.length<TEAM_SIZE*2?`<div class="note warn" role="alert">${t('setup.nodata')}</div>`:''}
   <section class="card"><span class="label">${t('s1')}</span><div class="opts">${FORMAT_KEYS.map(k=>opt('fmt',k,ui.format,t('fmt.'+k))).join('')}</div></section>
@@ -702,7 +872,7 @@ function vGame(){
   }
   const hist=g.history.length?`<section class="card"><h3>${t('hist')}</h3><div class="scroll"><table><thead><tr><th>#</th><th>Pokémon</th><th>${t('col.winner')}</th><th>${t('col.price')}</th><th>${t('col.opener')}</th></tr></thead><tbody>${
     g.history.slice().reverse().map(h=>`<tr><td class="n">${h.n}</td><td>${disp(h.mon)}</td><td>${name(h.winner)}</td><td class="n">${h.price}</td><td>${name(h.opener)}</td></tr>`).join('')}</tbody></table></div></section>`:'';
-  return `<div class="topbar"><header class="brand"><h1>Pokémon Incanto</h1><div class="chips"><span class="chip">${fmt}</span><span class="chip">${t('poolName.'+g.tier)}${g.legends?'':t('noLegends')}</span><span class="chip">${t('modeChip',mode)}</span></div></header>
+  return `<div class="topbar"><header class="brand"><h1><span class="h-poke">Pokémon</span> <span class="h-inc">Incanto</span></h1><div class="chips"><span class="chip">${fmt}</span><span class="chip">${t('poolName.'+g.tier)}${g.legends?'':t('noLegends')}</span><span class="chip">${t('modeChip',mode)}</span></div></header>
    <button class="btn ghost sm" data-act="askexit">${t('exit')}</button></div>
    <div class="players">${vPlayer(0,g)}${vPlayer(1,g)}</div>
    <section class="card lot${lotCls}">${lot}</section>${hist}`;
