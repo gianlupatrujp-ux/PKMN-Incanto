@@ -1,0 +1,37 @@
+Pokémon Incanto - animazioni delle mosse / move animations (lib/ps-anims.js, sprites/fx/)
+
+Fonte / Source: Pokémon Showdown client, https://github.com/smogon/pokemon-showdown-client
+  play.pokemonshowdown.com/src/battle-animations.ts  (estratto / excerpt)
+  play.pokemonshowdown.com/src/battle-animations-moves.ts
+
+Licenze indicate dagli autori nei file originali / Licenses stated by the authors in the original files:
+- battle-animations.ts: "The battle replay/animation engine (battle-*.ts) by itself is MIT"
+  (c) Guangcong Luo and contributors, MIT License (testo qui sotto / text below).
+  "Most of this file is: CC0 (public domain)" - http://creativecommons.org/publicdomain/zero/1.0/
+- battle-animations-moves.ts: @license CC0-1.0 (Guangcong Luo and contributors).
+- Immagini in sprites/fx / Images in sprites/fx: CC0 (public domain), tranne / except:
+  - icicle.png, icicle-pink.png (variante colorata / recolor), lightning.png: by Clint Bellanger, CC-BY-SA 3.0 (also GPLv2/GPLv3)
+    http://opengameart.org/content/icicle-spell  http://opengameart.org/content/lightning-shock-spell
+  - rock1.png, rock2.png: by Pokémon Online user "Gilad", GPLv3 (testo in / text in lib/GPL-3.0.txt), usate per Stealth Rock e
+    per le mosse di tipo Roccia / used for Stealth Rock and Rock-type moves. Non modificate / unmodified.
+  - caltrop.png, poisoncaltrop.png, web.png: by Pokémon Showdown user SailorCosmos (CC0, come indicato in battle-animations.ts).
+  - rock3.svg, rocks.svg, bone.svg: disegni originali di Pokémon Incanto (bone.png originale, licenza non indicata, NON incluso).
+- Artisti delle animazioni di Showdown / Showdown battle animation artists: Kevin Lau (Ascriptmaster), Ridaz and contributors.
+- Il "ponte" che collega le animazioni al campo di Pokémon Incanto (lotta.js) è scritto da zero.
+
+MIT License
+
+Copyright (c) 2011-2026 Guangcong Luo and other contributors http://pokemonshowdown.com/
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of
+the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

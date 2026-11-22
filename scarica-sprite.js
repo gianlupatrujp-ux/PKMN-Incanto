@@ -108,6 +108,36 @@ async function main() {
   }));
   if (backMancanti.length) console.log('Di schiena non trovati (' + backMancanti.length + '): ' + backMancanti.slice(0, 30).join(', ') + (backMancanti.length > 30 ? '...' : ''));
 
+  // Forme che compaiono solo in lotta (Mimikyu-Busted, Megaevoluzioni, Aegislash-Blade, Minior-Meteor, Palafin-Hero,
+  // Ogerpon/Terapagos teracristallizzati...) dei Pokémon del pool: servono alla lotta dentro il gioco (lotta.js).
+  // Niente Gigamax e Totem, che nei nostri formati non esistono.
+  console.log('Scarico le forme di lotta...');
+  const basi = new Set(pool.map(p => (dex[toId(p.name)] || {}).baseSpecies || p.name));
+  const forme = Object.values(dex).filter(d => d && d.name && basi.has(d.baseSpecies || d.name) && !pool.some(p => p.name === d.name)
+    && (d.battleOnly || d.changesFrom || /^(Mega|Primal)/.test(d.forme || '')) && !/Gmax|Totem/.test(d.forme || '') && d.num > 0);
+  const formeMancanti = [];
+  let f = 0;
+  await Promise.all(Array.from({ length: CONCORRENZA }, async () => {
+    for (;;) {
+      const d = forme[f++];
+      if (!d) return;
+      const id = spriteId(dex, d.name);
+      for (const [stile, ext] of STILI) {
+        const rel = 'sprites/' + stile + '/' + id + '.' + ext;
+        if (await scaricaFile(BASE + stile + '/' + id + '.' + ext, path.join(DIR, rel))) {
+          mappa[d.name] = rel;
+          for (const v of ['-shiny', '-back', '-back-shiny']) {
+            fs.mkdirSync(path.join(SPRITE_DIR, stile + v), { recursive: true });
+            await scaricaFile(BASE + stile + v + '/' + id + '.' + ext, path.join(DIR, 'sprites/' + stile + v + '/' + id + '.' + ext));
+          }
+          break;
+        }
+      }
+      if (!mappa[d.name]) formeMancanti.push(d.name);
+    }
+  }));
+  console.log('Forme di lotta: ' + (forme.length - formeMancanti.length) + '/' + forme.length + (formeMancanti.length ? ' (mancano: ' + formeMancanti.join(', ') + ')' : ''));
+
   // Icone degli strumenti (un solo foglio con tutte le icone 24x24, 16 per riga; la posizione è "spritenum" nei dati di Showdown)
   await scaricaFile(BASE + 'itemicons-sheet.png', path.join(SPRITE_DIR, 'itemicons-sheet.png'));
 
