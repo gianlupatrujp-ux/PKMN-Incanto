@@ -1,1 +1,3 @@
 https://gianlupatrujp-ux.github.io/PKMN-Incanto/
+
+PKMN_Incanto.metered.live
