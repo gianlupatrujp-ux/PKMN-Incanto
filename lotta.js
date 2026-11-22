@@ -1381,7 +1381,8 @@ function startTranslate(){ if(TR_OBS) TR_OBS.disconnect(); TR_OBS=null; if(!O||O
 // ---------- apertura e chiusura ----------
 async function readSide(g,sid,stream){
   for await(const chunk of stream){ if(g!==gen) return;
-    if(O.role==='host'&&sid==='p2'){ O.net.send({t:'bl',c:chunk}); continue; }
+    // il collegamento diretto perde i messaggi oltre ~16 KB: i pezzi lunghi si dividono tra una riga e l'altra (l'amico legge riga per riga)
+    if(O.role==='host'&&sid==='p2'){ let buf=''; for(const ln of chunk.split('\n')){ if(buf&&buf.length+ln.length>12000){ O.net.send({t:'bl',c:buf}); buf=''; } buf+=(buf?'\n':'')+ln; } if(buf) O.net.send({t:'bl',c:buf}); continue; }
     for(const line of chunk.split('\n')){
       if(line.startsWith('|request|')){ const r=JSON.parse(line.slice(9)); r.rqid=++B.nreq; B.req[sid]=r;
         if(r.side) for(const rp of r.side.pokemon){ const nick=rp.ident.split(': ')[1]; const m=B.side[sid].team[nick]; if(m) m.item=rp.item?Dex.items.get(rp.item).name:null; }

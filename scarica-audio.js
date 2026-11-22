@@ -82,5 +82,16 @@ async function main() {
   let byte = 0; for (const d of ['audio', 'audio/cries']) for (const f of fs.readdirSync(path.join(DIR, d))) { const p = path.join(DIR, d, f); if (fs.statSync(p).isFile()) byte += fs.statSync(p).size; }
   console.log('\nFatto: ' + musiche.length + ' musiche, ' + (ids.length - mancanti.length) + ' versi (' + (byte / 1048576).toFixed(1) + ' MB).' + (mancanti.length ? '\nVersi non trovati (' + mancanti.length + '): ' + mancanti.join(', ') : ''));
 }
-if (require.main === module) main().catch(e => { console.error('\nErrore: ' + e.message + '\nRilancia lo script: riparte da dove si era fermato.'); process.exit(1); });
+// Mappa nome del Pokémon del gioco → file del verso (per l'asta "per verso"). Uso: node scarica-audio.js --mappa
+async function mappaVersi() {
+  const dex = await pokedex(), vm = require('vm'), c = {}; vm.createContext(c);
+  vm.runInContext(fs.readFileSync(path.join(DIR, 'pokemon-data.js'), 'utf8').replace(/^const /m, 'var '), c);
+  const out = {}, manca = [];
+  for (const p of c.POKEMON_DATA) { const d = dex[toId(p.name)]; const id = d ? cryId(d) : null;
+    if (id && fs.existsSync(path.join(DIR, 'audio', 'cries', id + '.mp3'))) out[p.name] = id; else manca.push(p.name); }
+  fs.writeFileSync(path.join(DIR, 'versi-data.js'), '// Generato da scarica-audio.js --mappa: file del verso di ogni Pokémon (audio/cries/<id>.mp3)\nconst CRY_DATA = ' + JSON.stringify(out) + ';\n');
+  console.log('Versi: ' + Object.keys(out).length + '/' + c.POKEMON_DATA.length + (manca.length ? ' - mancano: ' + manca.join(', ') : ''));
+}
+if (require.main === module && process.argv.includes('--mappa')) mappaVersi().catch(e => { console.error(e); process.exit(1); });
+else if (require.main === module) main().catch(e => { console.error('\nErrore: ' + e.message + '\nRilancia lo script: riparte da dove si era fermato.'); process.exit(1); });
 module.exports = { cryId };

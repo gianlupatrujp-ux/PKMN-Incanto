@@ -2,7 +2,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <!-- Sicurezza: il browser può caricare script, font e immagini solo da questo sito, e contattare solo GitHub (regolamento
      VGC) e il centralino di PeerJS (modalità online). Niente plugin, niente invio di moduli, niente cambio dell'indirizzo base. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://raw.githubusercontent.com https://0.peerjs.com wss://0.peerjs.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; media-src 'self' blob:; connect-src 'self' https://raw.githubusercontent.com https://0.peerjs.com wss://0.peerjs.com; object-src 'none'; base-uri 'none'; form-action 'none'">
 <!-- Privacy: i siti contattati non ricevono l'indirizzo di questa pagina (che può contenere il codice della stanza) -->
 <meta name="referrer" content="no-referrer">
 <!-- Sito privato tra amici: i motori di ricerca non devono indicizzarlo -->
@@ -354,6 +354,7 @@ html,body{margin:0}
 <script src="pokemon-data.js"></script>
 <script src="set-data.js"></script>
 <script src="mega-data.js"></script>
+<script src="versi-data.js"></script>
 <script src="sprite-data.js"></script>
 <script>
 /*CORE-START*/
@@ -523,7 +524,7 @@ const I18N={
   'legends':'Leggendari e misteriosi:','yes':'Sì','no':'No','noLegends':', senza leggendari',
   'playOn':f=>`Su Showdown si gioca in <strong>${f}</strong>`,'fmtNote':' (si portano 6 Pokémon e se ne scelgono 4, livello 50)',
   'mode.classica':['Classica','Il Pokémon è mostrato: si sa esattamente chi è.'],'mode.tipo':['Per tipo','Si dichiara solo il tipo primario.'],
-  'mode.numero':['Per numero','Si conosce solo il numero di Pokédex.'],'mode.colore':['Per colore','Si dichiara solo il colore del Pokémon.'],
+  'mode.numero':['Per numero','Si conosce solo il numero di Pokédex.'],'mode.colore':['Per colore','Si dichiara solo il colore del Pokémon.'],'mode.verso':['Per verso','Si sente solo il verso del Pokémon.'],'cry.label':'Verso','cry.play':'Ascolta il verso','cry.tip':'Riconosci il Pokémon dal suo verso. Le forme regionali hanno lo stesso verso della forma normale.','cry.warn':'Questa modalità si gioca ascoltando il verso dei Pokémon: va fatta preferibilmente con l\'audio attivo (volume alzato, telefono non in silenzioso). Se ne sei consapevole, conferma per procedere.','cry.ok':'Ho capito: ho l\'audio attivo','cry.needOk':'Per l\'asta per verso, prima conferma di avere l\'audio attivo.',
   'modeChip':m=>'Asta '+m.toLowerCase(),
   'coins':'Monete','coinsHelp':'Predefinito 25. Minimo 6, cioè 1 moneta per ogni Pokémon.','heads':'Testa','tails':'Croce',
   'toflip':'Vai al lancio della moneta','err.coins':n=>`Inserisci un numero intero di monete tra ${n} e 999.`,
@@ -611,7 +612,7 @@ const I18N={
   'legends':'Legendaries and Mythicals:','yes':'Yes','no':'No','noLegends':', no legendaries',
   'playOn':f=>`On Showdown, play in <strong>${f}</strong>`,'fmtNote':' (bring 6 Pokémon, pick 4, level 50)',
   'mode.classica':['Classic','The Pokémon is shown: you know exactly who it is.'],'mode.tipo':['By type','Only the primary type is revealed.'],
-  'mode.numero':['By number','Only the Pokédex number is revealed.'],'mode.colore':['By color',"Only the Pokémon's color is revealed."],
+  'mode.numero':['By number','Only the Pokédex number is revealed.'],'mode.colore':['By color',"Only the Pokémon's color is revealed."],'mode.verso':['By cry','You only hear the Pokémon\'s cry.'],'cry.label':'Cry','cry.play':'Listen to the cry','cry.tip':'Recognize the Pokémon by its cry. Regional forms share the cry of the normal form.','cry.warn':'In this mode you listen to the Pokémon\'s cry: it is best played with sound on (volume up, phone not on silent). If you are aware of this, confirm to continue.','cry.ok':'Got it: my sound is on','cry.needOk':'For the cry auction, first confirm that your sound is on.',
   'modeChip':m=>m+' auction',
   'coins':'Coins','coinsHelp':'Default 25. Minimum 6, i.e. 1 coin per Pokémon.','heads':'Heads','tails':'Tails',
   'toflip':'Go to the coin toss','err.coins':n=>`Enter a whole number of coins between ${n} and 999.`,
@@ -710,7 +711,7 @@ const COLOR_NAMES={it:{red:'rosso',blue:'blu',yellow:'giallo',green:'verde',blac
   en:{red:'red',blue:'blue',yellow:'yellow',green:'green',black:'black',brown:'brown',purple:'purple',gray:'gray',white:'white',pink:'pink'}};
 const colorName=k=>(COLOR_NAMES[ui.lang]||COLOR_NAMES.it)[k];
 const HIDE_KEYS=['subito','fine','showdown'];
-const MODE_KEYS=['classica','tipo','numero','colore'], FORMAT_KEYS=['singolo','doppio'], POOL_KEYS=['tutti','ou','megaou','uu','champions'];
+const MODE_KEYS=['classica','tipo','numero','colore','verso'], FORMAT_KEYS=['singolo','doppio'], POOL_KEYS=['tutti','ou','megaou','uu','champions'];
 const fmtNote=(format,tier)=>tier==='champions'&&format==='doppio'?t('fmtNote'):'';
 
 const $app=document.getElementById('app');
@@ -744,6 +745,7 @@ const spr=(m,cls)=>{const p=SPRITES[m.name]; if(!p) return '';
 function ball(m,mode){return `<div class="ball sp${m.shiny?' shiny':''}" style="${colorStyle(m,mode)}" aria-hidden="true">${spr(m)}<span>${pad(m.dex)}</span></div>`;}
 function face(m,mode,reveal){
   if(reveal||mode==='classica') return `<div class="face">${m.shiny?`<div class="shinyban" role="status">${t('shinyBan')}</div>`:''}${ball(m,mode)}<h2>${disp(m)}</h2><div class="chips">${m.shiny?'<span class="chip shinychip">✨ Shiny</span>':''}${tchips(m)}${formOf(m)?`<span class="chip">${t('formOf',formOf(m))}</span>`:''}${mode==='colore'?`<span class="chip">${t('colorChip',colorName(m.color))}</span>`:''}<span class="chip">${t('dexNo')} ${pad(m.dex)}</span></div></div>`;
+  if(mode==='verso') return `<div class="face"><div class="ball q" aria-hidden="true">♪</div><span class="label">${t('cry.label')}</span><button class="btn big play2" data-act="playcry">🔊 ${t('cry.play')}</button><p class="muted" style="font-size:12px;margin:6px 0 0">${t('cry.tip')}</p></div>`;
   if(mode==='tipo') return `<div class="face"><div class="ball q">?</div><span class="label">${t('primaryType')}</span><span class="tchip" style="font-size:24px;padding:8px 24px;background:${TYPE_COLORS[m.type]};color:${ink(TYPE_COLORS[m.type])}">${typeName(m.type)}</span></div>`;
   if(mode==='numero') return `<div class="face"><div class="ball q">?</div><span class="label">${t('dexNumber')}</span><div class="big">${t('dexNo')} ${pad(m.dex)}</div></div>`;
   const c=COLOR_HEX[m.color];
@@ -873,7 +875,7 @@ function rulesBody(){
    <div class="note"><strong>Cap:</strong> you can bid at most your coins minus 1 for each other Pokémon you still need, so you can always complete your team. With 25 coins, the cap on the first Pokémon is 20.</div>
    <h3>3. Auction modes</h3>
    <ul><li><strong>Classic:</strong> you see the Pokémon.</li><li><strong>By type:</strong> you only see the primary type.</li>
-   <li><strong>By number:</strong> you only see the Pokédex number.</li><li><strong>By color:</strong> you only see the Pokédex color.</li></ul>
+   <li><strong>By number:</strong> you only see the Pokédex number.</li><li><strong>By color:</strong> you only see the Pokédex color.</li><li><strong>By cry:</strong> you only hear the Pokémon's cry (best with sound on; press the button to listen again).</li></ul>
    <p class="muted" style="font-size:14px">In the "blind" modes the Pokémon is revealed when the auction ends or, if you choose so in the settings ("Teams"), teams stay hidden until the end (then each player decides whether to show theirs) or are discovered directly in battle on Showdown. Every Pokémon drawn has a 1 in 512 chance of being shiny.</p>
    <h3>4. End of the game</h3>
    <ul><li>If one player completes 6 Pokémon first, the other takes every following Pokémon for 1 coin until they reach 6.</li>
@@ -897,7 +899,7 @@ function rulesBody(){
    <div class="note"><strong>Tetto:</strong> puoi offrire al massimo le tue monete meno 1 per ogni altro Pokémon che ti manca, così puoi sempre completare la squadra. Con 25 monete, al primo Pokémon il massimo è 20.</div>
    <h3>3. Le modalità d'asta</h3>
    <ul><li><strong>Classica:</strong> vedete il Pokémon.</li><li><strong>Per tipo:</strong> vedete solo il tipo primario.</li>
-   <li><strong>Per numero:</strong> vedete solo il numero del Pokédex.</li><li><strong>Per colore:</strong> vedete solo il colore del Pokédex.</li></ul>
+   <li><strong>Per numero:</strong> vedete solo il numero del Pokédex.</li><li><strong>Per colore:</strong> vedete solo il colore del Pokédex.</li><li><strong>Per verso:</strong> sentite solo il verso del Pokémon (meglio con l'audio attivo; si può riascoltare con il pulsante).</li></ul>
    <p class="muted" style="font-size:14px">Nelle modalità "al buio" il Pokémon si rivela a fine asta, oppure, se scegliete così nelle impostazioni ("Squadre"), le squadre restano nascoste fino alla fine (poi ognuno decide se mostrare la sua) o si scoprono direttamente in lotta su Showdown. Ogni Pokémon estratto ha 1 probabilità su 512 di essere shiny.</p>
    <h3>4. Fine partita</h3>
    <ul><li>Se un giocatore completa i 6 Pokémon prima, l'altro prende ogni Pokémon successivo a 1 moneta finché arriva a 6.</li>
@@ -979,6 +981,7 @@ function vSetup(){
     <button class="opt sm" data-act="legends" data-v="0" aria-pressed="${!ui.legends}"><strong>${t('no')}</strong></button></span></div>
    <p class="muted" style="font-size:13px">${t('playOn',showdownFormat(ui.format,ui.tier))}${fmtNote(ui.format,ui.tier)}.</p></section>
   <section class="card"><span class="label">${t('s3')}</span><div class="opts">${MODE_KEYS.map(k=>opt('mode',k,ui.mode,t('mode.'+k))).join('')}</div>
+   ${ui.mode==='verso'?`<div class="note warn" role="note">🔊 ${t('cry.warn')}<label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-weight:700;cursor:pointer"><input type="checkbox" data-act="cryok" ${ui.cryOk?'checked':''}> ${t('cry.ok')}</label></div>`:''}
    ${ui.mode!=='classica'?`<span class="muted" style="font-size:14px;font-weight:600">${t('hide.label')}</span><div class="opts">${HIDE_KEYS.map(k=>opt('hide',k,ui.hide,t('hide.'+k))).join('')}</div>`:''}</section>
   <section class="card"><span class="label">${t('s4')}</span><div class="row"><div class="field" style="max-width:160px"><label for="coins" class="muted">${t('coins')}</label><input type="number" id="coins" inputmode="numeric" min="6" max="999" step="1" value="${esc(ui.coins)}"></div><p class="muted" style="font-size:13px;flex:1 1 220px">${t('coinsHelp')}</p></div>${ui.msg?`<div class="err" role="alert">${esc(ui.msg)}</div>`:''}</section>
 ${ui.setupOnline?`  <section class="card"><span class="label">${t('online.name')}</span><div class="field" style="flex:0 0 auto"><input type="text" id="n0" maxlength="16" placeholder="${esc(t('player',1))}" value="${esc(ui.names[0])}"></div><p class="hint">💡 ${t('online.nameHint')}</p></section>
@@ -1206,6 +1209,33 @@ function vUndo(){
    <div class="row"><button class="btn ghost" data-act="noundo" id="unNo">${t('undo.back')}</button><button class="btn danger" data-act="undo">${ui.online?t('online.undoAsk',oppName()):t('undo.confirm')}</button></div></div></div>`;
 }
 const MASTER_BALL='<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14.5" fill="#fff" stroke="#1F2A44" stroke-width="2.4"/><path d="M1.5 16a14.5 14.5 0 0 1 29 0z" fill="#7B3FC4" stroke="#1F2A44" stroke-width="2.4"/><circle cx="9" cy="9.5" r="2.6" fill="#E85FA8"/><circle cx="23" cy="9.5" r="2.6" fill="#E85FA8"/><path d="M12.2 13.2V7.6l3.8 3.6 3.8-3.6v5.6" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><line x1="1.5" y1="16" x2="30.5" y2="16" stroke="#1F2A44" stroke-width="2.4"/><circle cx="16" cy="16" r="4" fill="#fff" stroke="#1F2A44" stroke-width="2.4"/></svg>';
+// ---------- Asta per verso ----------
+// In locale (e per l'host) il verso si prende dal file; l'amico online non conosce il Pokémon: l'host gli manda il file del
+// verso come dati (base64), così il nome non passa mai.
+let cryAudio=null;
+function cryKey(g){ return g&&g.auction?String(g.n)+':'+g.history.length:''; }
+function playCry(force){ const g=ui.game; if(!g||g.mode!=='verso'||!g.auction) return;
+  let src=null; const m=g.auction.mon;
+  if(m&&!m.hidden&&typeof CRY_DATA!=='undefined'&&CRY_DATA[m.name]) src='audio/cries/'+CRY_DATA[m.name]+'.mp3';
+  else if(ui.online&&ui.online.cry&&ui.online.cry.k===cryKey(g)) src=ui.online.cry.url;
+  if(!src) return;
+  try{ if(cryAudio) cryAudio.pause(); cryAudio=new Audio(src); cryAudio.volume=.8; cryAudio.play().catch(()=>{}); }catch(e){} }
+async function sendCry(g){ const m=g.auction&&g.auction.mon; if(!m||typeof CRY_DATA==='undefined'||!CRY_DATA[m.name]) return;
+  try{ const b=new Uint8Array(await (await fetch('audio/cries/'+CRY_DATA[m.name]+'.mp3')).arrayBuffer()); let s=''; for(let i=0;i<b.length;i+=8192) s+=String.fromCharCode.apply(null,b.subarray(i,i+8192));
+    // il collegamento diretto perde i messaggi oltre ~16 KB: il verso viaggia a pezzi da 12 KB
+    const d=btoa(s), k=cryKey(g), n=Math.ceil(d.length/12000); for(let i=0;i<n;i++) onlineSend({t:'cry',k,i,n,d:d.slice(i*12000,(i+1)*12000)}); }catch(e){} }
+function gotCry(m){ const g=ui.game, o=ui.online; if(!o||typeof m.d!=='string'||m.d.length>12000||typeof m.k!=='string'||m.k.length>20) return;
+  const n=wInt(m.n,1,40,1), i=wInt(m.i,0,n-1,0);
+  if(!o.cryParts||o.cryParts.k!==m.k) o.cryParts={k:m.k,n,p:[]};
+  o.cryParts.p[i]=m.d; if(o.cryParts.p.filter(x=>typeof x==='string').length<o.cryParts.n) return;
+  const all=o.cryParts.p.join(''); o.cryParts=null;
+  try{ const bin=atob(all), b=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) b[i]=bin.charCodeAt(i);
+    if(o.cry&&o.cry.url) URL.revokeObjectURL(o.cry.url);
+    o.cry={k:m.k,url:URL.createObjectURL(new Blob([b],{type:'audio/mpeg'}))}; }catch(e){ return; }
+  if(g&&cryKey(g)===m.k) playCry(); }
+// dopo ogni disegno: a ogni nuova asta il verso parte da solo (l'host lo manda anche all'amico)
+function cryAuto(){ const g=ui.game; if(!g||g.mode!=='verso'||!g.auction||ui.screen!=='game') return; const k=cryKey(g); if(ui.cryLast===k) return; ui.cryLast=k;
+  if(isHost()) sendCry(g); if(!isGuest()||(ui.online.cry&&ui.online.cry.k===k)) setTimeout(()=>playCry(),250); }
 function copyText(s){
   const old=()=>{ try{ const ta=document.createElement('textarea'); ta.value=s; ta.setAttribute('readonly',''); ta.style.cssText='position:fixed;top:0;left:0;opacity:0'; document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0,s.length); const r=document.execCommand('copy'); ta.remove(); return r; }catch(e){ return false; } };
   try{ if(navigator.clipboard&&window.isSecureContext) return navigator.clipboard.writeText(s).then(()=>true,()=>old()); }catch(e){}
@@ -1399,6 +1429,7 @@ function onlineMessage(m){
     else if(m.t==='err'){ const c=String(m.code||''); if(/^(turn|int|min\|\d{1,3}|max\|\d{1,3})$/.test(c)){ ui.msg=errText(c); render(); } }
     else if(m.t==='full'){ if(o.random){ try{o.peer.destroy();}catch(x){} ui.online=null; findOpponent((o.slot||1)+1); } else { o.status='full'; render(); } }
     else if(m.t==='undo-refused'){ ui.msg=t('online.undoRefused'); render(); }
+    else if(m.t==='cry'){ gotCry(m); }
   }
 }
 // ---------- Sicurezza: tutto ciò che arriva dall'altro dispositivo viene ricostruito con dati fidati ----------
@@ -1551,6 +1582,7 @@ function render(){
   else if(undoReq) document.getElementById('urNo').focus();
   else if(ui.modal) document.getElementById('rlClose').focus();
   try{ lobbySync(); }catch(e){}
+  try{ cryAuto(); }catch(e){}
 }
 
 function act(a,d){
@@ -1570,7 +1602,8 @@ function act(a,d){
   else if(a==='toflip'){const c=Number(ui.coins);
     if(!Number.isInteger(c)||c<TEAM_SIZE||c>999){ui.msg=t('err.coins',TEAM_SIZE);}
     else if(filterPool(POOL,{tier:ui.tier,legends:ui.legends}).length<TEAM_SIZE*2){ui.msg=t('err.pool',TEAM_SIZE);}
-    else{ui.msg='';ui.screen='flip';ui.flip=null;}}
+    else if(ui.mode==='verso'&&!ui.cryOk){ui.msg=t('cry.needOk');}
+    else {ui.msg='';ui.screen='flip';ui.flip=null;}}
   else if(a==='flip'){ui.flip=Math.random()<0.5?'testa':'croce';}
   else if(a==='begin'){ui.revealLocal=[false,false];ui.celebN=null;ui.game=newGame({format:ui.format,mode:ui.mode,hide:ui.hide,coins:Number(ui.coins),tier:ui.tier,legends:ui.legends,
     pool:filterPool(POOL,{tier:ui.tier,legends:ui.legends}),firstOpener:ui.flip==='testa'?0:1});ui.screen='game';ui.msg='';ui.setChoice={};}
@@ -1604,12 +1637,14 @@ function act(a,d){
   else if(a==='mkqueue'){const c=Number(ui.coins);
     if(!Number.isInteger(c)||c<TEAM_SIZE||c>999){ui.msg=t('err.coins',TEAM_SIZE);}
     else if(filterPool(POOL,{tier:ui.tier,legends:ui.legends}).length<TEAM_SIZE*2){ui.msg=t('err.pool',TEAM_SIZE);}
-    else{ui.msg='';ui.myName=ui.names[0];findOpponent(1);return;}}
+    else if(ui.mode==='verso'&&!ui.cryOk){ui.msg=t('cry.needOk');}
+    else {ui.msg='';ui.myName=ui.names[0];findOpponent(1);return;}}
   else if(a==='leaveonline'){leaveOnline();ui.setupOnline=false;ui.screen='title';ui.msg='';}
   else if(a==='mkroom'){const c=Number(ui.coins);
     if(!Number.isInteger(c)||c<TEAM_SIZE||c>999){ui.msg=t('err.coins',TEAM_SIZE);}
     else if(filterPool(POOL,{tier:ui.tier,legends:ui.legends}).length<TEAM_SIZE*2){ui.msg=t('err.pool',TEAM_SIZE);}
-    else{ui.msg='';ui.myName=ui.names[0];createRoom();return;}}
+    else if(ui.mode==='verso'&&!ui.cryOk){ui.msg=t('cry.needOk');}
+    else {ui.msg='';ui.myName=ui.names[0];createRoom();return;}}
   else if(a==='copylink'||a==='copycode'){const out=document.getElementById('lnk'),l=a==='copycode'?ui.online.code:roomLink(ui.online.code), ok=t(a==='copycode'?'online.codeCopied':'online.linkCopied');
     copyText(l).then(r=>{ if(out) out.textContent=r?ok:t('online.copyFail'); });
     return;}
@@ -1623,6 +1658,8 @@ function act(a,d){
   else if(a==='exit'&&ui.online){ui.askExit=false;leaveOnline();ui.setupOnline=false;ui.screen='title';ui.msg='';}
   else if(a==='exit'){ui.askExit=false;ui.screen='setup';ui.game=null;ui.flip=null;ui.msg='';ui.draft='';}
   else if(a==='fight'){ ui.series=null; startFight(); return; }
+  else if(a==='cryok'){ ui.cryOk=!ui.cryOk; ui.msg=''; }
+  else if(a==='playcry'){ playCry(true); return; }
   else if(a==='bo'){ ui.bo=d.v==='3'?3:1; }
   else if(a==='copy'&&ui.online&&+d.i!==ui.online.me){ return; } // online la squadra dell'avversario non si copia
   else if(a==='copy'){const i=+d.i,tx=exportText(g.teams[i],g.format,ui.setChoice,g.tier),out=document.getElementById('cp'+i);
