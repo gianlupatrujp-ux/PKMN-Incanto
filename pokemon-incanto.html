@@ -575,7 +575,7 @@ const I18N={
   'online.queueFull':'Troppe partite casuali in corso: riprova tra poco.',
   'online.strangerNote':"Con un avversario casuale giochi con uno sconosciuto, che vedrà anche il tuo indirizzo IP (vedi Note legali).",'online.create':'Crea una partita','online.createSub':'Scegli tu le impostazioni e ricevi un codice da mandare al tuo amico.',
   'online.join':'Entra in una partita','online.code':'Codice della stanza','online.joinBtn':'Entra','online.needCode':'Scrivi il codice della stanza.',
-  'online.mkroom':'Crea la stanza','online.room':'Stanza online','online.copyLink':'Copia il link','online.linkCopied':'Link copiato','online.copyCode':'Copia il codice','online.codeCopied':'Codice copiato!','online.copyFail':'Non riesco a copiare: scrivi il codice a mano.','online.codeHow':'Manda il codice al tuo amico: lo scrive in "Hai un codice? Entra".','online.linkToo':'Preferisci il link?',
+  'online.mkroom':'Crea la stanza','online.room':'Stanza online','online.copyLink':'Copia il link','online.oppSets':n=>`Squadra di ${n}: strumenti, mosse e set non si vedono e non si possono copiare (li scoprirai in lotta).`,'online.linkCopied':'Link copiato','online.copyCode':'Copia il codice','online.codeCopied':'Codice copiato!','online.copyFail':'Non riesco a copiare: scrivi il codice a mano.','online.codeHow':'Manda il codice al tuo amico: lo scrive in "Hai un codice? Entra".','online.linkToo':'Preferisci il link?',
   'online.opening':'Creazione della stanza…','online.waiting':"In attesa dell'amico: mandagli il codice o il link",
   'online.joined':n=>`${n} è entrato!`,'online.connecting':c=>`Collegamento alla stanza ${c}`,'online.connected':n=>`Connesso! In attesa che ${n} avvii la partita`,
   'online.notfound':c=>`Stanza ${c} non trovata: controlla il codice o chiedi un nuovo link.`,'online.full':'La stanza è già piena.',
@@ -663,7 +663,7 @@ const I18N={
   'online.queueFull':'Too many random matches in progress: try again shortly.',
   'online.strangerNote':'With a random opponent you play with a stranger, who will also see your IP address (see Legal notice).','online.create':'Create a game','online.createSub':'You pick the settings and get a code to send to your friend.',
   'online.join':'Join a game','online.code':'Room code','online.joinBtn':'Join','online.needCode':'Type the room code.',
-  'online.mkroom':'Create the room','online.room':'Online room','online.copyLink':'Copy link','online.linkCopied':'Link copied','online.copyCode':'Copy the code','online.codeCopied':'Code copied!','online.copyFail':'Cannot copy: type the code by hand.','online.codeHow':'Send the code to your friend: they type it in "Got a code? Join".','online.linkToo':'Prefer the link?',
+  'online.mkroom':'Create the room','online.room':'Online room','online.copyLink':'Copy link','online.oppSets':n=>`Team of ${n}: items, moves and sets are hidden and cannot be copied (you will find out in battle).`,'online.linkCopied':'Link copied','online.copyCode':'Copy the code','online.codeCopied':'Code copied!','online.copyFail':'Cannot copy: type the code by hand.','online.codeHow':'Send the code to your friend: they type it in "Got a code? Join".','online.linkToo':'Prefer the link?',
   'online.opening':'Creating the room…','online.waiting':'Waiting for your friend: send them the code or the link',
   'online.joined':n=>`${n} joined!`,'online.connecting':c=>`Connecting to room ${c}`,'online.connected':n=>`Connected! Waiting for ${n} to start the game`,
   'online.notfound':c=>`Room ${c} not found: check the code or ask for a new link.`,'online.full':'The room is already full.',
@@ -1168,10 +1168,10 @@ function vEnd(){
     return head+mostra+`
      <div class="chips">${g.teams[i].map(m=>`<span class="tchip mon" style="${colorStyle(m,g.mode)};box-shadow:inset 0 0 0 1px var(--line)">${spr(m,'mini')}${disp(m)}</span>`).join('')}</div>
      <div class="muted" style="font-size:13px">${g.teams[i].map(m=>disp(m)+' ('+typeName(m.type)+(m.type2?'/'+typeName(m.type2):'')+')').join(' · ')}</div>
-     <span class="label">${t('setsLabel')}</span><div class="setlist">${(eff=>g.teams[i].map((m,j)=>setPicker(m,g,eff[j])).join(''))(teamSets(g.teams[i],g.format,ui.setChoice,g.tier))}</div>
+     ${ui.online&&ui.online.me!==i?`<div class="note">🔒 ${t('online.oppSets',name(i))}</div></section>`:`<span class="label">${t('setsLabel')}</span><div class="setlist">${(eff=>g.teams[i].map((m,j)=>setPicker(m,g,eff[j])).join(''))(teamSets(g.teams[i],g.format,ui.setChoice,g.tier))}</div>
      <span class="label">${t('textLabel')}</span>
      <div class="fmtline">${t('fmtLine')} <strong>${showdownFormat(g.format,g.tier)}</strong>${fmtNote(g.format,g.tier)}</div><pre id="ex${i}">${esc(exportText(g.teams[i],g.format,ui.setChoice,g.tier))}</pre>
-     <div class="row"><button class="btn ghost" data-act="copy" data-i="${i}">${t('copy')}</button><a class="btn play2" href="https://play.pokemonshowdown.com/teambuilder" target="_blank" rel="noopener noreferrer" style="text-decoration:none">${t('openSD')}</a><span class="muted" id="cp${i}" aria-live="polite"></span></div><p class="muted" style="font-size:12px">${t('openSDhint')}</p></section>`;}).join('');
+     <div class="row"><button class="btn ghost" data-act="copy" data-i="${i}">${t('copy')}</button><a class="btn play2" href="https://play.pokemonshowdown.com/teambuilder" target="_blank" rel="noopener noreferrer" style="text-decoration:none">${t('openSD')}</a><span class="muted" id="cp${i}" aria-live="polite"></span></div><p class="muted" style="font-size:12px">${t('openSDhint')}</p></section>`}`;}).join('');
   const intro=Object.keys(SETS).length
     ?t('endIntro',g.format==='doppio',showdownFormat(g.format,g.tier),g.format==='doppio'&&g.tier!=='champions',fmtNote(g.format,g.tier))
     :t('noSetsFile');
@@ -1605,6 +1605,7 @@ function act(a,d){
   else if(a==='exit'&&ui.online){ui.askExit=false;leaveOnline();ui.setupOnline=false;ui.screen='title';ui.msg='';}
   else if(a==='exit'){ui.askExit=false;ui.screen='setup';ui.game=null;ui.flip=null;ui.msg='';ui.draft='';}
   else if(a==='fight'){ startFight(); return; }
+  else if(a==='copy'&&ui.online&&+d.i!==ui.online.me){ return; } // online la squadra dell'avversario non si copia
   else if(a==='copy'){const i=+d.i,tx=exportText(g.teams[i],g.format,ui.setChoice,g.tier),out=document.getElementById('cp'+i);
     const fb=()=>{const r=document.createRange();r.selectNodeContents(document.getElementById('ex'+i));const s=getSelection();s.removeAllRanges();s.addRange(r);out.textContent=t('selected');};
     try{navigator.clipboard.writeText(tx).then(()=>{out.textContent=t('copied',showdownFormat(g.format,g.tier));},fb);}catch(e){fb();}
