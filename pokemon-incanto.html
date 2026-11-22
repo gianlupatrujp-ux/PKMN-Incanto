@@ -181,6 +181,39 @@ details.remote ol{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:c
 .rules ul,.rules ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:14px}
 .rules .note{font-size:14px}
 .backlink{align-self:flex-start}
+/* Festa dell'aggiudicazione: timbro, monete e, ogni 5 monete spese, effetti più grandi */
+.lot{position:relative}
+.celebrate{position:absolute;inset:0;pointer-events:none;z-index:4;overflow:hidden;border-radius:inherit}
+.celebrate.lv1{--sc:1.06}.celebrate.lv2{--sc:1.13}.celebrate.lv3{--sc:1.2}.celebrate.lv4{--sc:1.28}
+.cel-stamp{position:absolute;left:50%;top:30%;font-family:'Luckiest Guy','Arial Black',sans-serif;font-size:clamp(20px,6vw,34px);letter-spacing:.04em;color:#E3350D;
+  background:rgba(255,255,255,.95);border:5px solid #E3350D;border-radius:12px;padding:6px 16px 2px;white-space:nowrap;opacity:0;
+  box-shadow:0 0 0 4px #fff,0 6px 14px rgba(0,0,0,.3);transform:translate(-50%,-50%) rotate(-12deg) scale(calc(2.2*var(--sc,1)));animation:celStamp 2.8s ease-out forwards}
+@keyframes celStamp{0%{opacity:0;transform:translate(-50%,-50%) rotate(-12deg) scale(calc(2.2*var(--sc,1)))}
+  12%{opacity:1;transform:translate(-50%,-50%) rotate(-12deg) scale(calc(.88*var(--sc,1)))}
+  18%{transform:translate(-50%,-50%) rotate(-12deg) scale(calc(1.06*var(--sc,1)))}
+  24%,78%{opacity:1;transform:translate(-50%,-50%) rotate(-12deg) scale(var(--sc,1))}
+  100%{opacity:0;transform:translate(-50%,-50%) rotate(-12deg) scale(var(--sc,1))}}
+.cc{position:absolute;left:50%;top:32%;width:18px;height:18px;border-radius:50%;opacity:0;
+  background:radial-gradient(circle at 35% 35%,#FFF1A8,#F2C14E 55%,#B07A12);border:2px solid #7A520E;animation:celCoin 1.7s cubic-bezier(.2,.7,.4,1) var(--d) forwards}
+@keyframes celCoin{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}10%{opacity:1}
+  55%{opacity:1;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) rotate(var(--r)) scale(1)}
+  100%{opacity:0;transform:translate(calc(-50% + var(--dx)*1.25),calc(-50% + 150px)) rotate(calc(var(--r)*2)) scale(.9)}}
+.lot:has(.celebrate.lv1),.lot:has(.celebrate.lv2),.lot:has(.celebrate.lv3),.lot:has(.celebrate.lv4){animation:celShake .55s ease .3s}
+@keyframes celShake{20%{transform:translateX(-6px) rotate(-.6deg)}40%{transform:translateX(6px) rotate(.6deg)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.cel-flash{position:absolute;left:50%;top:32%;width:44px;height:44px;border-radius:50%;opacity:0;
+  background:radial-gradient(circle,#FFF6B0 0,rgba(255,200,40,.85) 35%,rgba(255,200,40,0) 70%);animation:celFlash 1.1s ease-out .25s forwards}
+@keyframes celFlash{0%{opacity:1;transform:translate(-50%,-50%) scale(.2)}100%{opacity:0;transform:translate(-50%,-50%) scale(10)}}
+.cel-rays{position:absolute;left:50%;top:30%;width:560px;height:560px;margin:-280px 0 0 -280px;border-radius:50%;opacity:0;
+  background:repeating-conic-gradient(from 0deg,rgba(255,205,60,.6) 0 9deg,rgba(255,205,60,0) 9deg 18deg);
+  -webkit-mask:radial-gradient(circle,#000 25%,transparent 68%);mask:radial-gradient(circle,#000 25%,transparent 68%);animation:celRays 2.8s ease-out forwards}
+@keyframes celRays{0%{opacity:0;transform:rotate(0) scale(.3)}15%{opacity:1}80%{opacity:.85}100%{opacity:0;transform:rotate(70deg) scale(1.1)}}
+.celebrate.lv3 .cel-stamp,.celebrate.lv4 .cel-stamp{animation:celStamp 2.8s ease-out forwards,celGlow .45s linear infinite}
+@keyframes celGlow{0%{box-shadow:0 0 0 4px #fff,0 0 22px 8px #ff4d4d}33%{box-shadow:0 0 0 4px #fff,0 0 22px 8px #ffd23f}66%{box-shadow:0 0 0 4px #fff,0 0 22px 8px #4dc3ff}100%{box-shadow:0 0 0 4px #fff,0 0 22px 8px #ff4d4d}}
+.wrap:has(.celebrate.lv3),.wrap:has(.celebrate.lv4){animation:celShake .5s ease .3s 2}
+.cel-confetti{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:30}
+.cel-confetti b{position:absolute;top:-24px;left:var(--x);width:calc(9px*var(--w));height:calc(15px*var(--w));background:var(--c);border-radius:2px;opacity:0;animation:celFall 2.6s linear var(--d) forwards}
+@keyframes celFall{0%{opacity:1;transform:translateY(0) rotate(0)}100%{opacity:.9;transform:translateY(110vh) rotate(800deg)}}
+@media (prefers-reduced-motion:reduce){.celebrate,.cel-confetti{display:none}.lot:has(.celebrate),.wrap:has(.celebrate){animation:none!important}}
 /* Tasto Esci e finestra di conferma */
 .topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
 .btn.sm{padding:8px 14px;font-size:14px}
@@ -362,7 +395,10 @@ function newGame(o){
     // Probabilità che un Pokémon estratto sia shiny (cromatico): 1 su 512
     shinyRate:o.shinyRate!=null?o.shinyRate:SHINY_RATE, rnd:o.rnd||Math.random,
     // Annullamento: "fotografie" dello stato all'inizio di ogni asta manuale (vedi undoLast)
-    undo:[] };
+    undo:[],
+    // Squadre: 'subito' (si rivela a fine asta), 'fine' (nascoste fino a fine partita, poi ognuno sceglie se mostrare
+    // la sua), 'showdown' (ognuno vede solo la sua). In modalità classica sempre 'subito'.
+    hide:o.mode==='classica'?'subito':(['subito','fine','showdown'].includes(o.hide)?o.hide:'subito'), reveal:[false,false] };
 }
 const SHINY_RATE=1/512;
 // Pokémon che su Showdown non possono essere shiny (solo da eventi non shiny, o mosse che lo impediscono):
@@ -445,6 +481,17 @@ function teamSets(team, format, choice, tier){
     }
     return s||null; });
 }
+// Cosa può vedere "viewer" (0/1 online, 'local' sullo schermo condiviso) di un Pokémon posseduto da "owner"
+// (null = all'asta). Se non può vederlo riceve solo l'indizio dell'asta al buio (tipo, numero o colore).
+function hintOf(mon,mode){ return {hidden:true,name:'?',display:'?',dex:mode==='numero'?mon.dex:0,type:mode==='tipo'?mon.type:null,type2:null,color:mode==='colore'?mon.color:null,form:null}; }
+function canSee(g,owner,viewer,localRevealed){
+  if(owner==null) return g.mode==='classica';
+  if(!g.hide||g.hide==='subito'||g.mode==='classica') return true;
+  if(viewer==='local') return !!(g.over&&localRevealed&&localRevealed[owner]);
+  if(viewer===owner) return !!g.over;
+  return g.hide==='fine'&&!!g.over&&!!(g.reveal&&g.reveal[owner]);
+}
+function monView(g,mon,owner,viewer,localRevealed){ return !mon||mon.hidden||canSee(g,owner,viewer,localRevealed)?mon:hintOf(mon,g.mode); }
 function exportText(team, format, choice, tier){
   const ss=teamSets(team, format, choice, tier);
   return team.map((m,i)=>ss[i]?setText(m,ss[i]):m.name).join('\n\n');
@@ -503,6 +550,13 @@ const I18N={
   'undo.desc':(m,w,p)=>`<strong>${m}</strong> torna all'asta da capo e <strong>${w}</strong> riavrà ${p===1?'la sua moneta':'le sue '+p+' monete'}. L'asta ricomincia con l'offerta di 1 moneta.`,
   'undo.next':' Anche il Pokémon appena estratto torna nel mazzo.','undo.confirm':"Annulla l'asta",'undo.back':'Torna alla partita',
   'menu.local':'Gioca su questo dispositivo','menu.online':'Gioca online',
+  'soldStamp':'AGGIUDICATO!','mystery':'un Pokémon misterioso','hide.label':'Squadre:',
+  'hide.subito':['Mostra subito','Ogni Pokémon si rivela a fine asta.'],'hide.fine':['Nascoste fino alla fine',"A squadre complete ognuno vede la sua e sceglie se mostrarla all'avversario."],
+  'hide.showdown':['Scoperta su Showdown',"Ognuno vede solo la sua: quella dell'avversario la scopri in lotta."],
+  'hideChip.fine':'Squadre nascoste','hideChip.showdown':'Scoperta su Showdown',
+  'reveal.local':n=>`Mostra la squadra di ${n}`,'reveal.localHint':"Squadra coperta: chi la possiede la scopre quando vuole (gli altri guardino altrove!).",
+  'reveal.mine':n=>`Mostra la mia squadra a ${n}`,'reveal.waiting':n=>`${n} non ha ancora mostrato la sua squadra.`,
+  'reveal.secret':n=>`La squadra di ${n} resta segreta: la scoprirai in lotta su Showdown.`,'reveal.shown':n=>`Hai mostrato la tua squadra a ${n}.`,
   'rules.online':`<ol><li>Dal menu scegli <strong>Gioca online</strong> e scrivi il tuo nome.</li>
    <li>Chi crea la partita sceglie le impostazioni e preme <strong>Crea la stanza</strong>: riceve un <strong>codice</strong> e un <strong>link</strong> da mandare all'amico.</li>
    <li>L'amico apre il link (oppure sceglie <strong>Gioca online</strong> e scrive il codice) ed entra.</li>
@@ -584,6 +638,13 @@ const I18N={
   'undo.desc':(m,w,p)=>`<strong>${m}</strong> goes back to auction from the start and <strong>${w}</strong> gets back ${p===1?'their coin':'their '+p+' coins'}. The auction restarts with a 1-coin bid.`,
   'undo.next':' The Pokémon just drawn also goes back into the deck.','undo.confirm':'Undo the auction','undo.back':'Back to the game',
   'menu.local':'Play on this device','menu.online':'Play online',
+  'soldStamp':'SOLD!','mystery':'a mystery Pokémon','hide.label':'Teams:',
+  'hide.subito':['Show right away','Each Pokémon is revealed when its auction ends.'],'hide.fine':['Hidden until the end','When the teams are complete, each player sees theirs and chooses whether to show it.'],
+  'hide.showdown':['Discover on Showdown',"Each player only sees their own: you'll find out the opponent's in battle."],
+  'hideChip.fine':'Hidden teams','hideChip.showdown':'Discover on Showdown',
+  'reveal.local':n=>`Show ${n}'s team`,'reveal.localHint':'Covered team: its owner reveals it whenever they want (everyone else look away!).',
+  'reveal.mine':n=>`Show my team to ${n}`,'reveal.waiting':n=>`${n} hasn't shown their team yet.`,
+  'reveal.secret':n=>`${n}'s team stays secret: you'll find out in battle on Showdown.`,'reveal.shown':n=>`You showed your team to ${n}.`,
   'rules.online':`<ol><li>From the menu choose <strong>Play online</strong> and type your name.</li>
    <li>Whoever creates the game picks the settings and presses <strong>Create the room</strong>: they get a <strong>code</strong> and a <strong>link</strong> to send to their friend.</li>
    <li>The friend opens the link (or chooses <strong>Play online</strong> and types the code) and joins.</li>
@@ -640,13 +701,14 @@ const COLOR_HEX={red:'#E4533F',blue:'#3E78E0',yellow:'#F2C21B',green:'#4DAA55',b
 const COLOR_NAMES={it:{red:'rosso',blue:'blu',yellow:'giallo',green:'verde',black:'nero',brown:'marrone',purple:'viola',gray:'grigio',white:'bianco',pink:'rosa'},
   en:{red:'red',blue:'blue',yellow:'yellow',green:'green',black:'black',brown:'brown',purple:'purple',gray:'gray',white:'white',pink:'pink'}};
 const colorName=k=>(COLOR_NAMES[ui.lang]||COLOR_NAMES.it)[k];
+const HIDE_KEYS=['subito','fine','showdown'];
 const MODE_KEYS=['classica','tipo','numero','colore'], FORMAT_KEYS=['singolo','doppio'], POOL_KEYS=['tutti','ou','uu','champions'];
 const fmtNote=(format,tier)=>tier==='champions'&&format==='doppio'?t('fmtNote'):'';
 
 const $app=document.getElementById('app');
 const ui={screen:'title',lang:'it',format:'singolo',tier:'tutti',legends:true,mode:'classica',coins:'25',names:['',''],flip:null,game:null,draft:'',msg:'',setChoice:{}};
 ui.lang=detectLang();
-ui.myName=''; ui.online=null; ui.joinCode=''; ui.setupOnline=false;
+ui.myName=''; ui.online=null; ui.joinCode=''; ui.setupOnline=false; ui.hide='subito'; ui.revealLocal=[false,false]; ui.celebN=null;
 try{ const st=new URLSearchParams(location.search).get('stanza'); if(st){ ui.joinCode=st.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,8); ui.screen='online'; } }catch(e){}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const pad=n=>String(n).padStart(3,'0');
@@ -656,6 +718,8 @@ const tchip=k=>`<span class="tchip" style="background:${TYPE_COLORS[k]};color:${
 // Nome del giocatore: se il campo è vuoto si usa "Giocatore 1"/"Player 1" nella lingua scelta
 const name=i=>esc(ui.names[i]||t('player',i+1));
 const formOf=m=>m.form;
+// Pokémon come lo vede chi guarda questo schermo (vedi monView)
+const V=(mon,owner)=>ui.game?monView(ui.game,mon,owner,ui.online?ui.online.me:'local',ui.revealLocal):mon;
 const disp=m=>esc(m.display)+(m.shiny?' ✨':'');
 const tchips=m=>tchip(m.type)+(m.type2?tchip(m.type2):'');
 
@@ -802,7 +866,7 @@ function rulesBody(){
    <h3>3. Auction modes</h3>
    <ul><li><strong>Classic:</strong> you see the Pokémon.</li><li><strong>By type:</strong> you only see the primary type.</li>
    <li><strong>By number:</strong> you only see the Pokédex number.</li><li><strong>By color:</strong> you only see the Pokédex color.</li></ul>
-   <p class="muted" style="font-size:14px">In the "blind" modes the Pokémon is revealed when the auction ends. Every Pokémon drawn has a 1 in 512 chance of being shiny.</p>
+   <p class="muted" style="font-size:14px">In the "blind" modes the Pokémon is revealed when the auction ends or, if you choose so in the settings ("Teams"), teams stay hidden until the end (then each player decides whether to show theirs) or are discovered directly in battle on Showdown. Every Pokémon drawn has a 1 in 512 chance of being shiny.</p>
    <h3>4. End of the game</h3>
    <ul><li>If one player completes 6 Pokémon first, the other takes every following Pokémon for 1 coin until they reach 6.</li>
    <li>At the end each Pokémon has a full set (item, ability, EVs, nature, moves): if there are several, pick one from the menu.</li></ul>
@@ -826,7 +890,7 @@ function rulesBody(){
    <h3>3. Le modalità d'asta</h3>
    <ul><li><strong>Classica:</strong> vedete il Pokémon.</li><li><strong>Per tipo:</strong> vedete solo il tipo primario.</li>
    <li><strong>Per numero:</strong> vedete solo il numero del Pokédex.</li><li><strong>Per colore:</strong> vedete solo il colore del Pokédex.</li></ul>
-   <p class="muted" style="font-size:14px">Nelle modalità "al buio" il Pokémon si rivela a fine asta. Ogni Pokémon estratto ha 1 probabilità su 512 di essere shiny.</p>
+   <p class="muted" style="font-size:14px">Nelle modalità "al buio" il Pokémon si rivela a fine asta, oppure, se scegliete così nelle impostazioni ("Squadre"), le squadre restano nascoste fino alla fine (poi ognuno decide se mostrare la sua) o si scoprono direttamente in lotta su Showdown. Ogni Pokémon estratto ha 1 probabilità su 512 di essere shiny.</p>
    <h3>4. Fine partita</h3>
    <ul><li>Se un giocatore completa i 6 Pokémon prima, l'altro prende ogni Pokémon successivo a 1 moneta finché arriva a 6.</li>
    <li>Alla fine ogni Pokémon ha un set completo (strumento, abilità, EV, natura, mosse): se ce ne sono più di uno lo scegli dal menu.</li></ul>
@@ -900,7 +964,8 @@ function vSetup(){
     <span style="display:flex;gap:8px"><button class="opt sm" data-act="legends" data-v="1" aria-pressed="${ui.legends}"><strong>${t('yes')}</strong></button>
     <button class="opt sm" data-act="legends" data-v="0" aria-pressed="${!ui.legends}"><strong>${t('no')}</strong></button></span></div>
    <p class="muted" style="font-size:13px">${t('playOn',showdownFormat(ui.format,ui.tier))}${fmtNote(ui.format,ui.tier)}.</p></section>
-  <section class="card"><span class="label">${t('s3')}</span><div class="opts">${MODE_KEYS.map(k=>opt('mode',k,ui.mode,t('mode.'+k))).join('')}</div></section>
+  <section class="card"><span class="label">${t('s3')}</span><div class="opts">${MODE_KEYS.map(k=>opt('mode',k,ui.mode,t('mode.'+k))).join('')}</div>
+   ${ui.mode!=='classica'?`<span class="muted" style="font-size:14px;font-weight:600">${t('hide.label')}</span><div class="opts">${HIDE_KEYS.map(k=>opt('hide',k,ui.hide,t('hide.'+k))).join('')}</div>`:''}</section>
   <section class="card"><span class="label">${t('s4')}</span><div class="row"><div class="field" style="max-width:160px"><label for="coins" class="muted">${t('coins')}</label><input type="number" id="coins" inputmode="numeric" min="6" max="999" step="1" value="${esc(ui.coins)}"></div><p class="muted" style="font-size:13px;flex:1 1 220px">${t('coinsHelp')}</p></div>${ui.msg?`<div class="err" role="alert">${esc(ui.msg)}</div>`:''}</section>
 ${ui.setupOnline?`  <section class="card"><span class="label">${t('online.name')}</span><div class="field" style="flex:0 0 auto"><input type="text" id="n0" maxlength="16" placeholder="${esc(t('player',1))}" value="${esc(ui.names[0])}"></div><p class="hint">💡 ${t('online.nameHint')}</p></section>
   <section class="card"><span class="label">${t('menu.online')}</span>
@@ -940,17 +1005,34 @@ function vFlip(){
   ${isGuest()?`<p class="muted waitdots">${t('online.waitBegin',name(0))}</p>`:`<button class="btn" data-act="begin">${t('flip.begin')}</button>`}</div>`:(isGuest()?`<p class="muted waitdots">${t('online.waitFlip',name(0))}</p>`:`<button class="btn" data-act="flip">${t('flip.toss')}</button>`)}</section>`;
 }
 function vPlayer(i,g){
-  const a=g.auction, tm=g.teams[i];
+  const a=g.auction, tm=g.teams[i].map(m=>V(m,i));
   const slots=Array.from({length:TEAM_SIZE},(_,k)=>{const m=tm[k];
-    return m?`<div class="slot" style="${colorStyle(m,g.mode)};border-style:solid;border-color:var(--ink)" title="${disp(m)}">${spr(m)}<span>${pad(m.dex)}</span></div>`:`<div class="slot"></div>`;}).join('');
+    return m?`<div class="slot" style="${colorStyle(m,g.mode)};border-style:solid;border-color:var(--ink)" title="${disp(m)}">${spr(m)}<span>${m.hidden&&g.mode!=='numero'?'?':pad(m.dex)}</span></div>`:`<div class="slot"></div>`;}).join('');
   const lead=a&&a.leader===i?`<span class="tag">${t('leading',a.bid)}</span>`:a&&a.turn===i?`<span class="tag out">${t('yourTurn')}</span>`:'';
   const cap=a&&!isFull(g,i)?`<span class="muted" style="font-size:13px">${t('canBid',maxBid(g,i))}</span>`:'';
   return `<div class="pl i${i}${a&&a.turn===i?' turn':''}"><div class="top"><span class="nm">${name(i)}${ui.online&&ui.online.me===i?t('online.you'):''}</span><span class="chip">${tm.length}/${TEAM_SIZE}</span></div>
    <div class="coins">${g.coins[i]}<small>${t('coinsWord',g.coins[i])}</small></div>${cap}${lead}
    <div class="slots">${slots}</div><div class="team">${tm.map(m=>disp(m)).join(' · ')||'&nbsp;'}</div></div>`;
 }
+// Timbro "AGGIUDICATO!" con tante monete quante quelle spese; la festa cresce ogni 5 monete (livelli 0-4).
+// Parte una sola volta per aggiudicazione (ui.celebN).
+function celebrate(g){
+  // ui.celebN = quante aste concluse c'erano all'ultima schermata: si festeggia solo quando aumentano
+  // (così dopo un "Annulla asta" la nuova aggiudicazione si festeggia di nuovo, e chi rientra non rivede la vecchia)
+  const l=g.last, k=g.history.length, prev=ui.celebN; ui.celebN=k;
+  if(!l||g.auction||prev==null||k<=prev) return '';
+  const lv=Math.min(4,Math.floor(l.price/5)), n=Math.min(l.price,40), R=(a,b)=>a+Math.random()*(b-a);
+  const monete=Array.from({length:n},()=>`<i class="cc" style="--dx:${R(-1,1)*(80+lv*45)|0}px;--dy:${-R(50,110+lv*45)|0}px;--r:${R(-540,540)|0}deg;--d:${R(0,.25+lv*.12).toFixed(2)}s"></i>`).join('');
+  const colori=['#E3350D','#FFCB05','#2A75BB','#7B3FD6','#2E8B3E','#FF8FC8'];
+  // Coriandoli (da 20 monete in su): pioggia su tutto lo schermo, aggiunta fuori dalla pagina che si ridisegna
+  if(lv>=4) setTimeout(()=>{ document.querySelectorAll('.cel-confetti').forEach(e=>e.remove());
+    document.body.insertAdjacentHTML('beforeend',`<div class="cel-confetti" aria-hidden="true">${Array.from({length:44+Math.min(40,(l.price-20)*2)},(_,i)=>`<b style="--x:${R(0,100).toFixed(1)}%;--d:${R(0,.9).toFixed(2)}s;--c:${colori[i%colori.length]};--w:${R(.7,1.3).toFixed(2)}"></b>`).join('')}</div>`);
+    setTimeout(()=>document.querySelectorAll('.cel-confetti').forEach(e=>e.remove()),4200); },0);
+  return `<div class="celebrate lv${lv}" aria-hidden="true">${lv>=3?'<div class="cel-rays"></div>':''}${lv>=2?'<div class="cel-flash"></div>':''}<div class="cel-stamp">${esc(t('soldStamp'))}${'!'.repeat(Math.max(0,Math.min(2,lv-2)))}</div>${monete}</div>`;
+}
 function vGame(){
   const g=ui.game,a=g.auction;
+  if(a||!g.last) celebrate(g);   // aggiorna solo il conteggio delle aste concluse
   const mode=t('mode.'+g.mode)[0], fmt=t('fmt.'+g.format)[0];
   let lot='', lotCls='';
   if(a){
@@ -963,18 +1045,19 @@ function vGame(){
      <div class="duel">${side(0)}<div class="pot i${a.leader}" aria-label="${esc(t('potAria',a.bid,ui.names[a.leader]||t('player',a.leader+1)))}"><span class="arrow" aria-hidden="true">${a.leader===0?'◀':'▶'}</span><div class="bid">${a.bid}</div><span class="muted sm">${t('coinsWord',a.bid)}</span></div>${side(1)}</div>
      <div class="note turn i${p} ${can?'':'warn'}">${can?t('turnNote',name(p),a.bid+1,lo,name(a.leader),a.bid):t('turnNoteCap',name(p),lo,name(a.leader))}</div>
      ${ui.msg?`<div class="err" role="alert">${esc(ui.msg)}</div>`:''}
-     ${ui.online&&ui.online.me!==p?`<p class="muted waitdots">${t('online.waitTurn',name(p))}</p>`:`<div class="bidrow">\${can?\`<div class="field"><label for="draft" class="muted">\${t('newBid',name(p))}</label><input type="number" id="draft" inputmode="numeric" min="\${a.bid+1}" max="\${lo}" step="1" value="\${esc(ui.draft)}"></div><button class="btn pc i\${p}" data-act="raise">\${t('raise')}</button>\`:''}
-     <button class="btn ghost" data-act="pass">\${t('pass')}</button></div>`}`;
+     ${ui.online&&ui.online.me!==p?`<p class="muted waitdots">${t('online.waitTurn',name(p))}</p>`:`<div class="bidrow">${can?`<div class="field"><label for="draft" class="muted">${t('newBid',name(p))}</label><input type="number" id="draft" inputmode="numeric" min="${a.bid+1}" max="${lo}" step="1" value="${esc(ui.draft)}"></div><button class="btn pc i${p}" data-act="raise">${t('raise')}</button>`:''}
+     <button class="btn ghost" data-act="pass">${t('pass')}</button></div>`}`;
   } else {
     const l=g.last;
-    if(l) lot=`<span class="label">${t('resultN',g.n)}</span>${face(l.mon,g.mode,true)}
-      <div class="note ok">${t('won',name(l.winner),disp(l.mon),l.price,l.auto)}</div>`;
+    if(l){ const lm=V(l.mon,l.winner);
+      lot=`<span class="label">${t('resultN',g.n)}</span>${lm.hidden?face(lm,g.mode,false):face(lm,g.mode,true)}
+      <div class="note ok">${t('won',name(l.winner),lm.hidden?t('mystery'):disp(lm),l.price,l.auto)}</div>${celebrate(g)}`; }
     else lot=`<span class="label">${t('ready')}</span><p>${t('readyText',name(g.openerIdx))}</p>`;
     lot+= g.over?`<button class="btn" data-act="finish">${t('seeTeams')}</button>`:`<button class="btn" data-act="draw">${l?t('next'):t('first')}</button>`;
   }
   const hist=g.history.length?`<section class="card"><h3>${t('hist')}</h3><div class="scroll"><table><thead><tr><th>#</th><th>Pokémon</th><th>${t('col.winner')}</th><th>${t('col.price')}</th><th>${t('col.opener')}</th></tr></thead><tbody>${
-    g.history.slice().reverse().map(h=>`<tr><td class="n">${h.n}</td><td>${disp(h.mon)}</td><td>${name(h.winner)}</td><td class="n">${h.price}</td><td>${name(h.opener)}</td></tr>`).join('')}</tbody></table></div></section>`:'';
-  return `<div class="topbar"><header class="brand"><h1><span class="h-poke">Pokémon</span> <span class="h-inc">Incanto</span></h1><div class="chips"><span class="chip">${fmt}</span><span class="chip">${t('poolName.'+g.tier)}${g.legends?'':t('noLegends')}</span><span class="chip">${t('modeChip',mode)}</span></div></header>
+    g.history.slice().reverse().map(h=>`<tr><td class="n">${h.n}</td><td>${disp(V(h.mon,h.winner))}</td><td>${name(h.winner)}</td><td class="n">${h.price}</td><td>${name(h.opener)}</td></tr>`).join('')}</tbody></table></div></section>`:'';
+  return `<div class="topbar"><header class="brand"><h1><span class="h-poke">Pokémon</span> <span class="h-inc">Incanto</span></h1><div class="chips"><span class="chip">${fmt}</span><span class="chip">${t('poolName.'+g.tier)}${g.legends?'':t('noLegends')}</span><span class="chip">${t('modeChip',mode)}</span>${g.hide&&g.hide!=='subito'?`<span class="chip">${t('hideChip.'+g.hide)}</span>`:''}</div></header>
    <div class="topbtns"><button class="btn ghost sm" data-act="askundo"${(ui.online?((isHost()?canUndo(g):ui.online.canUndo)&&!ui.online.undoReq):canUndo(g))?'':' disabled'}>${t('undo')}</button><button class="btn ghost sm" data-act="askexit">${t('exit')}</button></div></div>
    ${onlineBanner()}${ui.online&&ui.online.undoReq&&ui.online.undoReq.from===ui.online.me?`<div class="note">${t('online.undoWaiting',oppName())}</div>`:''}
    <div class="players">${vPlayer(0,g)}${vPlayer(1,g)}</div>
@@ -1001,7 +1084,18 @@ function setPicker(m,g,eff){
 function vEnd(){
   const g=ui.game;
   const blocks=[0,1].map(i=>{const spent=g.startCoins-g.coins[i];
-    return `<section class="card pl i${i}" style="border-color:var(--c)"><div class="top"><h2 class="nm">${name(i)}</h2><span class="chip">${t('spent',spent,g.coins[i])}</span></div>
+    const vis=g.teams[i].map(m=>V(m,i)), coperta=vis.some(m=>m.hidden);
+    const head=`<section class="card pl i${i}" style="border-color:var(--c)"><div class="top"><h2 class="nm">${name(i)}${ui.online&&ui.online.me===i?t('online.you'):''}</h2><span class="chip">${t('spent',spent,g.coins[i])}</span></div>`;
+    if(coperta){
+      const indizi=`<div class="slots">${vis.map(m=>`<div class="slot" style="${colorStyle(m,g.mode)};border-style:solid;border-color:var(--ink)">${m.hidden&&g.mode!=='numero'?'?':pad(m.dex)}</div>`).join('')}</div>`;
+      let nota;
+      if(!ui.online) nota=`<p class="muted" style="font-size:13px">${t('reveal.localHint')}</p><div class="center"><button class="btn big" data-act="revealLocal" data-i="${i}">${t('reveal.local',name(i))}</button></div>`;
+      else nota=`<div class="note">${g.hide==='fine'?t('reveal.waiting',name(i)):t('reveal.secret',name(i))}</div>`;
+      return head+indizi+nota+'</section>';
+    }
+    const mostra=ui.online&&ui.online.me===i&&g.hide==='fine'
+      ?(g.reveal&&g.reveal[i]?`<div class="note ok">${t('reveal.shown',oppName())}</div>`:`<div class="center"><button class="btn big play2" data-act="reveal">${t('reveal.mine',oppName())}</button></div>`):'';
+    return head+mostra+`
      <div class="chips">${g.teams[i].map(m=>`<span class="tchip mon" style="${colorStyle(m,g.mode)};box-shadow:inset 0 0 0 1px var(--line)">${spr(m,'mini')}${disp(m)}</span>`).join('')}</div>
      <div class="muted" style="font-size:13px">${g.teams[i].map(m=>disp(m)+' ('+typeName(m.type)+(m.type2?'/'+typeName(m.type2):'')+')').join(' · ')}</div>
      <span class="label">${t('setsLabel')}</span><div class="setlist">${(eff=>g.teams[i].map((m,j)=>setPicker(m,g,eff[j])).join(''))(teamSets(g.teams[i],g.format,ui.setChoice,g.tier))}</div>
@@ -1019,7 +1113,7 @@ function vUndo(){
   const g=ui.game, h=g.history[g.history.length-1];
   return `<div class="modal-bg" data-act="noundo"><div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="unT" aria-describedby="unD">
    <h2 id="unT">${t('undo.title')}</h2>
-   <p id="unD" class="muted">${t('undo.desc',disp(h.mon),name(h.winner),h.price)}${g.auction?t('undo.next'):''}</p>
+   <p id="unD" class="muted">${t('undo.desc',(m=>m.hidden?t('mystery'):disp(m))(V(h.mon,h.winner)),name(h.winner),h.price)}${g.auction?t('undo.next'):''}</p>
    <div class="row"><button class="btn ghost" data-act="noundo" id="unNo">${t('undo.back')}</button><button class="btn danger" data-act="undo">${ui.online?t('online.undoAsk',oppName()):t('undo.confirm')}</button></div></div></div>`;
 }
 function vExit(){
@@ -1049,11 +1143,18 @@ const roomLink=code=>location.origin+location.pathname+'?stanza='+code;
 function onlineSend(msg){ const c=ui.online&&ui.online.conn; if(c&&c.open){ try{c.send(msg);}catch(e){} } }
 // Stato condiviso che l'host manda al guest. Il mazzo (Pokémon ancora da estrarre) NON viene inviato: le estrazioni
 // le fa solo l'host, e un messaggio con centinaia di Pokémon sarebbe troppo grande per il collegamento diretto.
-function wireGame(g){ if(!g) return null; const c=Object.assign({},g); delete c.undo; delete c.rnd; c.deckLen=g.deck.length; c.deck=[]; return c; }
+// Ciò che l'altro giocatore (guest, 1) non può vedere viene sostituito dall'indizio PRIMA di essere inviato.
+function wireGame(g){ if(!g) return null; const c=Object.assign({},g); delete c.undo; delete c.rnd; c.deckLen=g.deck.length; c.deck=[];
+  const v=(m,owner)=>monView(g,m,owner,1);
+  c.teams=g.teams.map((tm,i)=>tm.map(m=>v(m,i)));
+  c.history=g.history.map(h=>Object.assign({},h,{mon:v(h.mon,h.winner)}));
+  c.last=g.last?Object.assign({},g.last,{mon:v(g.last.mon,g.last.winner)}):null;
+  c.auction=g.auction?Object.assign({},g.auction,{mon:v(g.auction.mon,null)}):null;
+  return c; }
 function wireState(){
   const g=ui.game;
   return {t:'state', screen:ui.screen==='end'?'game':ui.screen, names:ui.names,
-    settings:{format:ui.format,tier:ui.tier,legends:ui.legends,mode:ui.mode,coins:ui.coins},
+    settings:{format:ui.format,tier:ui.tier,legends:ui.legends,mode:ui.mode,coins:ui.coins,hide:ui.hide},
     flip:ui.flip, game:wireGame(g), canUndo:!!(g&&canUndo(g)), undoReq:ui.online.undoReq||null};
 }
 function broadcast(){ if(isHost()) onlineSend(wireState()); }
@@ -1066,7 +1167,7 @@ const QUEUE_SLOTS=10;
 function findOpponent(slot){ slot=slot||1; if(slot>QUEUE_SLOTS){ ui.online={role:'guest',me:1,code:'',status:'queuefull',random:true}; ui.screen='lobby'; render(); return; }
   joinRoom(queueKey()+'-'+slot,{random:true,slot}); }
 // Una coda diversa per ogni combinazione di impostazioni: si incontra solo chi ha scelto le stesse regole
-function queueKey(){ return ['coda',ui.format==='doppio'?'d':'s',ui.tier,ui.legends?'l':'n',ui.mode,Number(ui.coins)].join('-'); }
+function queueKey(){ return ['coda',ui.format==='doppio'?'d':'s',ui.tier,ui.legends?'l':'n',ui.mode,ui.mode==='classica'?'subito':ui.hide,Number(ui.coins)].join('-'); }
 async function createRoom(opts){
   opts=opts||{};
   const o=ui.online={role:'host',me:0,code:opts.code||newRoomCode(),status:'opening',undoReq:null,random:!!opts.random,slot:opts.slot};
@@ -1114,7 +1215,7 @@ function onlineMessage(m){
   const o=ui.online; if(!m||typeof m!=='object') return;
   if(m.t==='bye'){ o.status='left'; ui.askUndo=false; render(); return; }
   if(isHost()){
-    if(m.t==='act'&&!['draw','raise','pass'].includes(m.a)) return; // il guest può solo estrarre, rilanciare e passare
+    if(m.t==='act'&&!['draw','raise','pass','reveal'].includes(m.a)) return; // il guest può solo estrarre, rilanciare e passare
     if(m.t==='hello'){ ui.names[1]=String(m.name||'').slice(0,16); o.status='connected'; broadcast(); render(); }
     else if(m.t==='act'){ const err=hostApply(m.a,m.d||{},1); if(err) onlineSend({t:'err',code:err}); broadcast(); render(); }
     else if(m.t==='undo-req'){ if(ui.game&&canUndo(ui.game)&&!o.undoReq){ o.undoReq={from:1}; broadcast(); render(); } }
@@ -1135,7 +1236,9 @@ function onlineMessage(m){
 const MON_BY_NAME=new Map(POOL.map(m=>[m.name,m]));
 const wInt=(v,min,max,def)=>{ v=Number(v); return Number.isFinite(v)?Math.max(min,Math.min(max,Math.round(v))):def; };
 const wPl=v=>v===1?1:0;
-function wMon(m){ const b=m&&typeof m.name==='string'&&MON_BY_NAME.get(m.name); if(!b) return null;
+function wMon(m){
+  if(m&&m.hidden===true) return {hidden:true,name:'?',display:'?',dex:wInt(m.dex,0,2000,0),type:TYPE_COLORS[m.type]?m.type:null,type2:null,color:COLOR_HEX[m.color]?m.color:null,form:null};
+  const b=m&&typeof m.name==='string'&&MON_BY_NAME.get(m.name); if(!b) return null;
   return m.shiny===true&&!SHINY_LOCK.includes(b.name)?Object.assign({},b,{shiny:true}):b; }
 function cleanWireGame(g){
   if(!g||typeof g!=='object') return null;
@@ -1151,14 +1254,15 @@ function cleanWireGame(g){
     tier:POOL_KEYS.includes(g.tier)?g.tier:'tutti', legends:g.legends!==false, startCoins:wInt(g.startCoins,TEAM_SIZE,999,25),
     coins:[0,1].map(i=>wInt(g.coins&&g.coins[i],0,999,0)), teams, deck:[], deckLen:wInt(g.deckLen,0,5000,0),
     openerIdx:wPl(g.openerIdx), auction, last, history, over:g.over===true, n:wInt(g.n,0,999,0),
-    speciesClause:g.speciesClause===true, usedDex:[], shinyRate:0, rnd:Math.random, undo:[]};
+    speciesClause:g.speciesClause===true, usedDex:[], shinyRate:0, rnd:Math.random, undo:[],
+    hide:HIDE_KEYS.includes(g.hide)?g.hide:'subito', reveal:[0,1].map(i=>!!(g.reveal&&g.reveal[i]===true))};
 }
 function applyWireState(m){
   const o=ui.online, prev=ui.game&&ui.game.auction?ui.game.n+':'+ui.game.auction.bid:'';
   const s=m.settings&&typeof m.settings==='object'?m.settings:{};
   ui.names=[0,1].map(i=>String((Array.isArray(m.names)?m.names[i]:'')||'').slice(0,16));
   ui.format=FORMAT_KEYS.includes(s.format)?s.format:'singolo'; ui.tier=POOL_KEYS.includes(s.tier)?s.tier:'tutti';
-  ui.legends=s.legends!==false; ui.mode=MODE_KEYS.includes(s.mode)?s.mode:'classica'; ui.coins=String(wInt(s.coins,TEAM_SIZE,999,25));
+  ui.legends=s.legends!==false; ui.mode=MODE_KEYS.includes(s.mode)?s.mode:'classica'; ui.hide=HIDE_KEYS.includes(s.hide)?s.hide:'subito'; ui.coins=String(wInt(s.coins,TEAM_SIZE,999,25));
   ui.flip=m.flip==='testa'||m.flip==='croce'?m.flip:null;
   ui.game=cleanWireGame(m.game);
   o.canUndo=m.canUndo===true; o.undoReq=m.undoReq&&(m.undoReq.from===0||m.undoReq.from===1)?{from:m.undoReq.from}:null;
@@ -1174,13 +1278,15 @@ function hostApply(a,d,player){
   if(a==='toflip'){ if(player!==0||!ui.names[1]&&!(ui.online.conn&&ui.online.conn.open)) return null; ui.screen='flip'; ui.flip=null; }
   else if(a==='flip'){ if(player!==0||ui.screen!=='flip'||ui.flip) return null; ui.flip=Math.random()<0.5?'testa':'croce'; }
   else if(a==='begin'){ if(player!==0||!ui.flip) return null;
-    ui.game=newGame({format:ui.format,mode:ui.mode,coins:Number(ui.coins),tier:ui.tier,legends:ui.legends,
+    ui.revealLocal=[false,false]; ui.celebN=null;
+    ui.game=newGame({format:ui.format,mode:ui.mode,hide:ui.hide,coins:Number(ui.coins),tier:ui.tier,legends:ui.legends,
       pool:filterPool(POOL,{tier:ui.tier,legends:ui.legends}),firstOpener:ui.flip==='testa'?0:1});
     ui.screen='game'; ui.setChoice={}; }
   else if(a==='draw'){ if(!g||g.auction||g.over) return null; startAuction(g); setDraftFromGame(); }
   else if(a==='raise'){ if(!g||!g.auction) return null; if(g.auction.turn!==player) return 'turn';
     const err=raise(g,player,parseInt(d.amount,10)); if(err) return err; setDraftFromGame(); }
   else if(a==='pass'){ if(!g||!g.auction) return null; if(g.auction.turn!==player) return 'turn'; pass(g,player); }
+  else if(a==='reveal'){ if(!g||!g.over||g.hide!=='fine') return null; g.reveal[player]=true; }
   else if(a==='newround'){ if(player!==0) return null; ui.game=null; ui.flip=null; ui.screen='lobby'; ui.setChoice={}; }
   return null;
 }
@@ -1205,7 +1311,7 @@ function vOnline(){
   <div class="center"><button class="btn ghost" data-act="online">${t('online.orCreate')}</button></div>`;
 }
 function settingsChips(){
-  return `<div class="chips"><span class="chip">${t('fmt.'+ui.format)[0]}</span><span class="chip">${t('poolName.'+ui.tier)}${ui.legends?'':t('noLegends')}</span><span class="chip">${t('modeChip',t('mode.'+ui.mode)[0])}</span><span class="chip">${esc(ui.coins)} ${t('coinsWord',Number(ui.coins))}</span></div>`;
+  return `<div class="chips"><span class="chip">${t('fmt.'+ui.format)[0]}</span><span class="chip">${t('poolName.'+ui.tier)}${ui.legends?'':t('noLegends')}</span><span class="chip">${t('modeChip',t('mode.'+ui.mode)[0])}</span>${ui.mode!=='classica'&&ui.hide!=='subito'?`<span class="chip">${t('hideChip.'+ui.hide)}</span>`:''}<span class="chip">${esc(ui.coins)} ${t('coinsWord',Number(ui.coins))}</span></div>`;
 }
 function onlineBanner(){
   const o=ui.online; if(!o) return '';
@@ -1256,7 +1362,7 @@ function vUndoReq(){
   const g=ui.game, h=g&&g.history[g.history.length-1]; if(!h) return '';
   return `<div class="modal-bg"><div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="urT" aria-describedby="urD">
    <h2 id="urT">${t('online.undoReqTitle',oppName())}</h2>
-   <p id="urD" class="muted">${t('undo.desc',disp(h.mon),name(h.winner),h.price)}${g.auction?t('undo.next'):''}</p>
+   <p id="urD" class="muted">${t('undo.desc',(m=>m.hidden?t('mystery'):disp(m))(V(h.mon,h.winner)),name(h.winner),h.price)}${g.auction?t('undo.next'):''}</p>
    <div class="row"><button class="btn ghost" data-act="undo-no" id="urNo">${t('online.decline')}</button><button class="btn danger" data-act="undo-yes">${t('online.accept')}</button></div></div></div>`;
 }
 function render(){
@@ -1275,7 +1381,7 @@ function render(){
 function act(a,d){
   const g=ui.game;
   // Online: le azioni di gioco le esegue chi ha creato la partita; l'altro le invia
-  if(ui.online&&ui.screen!=='setup'&&['toflip','flip','begin','draw','raise','pass'].includes(a)){
+  if(ui.online&&ui.screen!=='setup'&&['toflip','flip','begin','draw','raise','pass','reveal'].includes(a)){
     if(isGuest()){ onlineSend({t:'act',a,d:{amount:ui.draft}}); ui.msg=''; render(); return; }
     const err=hostApply(a,{amount:ui.draft},0); ui.msg=err?errText(err):''; broadcast(); render(); return;
   }
@@ -1284,12 +1390,14 @@ function act(a,d){
   else if(a==='tier'){ui.tier=d.v;}
   else if(a==='legends'){ui.legends=d.v==='1';}
   else if(a==='mode'){ui.mode=d.v;}
+  else if(a==='hide'){ui.hide=d.v;}
+  else if(a==='revealLocal'){ui.revealLocal[+d.i]=true;}
   else if(a==='toflip'){const c=Number(ui.coins);
     if(!Number.isInteger(c)||c<TEAM_SIZE||c>999){ui.msg=t('err.coins',TEAM_SIZE);}
     else if(filterPool(POOL,{tier:ui.tier,legends:ui.legends}).length<TEAM_SIZE*2){ui.msg=t('err.pool',TEAM_SIZE);}
     else{ui.msg='';ui.screen='flip';ui.flip=null;}}
   else if(a==='flip'){ui.flip=Math.random()<0.5?'testa':'croce';}
-  else if(a==='begin'){ui.game=newGame({format:ui.format,mode:ui.mode,coins:Number(ui.coins),tier:ui.tier,legends:ui.legends,
+  else if(a==='begin'){ui.revealLocal=[false,false];ui.celebN=null;ui.game=newGame({format:ui.format,mode:ui.mode,hide:ui.hide,coins:Number(ui.coins),tier:ui.tier,legends:ui.legends,
     pool:filterPool(POOL,{tier:ui.tier,legends:ui.legends}),firstOpener:ui.flip==='testa'?0:1});ui.screen='game';ui.msg='';ui.setChoice={};}
   else if(a==='draw'){startAuction(g);ui.msg='';ui.draft=g.auction?String(g.auction.bid+1):'';}
   else if(a==='raise'){const p=g.auction.turn;const err=raise(g,p,parseInt(ui.draft,10));ui.msg=err?errText(err):'';
