@@ -353,6 +353,7 @@ html,body{margin:0}
 
 <script src="pokemon-data.js"></script>
 <script src="set-data.js"></script>
+<script src="mega-data.js"></script>
 <script src="sprite-data.js"></script>
 <script>
 /*CORE-START*/
@@ -369,10 +370,12 @@ function shuffle(a, rnd){ rnd = rnd || Math.random; const r=a.slice();
   for(let i=r.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); const t=r[i]; r[i]=r[j]; r[j]=t; } return r; }
 // Gruppi di Pokémon in gioco, in base ai tier National Dex di Showdown. Ogni gruppo è legale nel formato indicato.
 // "champions": solo i Pokémon presenti in Pokémon Champions (flag champions dei dati).
-const POOL_TIERS={ tutti:null, ou:['OU','UUBL'], uu:['UU','RUBL'], champions:null };
+const POOL_TIERS={ tutti:null, ou:['OU','UUBL'], megaou:['OU','UUBL'], uu:['UU','RUBL'], champions:null };
+// Nat Dex OU con le Megaevoluzioni (senza Teracristallizzazione): set con Megapietra da scarica-mega.js
+const MEGA = typeof MEGA_DATA!=='undefined' ? MEGA_DATA : {};
 function filterPool(pool, o){
   const tier=o.tier||'tutti', t=POOL_TIERS[tier];
-  return pool.filter(m=>(!t||t.includes(m.tier)) && (tier!=='champions'||m.champions) && (o.legends!==false || !(m.legendary||m.mythical)));
+  return pool.filter(m=>(!t||t.includes(m.tier)||(tier==='megaou'&&MEGA[m.name])) && (tier!=='champions'||m.champions) && (o.legends!==false || !(m.legendary||m.mythical)));
 }
 // Doppio Champions: regolamento VGC attuale di Showdown. Valore salvato da scarica-set.js (SHOWDOWN_INFO),
 // aggiornato all'apertura del gioco se c'è internet (trovaVgcChampions sul testo di config/formats.ts).
@@ -388,13 +391,13 @@ function trovaVgcChampions(testo){
 function showdownFormat(format, tier){
   if(tier==='champions') return format==='doppio' ? CHAMP_VGC : '[Gen 9 Champions] OU';
   if(format==='doppio') return '[Gen 9] Doubles Custom Game';
-  return ({tutti:'[Gen 9] National Dex AG', ou:'[Gen 9] National Dex', uu:'[Gen 9] National Dex UU'})[tier||'tutti'];
+  return ({tutti:'[Gen 9] National Dex AG', ou:'[Gen 9] National Dex', megaou:'[Gen 9] National Dex', uu:'[Gen 9] National Dex UU'})[tier||'tutti'];
 }
 function newGame(o){
   return { format:o.format, mode:o.mode, tier:o.tier||'tutti', legends:o.legends!==false, startCoins:o.coins||START_COINS, coins:[o.coins||START_COINS,o.coins||START_COINS], teams:[[],[]],
     deck:shuffle(o.pool,o.rnd), openerIdx:o.firstOpener, auction:null, last:null, history:[], over:false, n:0,
     // Species Clause dei formati OU/UU/Champions: una sola forma per numero di Pokédex (es. non Tauros e Tauros di Paldea)
-    speciesClause:['ou','uu','champions'].includes(o.tier), usedDex:[],
+    speciesClause:['ou','megaou','uu','champions'].includes(o.tier), usedDex:[],
     // Probabilità che un Pokémon estratto sia shiny (cromatico): 1 su 512
     shinyRate:o.shinyRate!=null?o.shinyRate:SHINY_RATE, rnd:o.rnd||Math.random,
     // Annullamento: "fotografie" dello stato all'inizio di ogni asta manuale (vedi undoLast)
@@ -461,7 +464,9 @@ function pass(s,p){
 }
 // Set per Showdown, generati da scarica-set.js (file set-data.js, facoltativo: senza, l'export contiene solo i nomi).
 const SETS = typeof SET_DATA!=='undefined' ? SET_DATA : {};
-function setsFor(mon, format, tier){ let v=SETS[mon.name]; if(v&&tier==='champions') v=v.champions; return v ? (v[format]||v.singolo||[]) : []; }
+function setsFor(mon, format, tier){ let v=SETS[mon.name]; if(v&&tier==='champions') v=v.champions; const base=v ? (v[format]||v.singolo||[]) : [];
+  if(tier!=='megaou') return base;
+  return [...(MEGA[mon.name]||[]),...base].map(s=>s.tera?Object.assign({},s,{tera:null}):s); }
 // In Champions vale la "Item Clause": due Pokémon della stessa squadra non possono avere lo stesso strumento.
 const ITEM_ALT=['Leftovers','Sitrus Berry','Life Orb','Focus Sash','Choice Scarf','Expert Belt','Shell Bell','Lum Berry','Mental Herb','White Herb','Scope Lens','Black Glasses'];
 const EV_ORDER=['HP','Atk','Def','SpA','SpD','Spe'];
@@ -512,9 +517,9 @@ const I18N={
   'setup.nodata':'Elenco dei Pokémon non trovato: il file <strong>pokemon-data.js</strong> deve stare nella stessa cartella di questa pagina. Si crea con <code>node scarica-pokemon.js</code>.',
   's1':'1. Formato','s2':'2. Pokémon in gioco','s3':"3. Modalità d'asta",'s4':'4. Monete a testa','s5':'5. Giocatori',
   'fmt.singolo':['Singolo','Un Pokémon per lato in campo.'],'fmt.doppio':['Doppio','Due Pokémon per lato in campo.'],
-  'pool.tutti':['Tutti','Ogni Pokémon del gioco.'],'pool.ou':['Tier OU','Solo i più forti usati in OU.'],
+  'pool.tutti':['Tutti','Ogni Pokémon del gioco.'],'pool.ou':['Tier OU','Solo i più forti usati in OU.'],'pool.megaou':['Nat Dex OU (Mega)','Come OU, con le Megaevoluzioni e senza Tera.'],
   'pool.uu':['Tier UU','Forti ma un gradino sotto.'],'pool.champions':['Pokémon Champions','Solo quelli del gioco Pokémon Champions, con le Megaevoluzioni.'],
-  'poolName.tutti':'Tutti i Pokémon','poolName.ou':'Tier OU','poolName.uu':'Tier UU','poolName.champions':'Pokémon Champions',
+  'poolName.tutti':'Tutti i Pokémon','poolName.ou':'Tier OU','poolName.megaou':'Nat Dex OU (Mega)','poolName.uu':'Tier UU','poolName.champions':'Pokémon Champions',
   'legends':'Leggendari e misteriosi:','yes':'Sì','no':'No','noLegends':', senza leggendari',
   'playOn':f=>`Su Showdown si gioca in <strong>${f}</strong>`,'fmtNote':' (si portano 6 Pokémon e se ne scelgono 4, livello 50)',
   'mode.classica':['Classica','Il Pokémon è mostrato: si sa esattamente chi è.'],'mode.tipo':['Per tipo','Si dichiara solo il tipo primario.'],
@@ -600,9 +605,9 @@ const I18N={
   'setup.nodata':'Pokémon list not found: the file <strong>pokemon-data.js</strong> must be in the same folder as this page. Create it with <code>node scarica-pokemon.js</code>.',
   's1':'1. Battle format','s2':'2. Pokémon pool','s3':'3. Auction mode','s4':'4. Coins per player','s5':'5. Players',
   'fmt.singolo':['Singles','One Pokémon per side on the field.'],'fmt.doppio':['Doubles','Two Pokémon per side on the field.'],
-  'pool.tutti':['All','Every Pokémon in the game.'],'pool.ou':['OU tier','Only the strongest, used in OU.'],
+  'pool.tutti':['All','Every Pokémon in the game.'],'pool.ou':['OU tier','Only the strongest, used in OU.'],'pool.megaou':['Nat Dex OU (Mega)','Like OU, with Mega Evolutions and no Tera.'],
   'pool.uu':['UU tier','Strong, one step below.'],'pool.champions':['Pokémon Champions','Only those in Pokémon Champions, with Mega Evolutions.'],
-  'poolName.tutti':'All Pokémon','poolName.ou':'OU tier','poolName.uu':'UU tier','poolName.champions':'Pokémon Champions',
+  'poolName.tutti':'All Pokémon','poolName.ou':'OU tier','poolName.megaou':'Nat Dex OU (Mega)','poolName.uu':'UU tier','poolName.champions':'Pokémon Champions',
   'legends':'Legendaries and Mythicals:','yes':'Yes','no':'No','noLegends':', no legendaries',
   'playOn':f=>`On Showdown, play in <strong>${f}</strong>`,'fmtNote':' (bring 6 Pokémon, pick 4, level 50)',
   'mode.classica':['Classic','The Pokémon is shown: you know exactly who it is.'],'mode.tipo':['By type','Only the primary type is revealed.'],
@@ -705,7 +710,7 @@ const COLOR_NAMES={it:{red:'rosso',blue:'blu',yellow:'giallo',green:'verde',blac
   en:{red:'red',blue:'blue',yellow:'yellow',green:'green',black:'black',brown:'brown',purple:'purple',gray:'gray',white:'white',pink:'pink'}};
 const colorName=k=>(COLOR_NAMES[ui.lang]||COLOR_NAMES.it)[k];
 const HIDE_KEYS=['subito','fine','showdown'];
-const MODE_KEYS=['classica','tipo','numero','colore'], FORMAT_KEYS=['singolo','doppio'], POOL_KEYS=['tutti','ou','uu','champions'];
+const MODE_KEYS=['classica','tipo','numero','colore'], FORMAT_KEYS=['singolo','doppio'], POOL_KEYS=['tutti','ou','megaou','uu','champions'];
 const fmtNote=(format,tier)=>tier==='champions'&&format==='doppio'?t('fmtNote'):'';
 
 const $app=document.getElementById('app');
@@ -858,7 +863,7 @@ function rulesBody(){
   if(ui.lang==='en') return `
    <p>Two players buy <strong>6 Pokémon each</strong> at auction with coins, then play their teams on Pokémon Showdown.</p>
    <h3>1. Before starting</h3>
-   <ul><li>Choose <strong>Singles or Doubles</strong>, which <strong>Pokémon</strong> can be drawn (all, only the OU or UU tier, or only those in Pokémon Champions; with or without legendaries), the <strong>auction mode</strong>, the <strong>coins</strong> per player (usually 25) and the names.</li>
+   <ul><li>Choose <strong>Singles or Doubles</strong>, which <strong>Pokémon</strong> can be drawn (all, only the OU or UU tier, Nat Dex OU with Mega Evolutions and no Tera, or only those in Pokémon Champions; with or without legendaries), the <strong>auction mode</strong>, the <strong>coins</strong> per player (usually 25) and the names.</li>
    <li>Coin toss: <strong>heads</strong> (Poké Ball) is player 1, <strong>tails</strong> (Great Ball) is player 2. The winner opens the first auction, then players take turns opening.</li></ul>
    <h3>2. The auction</h3>
    <ol><li>The game draws a random Pokémon (each Pokémon comes up only once).</li>
@@ -882,7 +887,7 @@ function rulesBody(){
   return `
    <p>Due giocatori comprano all'asta <strong>6 Pokémon a testa</strong> con le monete, poi giocano le squadre su Pokémon Showdown.</p>
    <h3>1. Prima di iniziare</h3>
-   <ul><li>Scegliete <strong>Singolo o Doppio</strong>, quali <strong>Pokémon</strong> possono uscire (tutti, solo un tier OU o UU, oppure solo quelli di Pokémon Champions; con o senza leggendari), la <strong>modalità d'asta</strong>, le <strong>monete</strong> a testa (di solito 25) e i nomi.</li>
+   <ul><li>Scegliete <strong>Singolo o Doppio</strong>, quali <strong>Pokémon</strong> possono uscire (tutti, solo un tier OU o UU, il Nat Dex OU con le Megaevoluzioni e senza Tera, oppure solo quelli di Pokémon Champions; con o senza leggendari), la <strong>modalità d'asta</strong>, le <strong>monete</strong> a testa (di solito 25) e i nomi.</li>
    <li>Lancio della moneta: <strong>testa</strong> (Poké Ball) è il giocatore 1, <strong>croce</strong> (Mega Ball) il giocatore 2. Chi vince apre la prima asta, poi si apre a turno.</li></ul>
    <h3>2. L'asta</h3>
    <ol><li>Il gioco estrae un Pokémon a caso (ogni Pokémon esce una volta sola).</li>

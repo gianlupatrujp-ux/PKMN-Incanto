@@ -903,7 +903,7 @@ async function handle(line){
       if(s[sk]&&s[sk]!==id.nick){ el.classList.add('out'); await sleep(350); }
       s[sk]=id.nick; cry(species); el.classList.remove('faint'); el.dataset.sp=''; draw(); el.classList.add('out'); void el.offsetWidth; el.classList.remove('out');
       say(`${PN(id.side)} manda in campo <b>${esc(species)}</b>!`); return 900; }
-    case 'detailschange': case '-formechange': { const id=parseId(p[2]); const m=mon(id.side,id.nick); m.species=p[3].split(',')[0]; $('mon'+id.pos).dataset.sp=''; draw(); say(`${label(p[2])} cambia forma!`); return 900; }
+    case 'detailschange': case '-formechange': { const id=parseId(p[2]); const m=mon(id.side,id.nick); m.species=p[3].split(',')[0]; $('mon'+id.pos).dataset.sp=''; draw(); if(/-Mega/.test(p[3])&&k==='detailschange') return 300; say(`${label(p[2])} cambia forma!`); return 900; }
     case 'move': { const posOf=x=>(parseId(x)||{}).pos; const a=posOf(p[2]), tg=posOf(p[4])||a; const mv=Dex.moves.get(p[3]); B.eff=null; 
       { const id=parseId(p[2]); if(id&&!p.some(x=>x&&x.startsWith('[from]'))){ const um=mon(id.side,id.nick); um.movesSeen=um.movesSeen||[]; if(!um.movesSeen.includes(p[3])) um.movesSeen.push(p[3]); } }
       say(`${label(p[2])} usa <b>${esc(p[3])}</b>!`);
@@ -993,7 +993,7 @@ function cpuSingle(r){
   const sw=r.side.pokemon.map((m,i)=>({m,i})).filter(x=>!x.m.active&&!x.m.condition.endsWith(' fnt'));
   if(r.forceSwitch) return sw.length?'switch '+(sw[Math.random()*sw.length|0].i+1):'pass';
   const mv=r.active[0].moves.map((m,i)=>({m,i})).filter(x=>!x.m.disabled&&(x.m.pp===undefined||x.m.pp>0));
-  return mv.length?'move '+(mv[Math.random()*mv.length|0].i+1):'move 1';
+  return mv.length?'move '+(mv[Math.random()*mv.length|0].i+1)+(r.active[0].canMegaEvo?' mega':''):'move 1';
 }
 // Serie (al meglio di 3): il gioco riceve il vincitore e risponde con il messaggio e il pulsante per la lotta successiva
 function seriesEnd(winner){ if(!O.onEnd||B.seriesDone) return; B.seriesDone=true; const r=O.onEnd(winner); if(!r) return;
@@ -1025,6 +1025,7 @@ function uiSingle(sid){
     h+=`<div class="cq"><span class="who ${sid}">${PN(sid)}</span> <span>${O.lang==='en'?'What will':'Cosa farà'} <b>${esc(me?me.details.split(',')[0]:'')}</b>${O.lang==='en'?' do':''}?</span> ${hp?`<span class="hpchip">PS ${hp.hp}/${hp.max}</span>`:''}</div>
      <div class="sec">Attacca</div><div class="moves">${a.moves.map((m,i)=>{ const d=Dex.moves.get(m.id); const col=TYPE_COLORS[d.type]||'#666'; const e=effOf(m.id,sid);
       return `<button class="mv" style="--tc:${col}" data-tip="move:${esc(m.id)}:${sid}" ${m.disabled||m.pp===0?'disabled':`data-lt="pick" data-c="move ${i+1}"`}>${e?effSpan(e):'<span class="effl none"></span>'}<b>${esc(m.move)}</b><span class="mt"><i class="tdot"></i>${TIPI[d.type]||d.type}</span><span class="pp">${m.pp??'–'}/${m.maxpp??'–'}</span></button>`; }).join('')}</div>`;
+    if(a.canMegaEvo) h+=`<label class="tera mega"><input type="checkbox" id="lt-mega"> Megaevolvi <span class="st" style="background:linear-gradient(135deg,#F7A1D8,#7B3FC4)">MEGA</span></label>`;
     if(a.canTerastallize) h+=`<label class="tera"><input type="checkbox" id="lt-tera"> Teracristallizza <span class="st" style="background:${TYPE_COLORS[a.canTerastallize]||'#666'}">${(TIPI[a.canTerastallize]||esc(a.canTerastallize)).toUpperCase()}</span></label>`;
     h+=`<div class="sec">Cambia</div>${a.trapped?'<p class="lt-muted">Non puoi cambiare Pokémon.</p>':''}<div class="lt-team">${team.map((m,i)=>tm(m,i,a.trapped?null:'switch')).join('')}</div>`;
   }
@@ -1032,7 +1033,8 @@ function uiSingle(sid){
   c.innerHTML=h; timerArm(sid);
 }
 function pick(sid,choice){ if(isDbl()) return pickDbl(sid,choice); pickSingle(sid,choice); }
-function pickSingle(sid,choice){ const t=$('tera'); if(t&&t.checked&&choice.startsWith('move')) choice+=' terastallize'; if(O.mode==='two') B.passTo=null; send(sid,choice); }
+document.addEventListener('change',e=>{ const id=e.target&&e.target.id; if(id==='lt-mega'&&e.target.checked){ const t=document.getElementById('lt-tera'); if(t) t.checked=false; } if(id==='lt-tera'&&e.target.checked){ const m=document.getElementById('lt-mega'); if(m) m.checked=false; } });
+function pickSingle(sid,choice){ const t=$('tera'), mg=$('mega'); if(t&&t.checked&&choice.startsWith('move')) choice+=' terastallize'; else if(mg&&mg.checked&&choice.startsWith('move')) choice+=' mega'; if(O.mode==='two') B.passTo=null; send(sid,choice); }
 
 
 // ---------- doppio: due Pokémon per lato ----------
@@ -1085,12 +1087,13 @@ function uiDbl(sid){
     h+=`<div class="cq">${who} <span><b>${esc(mv.move)}</b>: ${en?'which target?':'contro chi?'}</span> ${back}</div><div class="lt-team tg">${list.map(x=>{ const m=actMon(x.p), sp=spritePath(m.species), e=x.foe?effOf(mv.id,sid,x.p):null;
       return `<button class="tm" data-lt="pick" data-c="move ${P.tgt.mi+1} ${x.n}">${sp?`<img src="${esc(sp)}" alt="">`:''}<small>${esc(m.species)}</small><span class="tgl ${x.foe?'foe':'ally'}">${x.foe?(en?'foe':'avversario'):(x.p===(idx===0?sid:sid+'b')?(en?'self':'se stesso'):(en?'ally':'alleato'))}</span>${e?effSpan(e):''}</button>`; }).join('')}</div>`;
   } else {
-    const a=r.active[idx], me=team[idx], hp=me?parseHP(me.condition):null, teraUsed=P.parts.some(x=>x.includes('terastallize'));
+    const a=r.active[idx], me=team[idx], hp=me?parseHP(me.condition):null, teraUsed=P.parts.some(x=>x.includes('terastallize')), megaUsed=P.parts.some(x=>x.endsWith(' mega'));
     const foes=[other(sid),other(sid)+'b'].filter(p=>{ const m=actMon(p); return m&&m.st!=='fnt'; });
     h+=`<div class="cq">${who} <span>${en?'What will':'Cosa farà'} <b>${esc(me?me.details.split(',')[0]:'')}</b>${en?' do':''}?</span> ${hp?`<span class="hpchip">PS ${hp.hp}/${hp.max}</span>`:''} <span class="slotn">${idx+1}/2</span> ${back}</div>
      <div class="sec">Attacca</div><div class="moves">${a.moves.map((m,i)=>{ const d=Dex.moves.get(m.id); const col=TYPE_COLORS[d.type]||'#666';
       const effs=d.category==='Status'?[]:foes.map(p=>effOf(m.id,sid,p)); const ef=effs.some(Boolean)?effs.map(e=>e?effSpan(e):'<span class="effl">·</span>').join('<span class="effsep">|</span>'):'<span class="effl none"></span>';
       return `<button class="mv" style="--tc:${col}" data-tip="move:${esc(m.id)}:${sid}" ${m.disabled||m.pp===0?'disabled':`data-lt="pick" data-c="move ${i+1}"`}><span class="effrow">${ef}</span><b>${esc(m.move)}</b><span class="mt"><i class="tdot"></i>${TIPI[d.type]||d.type}</span><span class="pp">${m.pp??'–'}/${m.maxpp??'–'}</span></button>`; }).join('')}</div>`;
+    if(a.canMegaEvo&&!megaUsed) h+=`<label class="tera mega"><input type="checkbox" id="lt-mega"> Megaevolvi <span class="st" style="background:linear-gradient(135deg,#F7A1D8,#7B3FC4)">MEGA</span></label>`;
     if(a.canTerastallize&&!teraUsed) h+=`<label class="tera"><input type="checkbox" id="lt-tera"> Teracristallizza <span class="st" style="background:${TYPE_COLORS[a.canTerastallize]||'#666'}">${(TIPI[a.canTerastallize]||esc(a.canTerastallize)).toUpperCase()}</span></label>`;
     h+=`<div class="sec">Cambia</div>${a.trapped?'<p class="lt-muted">Non puoi cambiare Pokémon.</p>':''}<div class="lt-team">${team.map((m,i)=>tm(m,i,a.trapped?null:'switch')).join('')}</div>`;
   }
@@ -1103,8 +1106,8 @@ function pickDbl(sid,choice){
     if(P.parts.length>=need){ const ch='team '+P.parts.join(''); B.pick=null; if(O.mode==='two') B.passTo=null; send(sid,ch); } else uiDbl(sid); return; }
   const w=choice.split(' ');
   if(w[0]==='move'&&w.length===2){ const idx=P.parts.length, mi=+w[1]-1, mv=r.active[idx].moves[mi];
-    if(T_ONE.includes(mv.target)){ const list=validTargets(sid,idx,mv.target); if(list.length>1){ const te=$('tera'); P.teraNext=!!(te&&te.checked); P.tgt={mi}; uiDbl(sid); return; } if(list.length===1) choice+=' '+list[0].n; } }
-  if(w[0]==='move'){ const te=$('tera'); if((te&&te.checked)||P.teraNext) choice+=' terastallize'; P.teraNext=false; }
+    if(T_ONE.includes(mv.target)){ const list=validTargets(sid,idx,mv.target); if(list.length>1){ const te=$('tera'), mg=$('mega'); P.teraNext=!!(te&&te.checked); P.megaNext=!!(mg&&mg.checked); P.tgt={mi}; uiDbl(sid); return; } if(list.length===1) choice+=' '+list[0].n; } }
+  if(w[0]==='move'){ const te=$('tera'), mg=$('mega'); if((te&&te.checked)||P.teraNext) choice+=' terastallize'; else if((mg&&mg.checked)||P.megaNext) choice+=' mega'; P.teraNext=false; P.megaNext=false; }
   if(P.tgt){ const te=$('tera'); P.tgt=null; }
   P.parts.push(choice); uiDbl(sid);
 }
@@ -1338,7 +1341,7 @@ const EN_RX=[
   [/^(.+?) si teracristallizza: tipo (.+)!$/,(m,a,b)=>`${lab(a)} has Terastallized into the ${TYPE_EN[b]||b} type!`],[/^\[Abilità di (.+?): (.+)\]$/,(m,a,b)=>`[${lab(a)}'s ${b}]`],
   [/^(.+?) ottiene (.+)\.$/,(m,a,b)=>`${lab(a)} obtained ${b}.`],[/^(.+?) mangia (.+)!$/,(m,a,b)=>`${lab(a)} ate its ${b}!`],[/^(.+?) perde (.+)\.$/,(m,a,b)=>`${lab(a)} lost its ${b}.`],
   [/^(.+?) crea un sostituto!$/,(m,a)=>`${lab(a)} put in a substitute!`],[/^(.+?) è confuso!$/,(m,a)=>`${lab(a)} became confused!`],[/^Il sostituto di (.+?) svanisce!$/,(m,a)=>`${lab(a)}'s substitute faded!`],
-  [/^(.+?) si protegge!$/,(m,a)=>`${lab(a)} protected itself!`],[/^(.+?) megaevolve!$/,(m,a)=>`${lab(a)} has Mega Evolved!`],[/^(.+?) cambia forma!$/,(m,a)=>`${lab(a)} transformed!`],
+  [/^(.+?) si protegge!$/,(m,a)=>`${lab(a)} protected itself!`],[/^Megaevolvi$/,()=>'Mega Evolve'],[/^(.+?) megaevolve!$/,(m,a)=>`${lab(a)} has Mega Evolved!`],[/^(.+?) cambia forma!$/,(m,a)=>`${lab(a)} transformed!`],
   [/^Turno (\d+)$/,(m,a)=>`Turn ${a}`],[/^— Turno (\d+) —$/,(m,a)=>`— Turn ${a} —`],[/^Vince (.+)!$/,(m,a)=>`${a} won the battle!`],[/^(.+?) si arrende!$/,(m,a)=>`${a} forfeited.`],[/^(.+?) ha lasciato la lotta\.$/,(m,a)=>`${a} left the battle.`],
   [/^In attesa che (.+) faccia partire la lotta…$/,(m,a)=>`Waiting for ${a} to start the battle…`],[/^In attesa di (.+)…$/,(m,a)=>`Waiting for ${a}…`],[/^Sono (.+)$/,(m,a)=>`I'm ${a}`],
   [/^Si arrende (.+)\? Premi di nuovo$/,(m,a)=>`Does ${a} forfeit? Press again`],[/^Tempo scaduto per la terza volta: (.+) perde la lotta\.$/,(m,a)=>`Time ran out for the third time: ${a} loses the battle.`],
