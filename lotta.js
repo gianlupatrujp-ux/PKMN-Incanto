@@ -123,6 +123,7 @@ const CSS=`#lotta{position:fixed;inset:0;z-index:60;overflow:auto;background:#F6
 #lotta .lt-tip .tc{font:800 10px 'Inter',sans-serif;color:#fff;border-radius:5px;padding:1px 6px;text-shadow:0 1px 0 rgba(0,0,0,.3)}
 #lotta .lt-tip dl{display:grid;grid-template-columns:auto 1fr;gap:1px 8px;margin:4px 0}
 #lotta .lt-tip dt{font-weight:800;color:var(--muted)} #lotta .lt-tip dd{margin:0}
+#lotta .tgrow{margin:2px 0 8px}#lotta .tglab{display:inline-block;font:800 11px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.06em;padding:1px 8px;border-radius:99px;margin:0 0 4px;color:#fff}#lotta .tglab.foe{background:#C21F1F}#lotta .tglab.ally{background:#2E8B3E}
 #lotta .lt-tip ul{margin:4px 0 0;padding-left:16px} #lotta .lt-tip .mvt{border-collapse:collapse;width:100%;margin:4px 0;font-size:12px}#lotta .lt-tip .mvt th{text-align:left;color:var(--muted);font-size:11px;padding:0 4px}#lotta .lt-tip .mvt td{padding:2px 4px;border-top:1px solid #EFE6C8;white-space:nowrap}#lotta .lt-tip ul.fx{margin:6px 0 0;padding-left:18px}#lotta .lt-tip ul.fx li{margin:1px 0}#lotta .lt-tip .desc .ico{vertical-align:middle;display:inline-block}#lotta .lt-tip .desc{margin-top:6px;border-top:2px dashed #E3D9B8;padding-top:6px}
 #lotta .lt-tip .plus{color:#2E8B3E;font-weight:800}#lotta .lt-tip .minus{color:#C21F1F;font-weight:800}
 #lotta .arena{background:#87C8F0}#lotta .arena::before{display:none}
@@ -1224,8 +1225,10 @@ function uiDbl(sid){
     h+=`<div class="cq">${who} <span>${en?'Who will you send out?':'Chi mandi in campo?'}</span> ${back}</div><div class="lt-team">${team.map((m,i)=>tm(m,i,'switch')).join('')}</div>`;
   } else if(P.tgt){
     const a=r.active[idx], mv=a.moves[P.tgt.mi], list=validTargets(sid,idx,mv.target);
-    h+=`<div class="cq">${who} <span><b>${esc(mv.move)}</b>: ${en?'which target?':'contro chi?'}</span> ${back}</div><div class="lt-team tg">${list.map(x=>{ const m=actMon(x.p), sp=spritePath(m.species), e=x.foe?effOf(mv.id,sid,x.p):null;
-      return `<button class="tm" data-lt="pick" data-c="move ${P.tgt.mi+1} ${x.n}">${sp?`<img src="${esc(sp)}" alt="">`:''}<small>${esc(m.species)}</small><span class="tgl ${x.foe?'foe':'ally'}">${x.foe?(en?'foe':'avversario'):(x.p===(idx===0?sid:sid+'b')?(en?'self':'se stesso'):(en?'ally':'alleato'))}</span>${e?effSpan(e):''}</button>`; }).join('')}</div>`;
+    h+=`<div class="cq">${who} <span><b>${esc(mv.move)}</b>: ${en?'which target?':'contro chi?'}</span> ${back}</div>${(()=>{ const btn=x=>{ const m=actMon(x.p), sp=spritePath(m.species), e=x.foe?effOf(mv.id,sid,x.p):null;
+      return `<button class="tm" data-lt="pick" data-c="move ${P.tgt.mi+1} ${x.n}">${sp?`<img src="${esc(sp)}" alt="">`:''}<small>${esc(m.species)}</small><span class="tgl ${x.foe?'foe':'ally'}">${x.foe?(en?'foe':'avversario'):(x.p===(idx===0?sid:sid+'b')?(en?'self':'se stesso'):(en?'ally':'alleato'))}</span>${e?effSpan(e):''}</button>`; }; const foes=list.filter(x=>x.foe), allies=list.filter(x=>!x.foe);
+      // avversari sopra, alleati sotto (come in campo), ognuno con la sua etichetta
+      return (foes.length?`<div class="tgrow"><span class="tglab foe">${en?'Foes':'Avversari'}</span><div class="lt-team tg">${foes.map(btn).join('')}</div></div>`:'')+(allies.length?`<div class="tgrow"><span class="tglab ally">${en?'Allies':'Alleati'}</span><div class="lt-team tg">${allies.map(btn).join('')}</div></div>`:''); })()}`;
   } else {
     const a=r.active[idx], me=team[idx], hp=me?parseHP(me.condition):null, teraUsed=P.parts.some(x=>x.includes('terastallize')), megaUsed=P.parts.some(x=>x.endsWith(' mega'));
     const foes=[other(sid),other(sid)+'b'].filter(p=>{ const m=actMon(p); return m&&m.st!=='fnt'; });
