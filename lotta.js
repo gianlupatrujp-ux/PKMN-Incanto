@@ -996,7 +996,89 @@ function effOf(moveId,sid,fp){
 // ---------- scelte ----------
 function need(sid){ const r=B.req[sid]; return r&&!r.wait&&B.answered[sid]!==r.rqid; }
 function send(sid,choice){ if(B.tSid===sid) timerClear(); B.answered[sid]=B.req[sid].rqid; B.err=''; if(O.role==='guest') O.net.send({t:'bc',c:choice}); else B.streams[sid].write(choice); $('ctrl').innerHTML='<p class="lt-wait">Il turno è in corso…</p>'; hideTip(); setTimeout(prompt,30); }
-function cpuChoice(r){ if(isDbl()) return cpuDbl(r); return cpuSingle(r); }
+// ---------- Intelligenza del computer (Torre Lotta) ----------
+// Livello 0: mosse a caso. 1: sceglie quasi sempre l'attacco che fa più danno. 2: calcola il danno stimato, cerca il KO
+// (priorità se basta), si cura, piazza trappole e si potenzia quando è al sicuro, cambia Pokémon se rischia grosso.
+// 3: come 2 ma senza errori, prevede meglio, usa Mega/Tera nel momento giusto. Stima i danni con le statistiche base
+// (come farebbe un giocatore esperto), senza sbirciare i set dell'avversario.
+const AI_SETUP={swordsdance:1,dragondance:1,nastyplot:1,calmmind:1,bulkup:1,quiverdance:1,shellsmash:1,coil:1,agility:1,rockpolish:1,victorydance:1,tidyup:1,shiftgear:1,growth:1,honeclaws:1,workup:1,curse:1,bellydrum:1,irondefense:.5,amnesia:.5,cosmicpower:.5};
+const AI_HEAL={recover:1,roost:1,softboiled:1,slackoff:1,moonlight:1,morningsun:1,synthesis:1,shoreup:1,milkdrink:1,healorder:1,strengthsap:1,wish:.6,rest:.7,lifedew:.5,junglehealing:.5};
+const AI_HAZ={stealthrock:'stealthrock',spikes:'spikes',toxicspikes:'toxicspikes',stickyweb:'stickyweb'};
+const AI_STATUS={willowisp:'brn',thunderwave:'par',toxic:'tox',spore:'slp',sleeppowder:'slp',hypnosis:'slp',yawn:'slp',glare:'par',nuzzle:'par',stunspore:'par',poisonpowder:'psn'};
+function aiStat(base,lvl,isHP){ return isHP?Math.floor((2*base+31+21)*lvl/100)+lvl+10:Math.floor(((2*base+31+21)*lvl/100+5)); }
+function aiMul(st){ return st>0?(2+st)/2:2/(2-st); }
+function aiEff(type,defTypes){ if(!Dex.getImmunity(type,defTypes)) return 0; return Math.pow(2,Dex.getEffectiveness(type,defTypes)); }
+// danno stimato (in % dei PS massimi del difensore) di una mossa
+function aiDmg(mv,atk,def){ if(!mv||mv.category==='Status') return 0; let bp=mv.basePower||0;
+  if(mv.id==='seismictoss'||mv.id==='nightshade') return 100/def.hpStat*100;
+  if(!bp) bp=mv.id==='lowkick'||mv.id==='grassknot'?80:mv.id==='heavyslam'||mv.id==='heatcrash'?80:mv.id==='gyroball'||mv.id==='electroball'?80:60;
+  if(mv.multihit) bp*=Array.isArray(mv.multihit)?(mv.multihit[1]>=5?3.1:2):mv.multihit;
+  const phys=mv.category==='Physical', A=(phys?atk.atk:atk.spa)*aiMul((atk.boosts||{})[phys?'atk':'spa']||0), D=(phys?def.def:def.spd)*aiMul((def.boosts||{})[phys?'def':'spd']||0);
+  const type=mv.id==='terablast'&&atk.tera?atk.tera:mv.type;
+  let d=(Math.floor(Math.floor(2*atk.lvl/5+2)*bp*A/D)/50+2)*.925;
+  if(atk.types.includes(type)) d*=atk.adapt?2:1.5; d*=aiEff(type,def.types);
+  if(phys&&atk.st==='brn'&&atk.ability!=='Guts') d*=.5; if(mv.id==='facade'&&atk.st) d*=2;
+  return d/def.hpStat*100; }
+// descrizione "da giocatore" di un Pokémon in campo: per il proprio lato statistiche vere, per l'altro stime dalle base
+function aiMon(side,sp,extra){ const s=Dex.species.get(sp); const lvl=100, b=s.baseStats;
+  const o={sp:s.name,types:s.types.slice(),lvl,hpStat:aiStat(b.hp,lvl,true),atk:aiStat(b.atk,lvl),def:aiStat(b.def,lvl),spa:aiStat(b.spa,lvl),spd:aiStat(b.spd,lvl),spe:aiStat(b.spe,lvl),boosts:{},st:'',ability:Object.values(s.abilities)[0]};
+  return Object.assign(o,extra||{}); }
+function cpuSmart(r,level){
+  if(r.teamPreview) return 'team 1';
+  const me=r.side.pokemon, act=me.find(x=>x.active)||me[0], foeM=actMon('p1');
+  const bench=me.map((m,i)=>({m,i})).filter(x=>!x.m.active&&!x.m.condition.endsWith(' fnt'));
+  const myInfo=x=>{ const sp=x.details.split(',')[0]; const m=aiMon('p2',sp); const S=x.stats||{}; Object.assign(m,{atk:S.atk||m.atk,def:S.def||m.def,spa:S.spa||m.spa,spd:S.spd||m.spd,spe:S.spe||m.spe});
+    const hp=parseHP(x.condition); m.hpStat=hp&&hp.max||m.hpStat; m.hpPct=hp&&hp.max?hp.hp/hp.max*100:0; m.st=hp&&hp.st||''; m.ability=Dex.abilities.get(x.ability||x.baseAbility).name; m.adapt=m.ability==='Adaptability';
+    const tm=B.side.p2.team[x.ident.split(': ')[1]]; if(tm){ m.boosts=tm.boosts||{}; if(tm.tera) m.types=[tm.tera]; } if(x.terastallized) m.types=[x.terastallized]; return m; };
+  const foe=foeM?aiMon('p1',foeM.species,{boosts:foeM.boosts||{},st:foeM.st||'',hpPct:foeM.max?foeM.hp/foeM.max*100:100}):null;
+  if(foe&&foeM.tera) foe.types=[foeM.tera];
+  // la peggior mossa che l'avversario può avere: i suoi tipi (STAB) con potenza 90
+  const threat=(def)=>{ if(!foe) return 0; let best=0; for(const ty of foe.types){ const fake={id:'x',type:ty,basePower:90,category:foe.atk>=foe.spa?'Physical':'Special'}; best=Math.max(best,aiDmg(fake,foe,def)); } return best; };
+  const sw=()=>{ if(!bench.length) return null; let best=null; for(const x of bench){ const m=myInfo(x.m); const th=threat(m), hit=foe?Math.max(...m.types.map(ty=>aiDmg({id:'x',type:ty,basePower:80,category:m.atk>=m.spa?'Physical':'Special'},m,foe))):0;
+      const sc=-th*1.2+hit*.8+m.hpPct*.3; if(!best||sc>best.sc) best={i:x.i,sc}; } return best; };
+  if(r.forceSwitch){ const b=sw(); return b?'switch '+(b.i+1):'pass'; }
+  const a=r.active[0], mine=myInfo(act); if(!foe) return cpuSingle(r);
+  const opts=a.moves.map((m,i)=>({m,i,d:Dex.moves.get(m.id||m.move)})).filter(x=>!x.m.disabled&&(x.m.pp===undefined||x.m.pp>0));
+  if(!opts.length) return 'move 1';
+  if(level<=0||(level===1&&Math.random()<.25)) return cpuSingle(r);
+  const faster=mine.spe*aiMul(mine.boosts.spe||0)*(mine.st==='par'?.5:1) > foe.spe*aiMul(foe.boosts.spe||0)*(foe.st==='par'?.5:1);
+  const danger=threat(mine), myHp=mine.hpPct, foeHp=foe.hpPct, sideFoe=B.cond.p1||{};
+  for(const o of opts){ const mv=o.d; let s=0;
+    if(mv.category!=='Status'){ const dmg=aiDmg(mv,mine,foe); s=Math.min(dmg,foeHp+10);
+      if(dmg>=foeHp){ s+=60; if(mv.priority>0) s+=faster?5:40; if(!faster&&myHp<=danger) s+=mv.priority>0?30:0; }
+      if(mv.self&&mv.self.boosts&&Object.values(mv.self.boosts).some(v=>v<0)&&dmg<foeHp) s-=8;
+      if(mv.recoil||mv.mindBlownRecoil) s-=myHp<30?15:3;
+      if(mv.flags&&mv.flags.charge&&mv.id!=='solarbeam') s-=25;
+      if(level>=2&&(mv.accuracy!==true&&mv.accuracy<85)) s*=mv.accuracy/100;
+      if(mv.id==='fakeout'&&!B.fakeoutUsed) s+=12; if(mv.id==='uturn'||mv.id==='voltswitch'||mv.id==='flipturn') s+=danger>=myHp&&bench.length?15:2; }
+    else { const id=mv.id;
+      if(AI_SETUP[id]){ const safe=danger<myHp*.45; const boosted=Object.values(mine.boosts).reduce((a,b)=>a+Math.max(0,b),0); s=safe&&boosted<4?38*AI_SETUP[id]:0; if(id==='bellydrum') s=myHp>75&&safe?45:0; if(id==='shellsmash') s=safe||faster?50:5; }
+      else if(AI_HEAL[id]){ s=myHp<45?55*AI_HEAL[id]:myHp<70?18*AI_HEAL[id]:0; if(id==='rest'&&mine.st) s+=15; }
+      else if(AI_HAZ[id]){ const c=sideFoe[AI_HAZ[id]]||0; s=(id==='spikes'?c<3:id==='toxicspikes'?c<2:!c)?30-(B.turn>8?15:0):0; if(danger>=myHp) s-=20; }
+      else if(AI_STATUS[id]){ const t=AI_STATUS[id]; s=foe.st?0:22; if(t==='brn'&&foe.atk>foe.spa) s+=15; if(t==='brn'&&foe.types.includes('Fire')) s=0; if(t==='par'&&(foe.types.includes('Electric')||(id==='thunderwave'&&foe.types.includes('Ground')))) s=0; if(t==='tox'&&(foe.types.includes('Steel')||foe.types.includes('Poison'))) s=0; if(t==='slp'&&(id==='sleeppowder'||id==='spore')&&foe.types.includes('Grass')) s=0; if(t==='slp') s+=10; }
+      else if(id==='protect'||id==='detect'||id==='kingsshield'||id==='spikyshield'||id==='banefulbunker'||id==='silktrap') s=(B.lastProtect?0:(mine.st==='tox'||danger>=myHp)?12:4);
+      else if(id==='substitute') s=myHp>60&&danger<30?20:0;
+      else if(id==='defog'||id==='rapidspin'||id==='mortalspin'||id==='courtchange'){ const mc=B.cond.p2||{}; s=(mc.stealthrock||mc.spikes||mc.toxicspikes||mc.stickyweb)?32:0; }
+      else if(id==='taunt'||id==='encore') s=10; else if(id==='trick'||id==='switcheroo') s=12; else if(id==='destinybond') s=myHp<30&&!faster?40:0;
+      else s=8; }
+    if(level===1) s+=Math.random()*25; else if(level===2) s+=Math.random()*10; else s+=Math.random()*2;
+    o.s=s; }
+  opts.sort((x,y)=>y.s-x.s); const best=opts[0];
+  // cambio: se resto in campo vado KO (o quasi) e ho in panchina qualcuno messo molto meglio
+  const b=level>=2&&bench.length&&!a.trapped&&!a.maybeTrapped?sw():null, stay=-danger*1.2+(best.s)*.8+myHp*.3;
+  (B.aiLog=B.aiLog||[]).push({me:mine.sp,foe:foe.sp,danger:Math.round(danger),hp:Math.round(myHp),best:best.d&&best.d.name,s:Math.round(best.s),sw:b&&{to:me[b.i].details.split(',')[0],sc:Math.round(b.sc)},stay:Math.round(stay)}); if(B.aiLog.length>40) B.aiLog.shift();
+  if(b){
+    if(danger>=myHp*.9&&best.s<60&&b.sc>stay+25&&(level>=3||Math.random()<.6)) return 'switch '+(b.i+1);
+    // bloccato su una mossa inutile (es. strumento Scelta): meglio cambiare
+    if(opts.length===1&&best.s<15&&b.sc>stay) return 'switch '+(b.i+1); }
+  let ch='move '+(best.i+1);
+  if(best.d&&best.d.id==='protect') B.lastProtect=true; else B.lastProtect=false;
+  if(a.canMegaEvo) ch+=' mega';
+  else if(a.canTerastallize&&level>=2){ const tt=a.canTerastallize; const useT=best.d&&best.d.category!=='Status'&&(best.d.type===tt||best.d.id==='terablast');
+    const defensive=level>=3&&danger>=myHp&&threat(Object.assign({},mine,{types:[tt]}))<danger*.5; if(useT&&(best.s>=60||myHp<60)||defensive) ch+=' terastallize'; }
+  return ch; }
+
+function cpuChoice(r){ if(isDbl()) return cpuDbl(r); if(O.ai>0){ try{ return cpuSmart(r,O.ai); }catch(e){ console.warn('IA',e); } } return cpuSingle(r); }
 function cpuSingle(r){
   if(r.teamPreview) return 'team 1';
   const sw=r.side.pokemon.map((m,i)=>({m,i})).filter(x=>!x.m.active&&!x.m.condition.endsWith(' fnt'));
@@ -1451,6 +1533,7 @@ function open(opts){
   const sc=SCENES.includes(O.scene)?O.scene:pickNew(SCENES,'lt-lastscene');
   $('arena').className='arena sc-'+sc; $('bg').innerHTML=sceneSVG(sc); $('scene').textContent=' · Sfondo: '+SCENE_NAMES[sc];
   drawField(); say('La lotta sta per cominciare!'); loadPS(); drawTools(); loadJS('audio-data.js').then(()=>{ if(root) musicStart(); }).catch(()=>{}); B.tick=setInterval(timerTick,250);
+  if(O.intro) say(esc(O.intro),'turn');
   if(O.role==='guest'){ say(`In attesa che ${PN('p2')} faccia partire la lotta…`); return; }   // l'amico non ha il motore: riceve tutto dall'host
   const streams=BattleStreams.getPlayerStreams(new BattleStreams.BattleStream()); B.streams=streams;
   readSide(g,'p1',streams.p1); readSide(g,'p2',streams.p2); readLog(g,streams.omniscient);
@@ -1465,5 +1548,5 @@ function demo(o){ if(!B) return; if('weather' in o) B.weather=o.weather||null; i
   draw(); }
 // Solo anteprima: prova un'animazione di mossa
 async function demoMove(name,from,dry){ await loadPS(); return psRun('move',name,from||'p1',(from||'p1')==='p1'?'p2':'p1',false,dry); }
-window.Lotta={net,isOpen:()=>!!(root&&B),_audio:()=>({ctx:SND.ctx&&SND.ctx.state,music:!!SND.mus,track:SND.mus&&SND.mus.m.file,playing:!!(SND.mus&&!SND.mus.el.paused),sfx:SND.sfx,sil:!!SIL}),open,close,demo,demoMove,SCENES,SCENE_NAMES,_B:()=>B};
+window.Lotta={net,isOpen:()=>!!(root&&B),_ai:()=>B&&B.aiLog,_audio:()=>({ctx:SND.ctx&&SND.ctx.state,music:!!SND.mus,track:SND.mus&&SND.mus.m.file,playing:!!(SND.mus&&!SND.mus.el.paused),sfx:SND.sfx,sil:!!SIL}),open,close,demo,demoMove,SCENES,SCENE_NAMES,_B:()=>B};
 })();
