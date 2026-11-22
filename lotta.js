@@ -55,6 +55,9 @@ const CSS=`#lotta{position:fixed;inset:0;z-index:60;overflow:auto;background:#F6
 #lotta .bchip.up{background:#2E8B3E}#lotta .bchip.down{background:#C21F1F}
 #lotta .pop{position:absolute;z-index:8;font:900 clamp(13px,2.6vw,18px) 'Inter',sans-serif;padding:2px 10px;border-radius:99px;border:2px solid var(--line);color:#fff;pointer-events:none;animation:pop 1.3s ease-out forwards;white-space:nowrap}
 #lotta .pop.up{background:#2E8B3E}#lotta .pop.down{background:#C21F1F}#lotta .pop.heal{background:#3FA9F5}
+#lotta .shield{position:absolute;left:50%;top:52%;width:118%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;z-index:3;background:radial-gradient(circle,rgba(120,220,255,.05) 40%,rgba(120,220,255,.32) 66%,rgba(200,245,255,.6) 71%,rgba(120,220,255,0) 73%);box-shadow:0 0 14px rgba(120,220,255,.6);animation:shieldIn .35s ease-out,shieldGlow 1.6s ease-in-out infinite alternate}
+@keyframes shieldIn{from{transform:translate(-50%,-50%) scale(.4);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
+@keyframes shieldGlow{from{filter:brightness(1)}to{filter:brightness(1.25)}}
 #lotta .pop.miss{background:#fff;color:#1F2A44;font-style:italic}
 #lotta .st.vol{background:#5B4A9E;color:#fff;font-weight:700}
 #lotta .le.hp{color:#5B6684;font-size:.9em}
@@ -551,7 +554,10 @@ function hpView(sid){ const m=actMon(sid); if(!m) return;
   const f=$('fill'+sid), n=$('num'+sid), pc=$('pct'+sid); if(!f) return; const pct=m.max?Math.max(0,m.shown/m.max*100):0;
   f.style.width=pct+'%'; f.className='fill '+(pct<=20?'low':pct<=50?'mid':'');
   pc.textContent=Math.ceil(pct)+'%'; n.textContent=exactHP(sideOfPos(sid))?`${Math.max(0,Math.round(m.shown))}/${m.max}`:''; }
-function drawSide(x){ if(String(x).length>2){ drawPos(x); return; } drawPos(x); drawPos(x+'b'); }
+function drawSide(x){ if(String(x).length>2){ drawPos(x); ballsDbl(); return; } drawPos(x); drawPos(x+'b'); ballsDbl(); }
+// in doppio le Poké Ball dell'avversario vanno sotto la sua seconda barra (così stanno sotto a entrambe, non in mezzo)
+function ballsDbl(){ if(!isDbl()) return; const src=$('ballsxp2'), hb=$('hudp2b'); if(!src) return; const sb=hb&&!hb.hidden&&hb.querySelector('.sb'); let dst=sb&&sb.querySelector('.balls.moved');
+  if(!sb){ src.style.visibility=''; return; } if(!dst){ dst=document.createElement('div'); dst.className='balls moved'; sb.appendChild(dst); } dst.innerHTML=src.innerHTML; src.style.visibility='hidden'; src.style.height='0'; }
 // effetti temporanei mostrati come su Showdown (etichette sotto la barra dei PS)
 const VOL={confusion:'Confuso',leechseed:'Leech Seed',taunt:'Taunt',encore:'Encore',yawn:'Yawn',focusenergy:'Focus Energy',attract:'Infatuato',curse:'Curse',disable:'Disable',embargo:'Embargo',healblock:'Heal Block',magnetrise:'Magnet Rise',aquaring:'Aqua Ring',ingrain:'Ingrain',flashfire:'Flash Fire',slowstart:'Slow Start',protosynthesis:'Protosynthesis',quarkdrive:'Quark Drive',charge:'Charge',torment:'Torment',nightmare:'Nightmare',powertrick:'Power Trick',smackdown:'Smack Down',telekinesis:'Telekinesis',throatchop:'Throat Chop',saltcure:'Salt Cure',syrupbomb:'Syrup Bomb',tarshot:'Tar Shot',imprison:'Imprison',laserfocus:'Laser Focus',miracleeye:'Miracle Eye',foresight:'Foresight',odorsleuth:'Odor Sleuth',noretreat:'No Retreat',octolock:'Octolock',partiallytrapped:'Intrappolato',doomdesire:'Doom Desire',futuresight:'Future Sight',gastroacid:'Gastro Acid',glaiverush:'Glaive Rush',minimize:'Minimize',defensecurl:'Defense Curl',dynamax:'Dynamax',substitute:'Substitute'};
 const STATN={atk:'Att.',def:'Dif.',spa:'Att.Sp.',spd:'Dif.Sp.',spe:'Vel.'};
@@ -561,6 +567,10 @@ function volChips(m){ const out=[]; if(m.tchange&&m.tchange.length) out.push(`<s
   for(const v of Object.values(m.vol||{})) if(v!=='Substitute') out.push(`<span class="st vol">${esc(v)}</span>`); return out.join(''); }
 const VOLMSG={confusion:a=>`${a} è confuso!`,leechseed:a=>`${a} è stato colpito da Leech Seed!`,taunt:a=>`${a} cade nella provocazione!`,encore:a=>`${a} è costretto da Encore!`,yawn:a=>`${a} diventa sonnolento!`,focusenergy:a=>`${a} si concentra al massimo!`,attract:a=>`${a} si è infatuato!`,curse:a=>`${a} è maledetto!`,disable:(a,x)=>`La mossa ${esc(x||'')} di ${a} è bloccata!`,
   healblock:a=>`${a} non può curarsi!`,magnetrise:a=>`${a} levita grazie al magnetismo!`,aquaring:a=>`${a} si circonda di un velo d'acqua!`,ingrain:a=>`${a} mette radici!`,flashfire:a=>`La potenza delle mosse Fuoco di ${a} aumenta!`,slowstart:a=>`${a} non riesce a carburare!`,protosynthesis:(a,x)=>`Protosynthesis potenzia ${a}!`,quarkdrive:(a,x)=>`Quark Drive potenzia ${a}!`,charge:a=>`${a} si carica di elettricità!`,torment:a=>`${a} è tormentato!`,smackdown:a=>`${a} cade a terra!`,saltcure:a=>`${a} è colpito da Salt Cure!`,tarshot:a=>`${a} diventa più debole al fuoco!`,noretreat:a=>`${a} non può più fuggire!`,partiallytrapped:a=>`${a} è intrappolato!`,futuresight:a=>`${a} prevede un attacco!`,doomdesire:a=>`${a} sceglie Doom Desire come destino!`,gastroacid:a=>`L'abilità di ${a} viene annullata!`,laserfocus:a=>`${a} si concentra intensamente!`,minimize:a=>`${a} si rimpicciolisce!`};
+const PROTECTS=['Protect','Detect',"King's Shield",'Spiky Shield','Baneful Bunker','Silk Trap','Burning Bulwark','Obstruct','Max Guard'];
+// scudo trasparente intorno al Pokémon protetto (fino alla fine del turno)
+function shieldOn(pos){ const el=$('mon'+pos); if(!el||el.querySelector('.shield')) return; const s=document.createElement('div'); s.className='shield'; el.appendChild(s); }
+function shieldsOff(){ if(root) root.querySelectorAll('#lotta .shield').forEach(x=>x.remove()); }
 function drawPos(sid){ const side=sideOfPos(sid);
   const s=B.side[side], m=actMon(sid), hud=$('hud'+sid), el=$('mon'+sid); if(!hud||!el) return;
   if(!m){ hud.hidden=true; if(sid!==side){ el.innerHTML=''; el.dataset.sp=''; } return; }
@@ -997,10 +1007,10 @@ async function handle(line){
       say(`${label(p[2])}: ${esc(n)}.`); return 700; }
     case '-end': { const id=parseId(p[2]); const n=p[3].replace(/^(move|ability|item): /,''); { const mm=mon(id.side,id.nick); if(mm.vol&&p.includes('[partiallytrapped]')&&mm.vol.partiallytrapped){ delete mm.vol.partiallytrapped; drawSide(id.side); } if(mm.vol){ const kk=/^stockpile/.test(toID(n))?'stockpile':toID(n); if(mm.vol[kk]){ delete mm.vol[kk]; drawSide(id.side); } } if(toID(n)==='typechange'){ mm.tchange=null; drawSide(id.side); } } if(n==='Substitute'){ mon(id.side,id.nick).sub=false; drawSide(id.side); say(`Il sostituto di ${label(p[2])} svanisce!`); return 800; } return 0; }
     case '-activate': { const n=(p[3]||'').replace('move: ','');
-      if(['Bind','Wrap','Fire Spin','Whirlpool','Sand Tomb','Magma Storm','Infestation','Clamp','Snap Trap','Thunder Cage'].includes(n)){ const id=parseId(p[2]); if(id){ const mm=mon(id.side,id.nick); (mm.vol=mm.vol||{}).partiallytrapped='Intrappolato'; drawSide(id.side); say(`${label(p[2])} è intrappolato da ${esc(n)}!`); return 800; } } if(n==='Protect'||n==='Detect'){ say(`${label(p[2])} si protegge!`); return 800; } if(n==='Substitute'){ say('Il sostituto incassa il colpo!'); return 800; } return 0; }
-    case '-singleturn': { const n=(p[3]||'').replace('move: ',''); if(n==='Protect'||n==='Detect'){ say(`${label(p[2])} si protegge!`); return 800; } return 0; }
+      if(['Bind','Wrap','Fire Spin','Whirlpool','Sand Tomb','Magma Storm','Infestation','Clamp','Snap Trap','Thunder Cage'].includes(n)){ const id=parseId(p[2]); if(id){ const mm=mon(id.side,id.nick); (mm.vol=mm.vol||{}).partiallytrapped='Intrappolato'; drawSide(id.side); say(`${label(p[2])} è intrappolato da ${esc(n)}!`); return 800; } } if(PROTECTS.includes(n)){ const id=parseId(p[2]); if(id){ shieldOn(id.pos); pop(id.pos,n,'miss'); } say(`${label(p[2])} si protegge!`); return 800; } if(n==='Substitute'){ say('Il sostituto incassa il colpo!'); return 800; } return 0; }
+    case '-singleturn': { const n=(p[3]||'').replace('move: ',''); if(PROTECTS.includes(n)){ const id=parseId(p[2]); if(id) shieldOn(id.pos); say(`${label(p[2])} si protegge!`); return 800; } return 0; }
     case '-mega': say(`${label(p[2])} megaevolve!`); return 1000;
-    case 'turn': { B.turn=+p[2]||0; const tb=$('turn'); tb.hidden=false; tb.textContent='Turno '+p[2]; say(`Turno ${esc(p[2])}`,'turn'); return 350; }
+    case 'turn': { shieldsOff(); B.turn=+p[2]||0; const tb=$('turn'); tb.hidden=false; tb.textContent='Turno '+p[2]; say(`Turno ${esc(p[2])}`,'turn'); return 350; }
     case 'win': B.over=true; timerClear(); musicStop(); say(`Vince ${esc(p[2])}!`,'win'); seriesEnd(String(p[2]||'')); try{ if(O.onStats) O.onStats({winner:String(p[2]||''),names:Object.assign({},O.names),stats:B.stats||null,turns:B.turn||0}); }catch(e){} return 0;
     case 'tie': B.over=true; say('Pareggio!'); return 0;
   }
