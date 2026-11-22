@@ -512,17 +512,56 @@ function setText(mon, s){
 // Set effettivi della squadra (con la versione per UU e la regola dello strumento unico di Champions applicate)
 function teamSets(team, format, choice, tier){
   choice=choice||{};
-  const basso=tier==='uu', usati=new Set(); let mega=0;
+  if(tier==='champions') return champSets(team, format||'singolo', choice);
+  const basso=tier==='uu';
   return team.map(m=>{ const ss=setsFor(m,format||'singolo',tier); let s=ss[choice[m.name]]||ss[0];
-    if(s&&tier==='champions'&&s.mega){ if(mega>=2){ const alt=ss.find(x=>!x.mega); s=alt?alt:Object.assign({},s,{strumento:'Leftovers',mega:null}); } else mega++; }
     if(s&&basso&&s.basso) s=Object.assign({},s,s.basso);
-    if(s&&tier==='champions'){
-      if(/^Choice/.test(s.strumento)&&(s.mosse||[]).some(x=>STATUS_MOVES.has(x)&&x!=='Trick'&&x!=='Switcheroo')) s=Object.assign({},s,{strumento:ITEM_ALT.find(x=>!usati.has(x)&&!/^Choice/.test(x))});
-      // strumenti "Scelta" solo se il set non ha mosse di stato (tranne Trick/Switcheroo, che li passano all'avversario)
-      if(usati.has(s.strumento)){ const stato=(s.mosse||[]).some(x=>STATUS_MOVES.has(x)&&x!=='Trick'&&x!=='Switcheroo'); s=Object.assign({},s,{strumento:ITEM_ALT.find(x=>!usati.has(x)&&!(stato&&/^Choice/.test(x)))}); }
-      usati.add(s.strumento);
-    }
     return s||null; });
+}
+// Pokémon Champions: almeno 1 e al massimo 2 Megapietre, e nessuno strumento ripetuto (Item Clause).
+// Criteri:
+//  1) Mega: se mancano, la ottiene il Pokémon con la Mega più giocata (i set da statistiche d'uso vengono per primi),
+//     preferendo quelli di cui non hai scelto tu il set; se sono più di 2, restano quelle scelte da te e poi in ordine.
+//  2) Strumento conteso: lo tiene chi ne ha più bisogno = set scelto da te (+100), set più usato secondo le statistiche
+//     (1° +20, 2° +10), meno alternative (+5 se ha al massimo un altro set); a parità, l'ordine in squadra.
+//     Chi lo perde passa a un altro suo set con uno strumento libero (così mosse e strumento restano coerenti);
+//     se non ce n'è, riceve uno strumento adatto al suo ruolo (difensivo: Leftovers, Sitrus Berry…; offensivo: Life Orb…).
+//  3) Mai uno strumento "Scelta" con mosse di stato (tranne Trick/Switcheroo).
+const ITEM_DIF=['Leftovers','Sitrus Berry','Lum Berry','Shell Bell','Mental Herb','White Herb'];
+const ITEM_OFF=['Life Orb','Expert Belt','Focus Sash','Choice Scarf','Scope Lens','Black Glasses','Shell Bell'];
+const RECOVERY=new Set(['Recover','Roost','Slack Off','Soft-Boiled','Moonlight','Morning Sun','Synthesis','Wish','Rest','Strength Sap','Shore Up','Life Dew','Protect','Detect','Spiky Shield','King\'s Shield','Baneful Bunker','Silk Trap','Burning Bulwark','Substitute','Leech Seed']);
+const hasStatus=s=>(s.mosse||[]).some(x=>STATUS_MOVES.has(x)&&x!=='Trick'&&x!=='Switcheroo');
+function champSets(team, format, choice){
+  const all=team.map(m=>setsFor(m,format,'champions'));
+  const explicit=team.map(m=>choice[m.name]!=null);
+  const idx=team.map((m,i)=>{ const k=choice[m.name]; return k!=null&&all[i][k]?k:0; });
+  const S=team.map((m,i)=>all[i][idx[i]]?Object.assign({},all[i][idx[i]]):null);
+  // 1) Megapietre: al massimo 2...
+  const megaAt=()=>S.map((s,i)=>s&&s.mega?i:-1).filter(i=>i>=0);
+  let mg=megaAt();
+  if(mg.length>2){ const keep=mg.slice().sort((a,b)=>(explicit[b]-explicit[a])||(a-b)).slice(0,2);
+    for(const i of mg) if(!keep.includes(i)){ const k=all[i].findIndex(x=>!x.mega); if(k>=0){ idx[i]=k; S[i]=Object.assign({},all[i][k]); } else S[i]=Object.assign({},S[i],{strumento:'Leftovers',mega:null}); } }
+  // ...e almeno 1, se qualcuno della squadra può megaevolversi
+  if(!megaAt().length){ let best=null;
+    team.forEach((m,i)=>{ const k=all[i].findIndex(x=>x.mega); if(k<0) return; const sc=(explicit[i]?0:100)-k*2-i*0.1; if(!best||sc>best.sc) best={i,k,sc}; });
+    if(best){ idx[best.i]=best.k; S[best.i]=Object.assign({},all[best.i][best.k]); } }
+  // 3) niente Scelta con mosse di stato
+  S.forEach((s,i)=>{ if(s&&/^Choice/.test(s.strumento)&&hasStatus(s)) s.strumento=''; });
+  // 2) strumenti contesi
+  const prio=i=>(explicit[i]?100:0)+(idx[i]===0?20:idx[i]===1?10:0)+(all[i].length<=2?5:0)-i*0.01;
+  const used=new Set();
+  const order=S.map((s,i)=>i).filter(i=>S[i]).sort((a,b)=>prio(b)-prio(a));
+  const megaCount=()=>S.filter(s=>s&&s.mega).length;
+  for(const i of order){ const s=S[i];
+    if(s.strumento&&!used.has(s.strumento)){ used.add(s.strumento); continue; }
+    // un altro set dello stesso Pokémon con strumento libero (senza superare 2 Mega)
+    const k=all[i].findIndex((x,j)=>j!==idx[i]&&x.strumento&&!used.has(x.strumento)&&!(/^Choice/.test(x.strumento)&&hasStatus(x))&&(!x.mega||s.mega||megaCount()<2));
+    if(k>=0){ idx[i]=k; S[i]=Object.assign({},all[i][k]); used.add(S[i].strumento); continue; }
+    // strumento adatto al ruolo
+    const dif=(s.mosse||[]).some(x=>RECOVERY.has(x))||hasStatus(s), lista=(dif?ITEM_DIF:ITEM_OFF).concat(ITEM_ALT);
+    const it=lista.find(x=>!used.has(x)&&!(/^Choice/.test(x)&&hasStatus(s)));
+    S[i]=Object.assign({},s,{strumento:it||'Leftovers',mega:null}); used.add(S[i].strumento); }
+  return S;
 }
 // Cosa può vedere "viewer" (0/1 online, 'local' sullo schermo condiviso) di un Pokémon posseduto da "owner"
 // (null = all'asta). Se non può vederlo riceve solo l'indizio dell'asta al buio (tipo, numero o colore).
@@ -1408,19 +1447,23 @@ const twModeName=key=>{ const m=twMode(key); return t('fmt.'+m.format)[0]+' · '
 function twTiers(f){ if(f%10===0) return ['OU','Uber','AG','UUBL']; if(f<=3) return ['RU','NFE','LC']; if(f<=7) return ['RU','RUBL','UU']; if(f<=14) return ['UU','UUBL','OU']; if(f<=24) return ['OU','UUBL','Uber']; return ['OU','Uber','AG']; }
 function twAI(f){ if(f%10===0) return 3; return f<=3?0:f<=7?1:f<=14?2:3; }
 function twPick(pool,n,M){ const out=[], dex=new Set(); for(const m of shuffle(pool)){ if(out.length>=n) break; if(dex.has(m.dex)||!setsFor(m,M.format,M.tier).length) continue; dex.add(m.dex); out.push(m.name); } return out; }
+// Champions: in ogni squadra almeno un Pokémon che può megaevolversi
+function twMegaOk(names,M,pool){ if(M.tier!=='champions') return names; const canMega=n=>setsFor(MON_BY_NAME.get(n),M.format,M.tier).some(s=>s.mega);
+  if(names.some(canMega)) return names; const dex=new Set(names.map(n=>MON_BY_NAME.get(n).dex)); const c=shuffle(pool).find(m=>!dex.has(m.dex)&&setsFor(m,M.format,M.tier).some(s=>s.mega));
+  if(c) names=names.slice(0,5).concat(c.name); return names; }
 function twChoice(names,M){ const c={}; for(const n of names){ const k=setsFor(MON_BY_NAME.get(n),M.format,M.tier).length; c[n]=Math.floor(Math.random()*k); } return c; }
 // avversari: nel gruppo "Tutti" i Pokémon diventano più forti salendo; negli altri gruppi si resta nel gruppo e cresce l'IA
 function twTrainer(f,M){ const boss=f%10===0, legends=f>=15||boss;
   let pool=M.tier==='tutti'?POOL.filter(m=>twTiers(f).includes(m.tier)&&(legends||!(m.legendary||m.mythical))):filterPool(POOL,{tier:M.tier,legends:M.tier==='champions'?false:(f>=8||boss)});
   if(pool.length<6) pool=filterPool(POOL,{tier:M.tier,legends:true});
-  const team=twPick(pool,6,M), lang=ui.lang==='en'?'en':'it';
+  const team=twMegaOk(twPick(pool,6,M),M,pool), lang=ui.lang==='en'?'en':'it';
   const ci=Math.random()*TW_CLASS.it.length|0, gen=boss?(Math.random()<.5?'m':'f'):(TW_GEN[ci]==='x'?(Math.random()<.5?'m':'f'):TW_GEN[ci]), nl=TW_NAMES[gen];
   return {name:nl[Math.random()*nl.length|0], cls:boss?(lang==='en'?'Tower Ace':'Asso della Torre'):TW_CLASS[lang][ci],
     line:TW_LINES[lang][Math.random()*TW_LINES[lang].length|0], team, choice:twChoice(team,M), ai:twAI(f), boss}; }
 // La scalata è legata al profilo (salvata dentro il profilo, quindi va anche con "Esporta"), una per modalità. Si salva solo
 // tra una lotta e l'altra: una lotta lasciata a metà (uscita o pagina chiusa) conta come sconfitta. A ogni tentativo si possono
 // estrarre fino a 3 squadre e sceglierne una; dopo la prima lotta la squadra non si cambia più.
-function twDraw(M){ const team=twPick(filterPool(POOL,{tier:M.tier,legends:true}),6,M); return {team,choice:twChoice(team,M)}; }
+function twDraw(M){ const pool=filterPool(POOL,{tier:M.tier,legends:true}); const team=twMegaOk(twPick(pool,6,M),M,pool); return {team,choice:twChoice(team,M)}; }
 function twCheck(o){ return o&&Array.isArray(o.draws)&&o.draws.length>=1&&o.draws.length<=3&&o.draws.every(d=>d&&Array.isArray(d.team)&&d.team.length===6&&d.team.every(n=>MON_BY_NAME.has(n)))&&o.trainer&&Array.isArray(o.trainer.team)&&o.trainer.team.every(n=>MON_BY_NAME.has(n)); }
 function twRuns(p){ const r=p&&p.runs&&typeof p.runs==='object'?p.runs:{}; if(p&&p.run&&!r['singolo-tutti']) r['singolo-tutti']=p.run; return r; } // vecchi profili: una sola scalata
 function twLoad(key){ const p=profMe(); if(!p) return null; const M=twMode(key||twCur().key), o=twRuns(p)[M.key]; if(!twCheck(o)) return null;
