@@ -600,7 +600,7 @@ const I18N={
   'online.opening':'Creazione della stanza…','online.waiting':"In attesa dell'amico: mandagli il codice o il link",
   'online.joined':n=>`${n} è entrato!`,'online.connecting':c=>`Collegamento alla stanza ${c}`,'online.connected':n=>`Connesso! In attesa che ${n} avvii la partita`,
   'online.notfound':c=>`Stanza ${c} non trovata: controlla il codice o chiedi un nuovo link.`,'online.full':'La stanza è già piena.',
-  'online.error':'Connessione non riuscita. Riprova; su alcune reti molto protette (es. aziendali o scolastiche) il gioco online potrebbe non funzionare.',
+  'online.blocked':'Il collegamento diretto con l\'altro giocatore non si apre: succede quando siete su reti diverse che lo bloccano (rete mobile, alcuni router). Serve un server ponte (TURN), non ancora attivo.','online.error':'Connessione non riuscita. Riprova; su alcune reti molto protette (es. aziendali o scolastiche) il gioco online potrebbe non funzionare.',
   'online.lost':n=>`Connessione persa con ${n}.`,'online.left':n=>`${n} ha lasciato la partita.`,
   'online.hostWait':"Rimani su questa pagina: l'amico può rientrare con lo stesso link.",'online.rejoin':'Riconnetti','online.menu':'Torna al menu',
   'online.waitFlip':n=>`In attesa che ${n} lanci la moneta`,'online.waitBegin':n=>`In attesa che ${n} inizi le aste`,'online.waitTurn':n=>`In attesa di ${n}`,
@@ -688,7 +688,7 @@ const I18N={
   'online.opening':'Creating the room…','online.waiting':'Waiting for your friend: send them the code or the link',
   'online.joined':n=>`${n} joined!`,'online.connecting':c=>`Connecting to room ${c}`,'online.connected':n=>`Connected! Waiting for ${n} to start the game`,
   'online.notfound':c=>`Room ${c} not found: check the code or ask for a new link.`,'online.full':'The room is already full.',
-  'online.error':'Connection failed. Try again; on some very restricted networks (e.g. office or school) online play may not work.',
+  'online.blocked':'The direct connection with the other player does not open: this happens when you are on different networks that block it (mobile data, some routers). A relay server (TURN) is needed, not active yet.','online.error':'Connection failed. Try again; on some very restricted networks (e.g. office or school) online play may not work.',
   'online.lost':n=>`Connection lost with ${n}.`,'online.left':n=>`${n} left the game.`,
   'online.hostWait':'Stay on this page: your friend can rejoin with the same link.','online.rejoin':'Reconnect','online.menu':'Back to menu',
   'online.waitFlip':n=>`Waiting for ${n} to toss the coin`,'online.waitBegin':n=>`Waiting for ${n} to start the auctions`,'online.waitTurn':n=>`Waiting for ${n}`,
@@ -1412,6 +1412,19 @@ const ONLINE_PREFIX='pkmn-incanto-';
 const CODE_ABC='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const newRoomCode=()=>Array.from({length:5},()=>CODE_ABC[Math.floor(Math.random()*CODE_ABC.length)]).join('');
 let peerLibPromise=null;
+// ---------- Server "relay" (TURN) ----------
+// Il collegamento diretto tra due browser spesso non riesce quando sono su reti diverse (rete mobile, router con doppio NAT):
+// serve un server TURN che faccia da ponte. Quello gratuito di PeerJS non risponde più (verificato il 22/11/2026).
+// TURN_CFG: servizio con chiave pubblica che restituisce le credenziali (es. Metered: https://<app>.metered.live/api/v1/turn/credentials?apiKey=...).
+// Finché è vuoto si usa solo lo STUN di Google (funziona solo quando la rete permette il collegamento diretto).
+const TURN_CFG={url:''};
+let iceCache=null;
+async function iceConfig(){ const base=[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}];
+  if(!TURN_CFG.url) return {iceServers:base};
+  if(iceCache&&Date.now()-iceCache.at<30*60*1000) return {iceServers:base.concat(iceCache.list)};
+  try{ const r=await fetch(TURN_CFG.url,{cache:'no-store'}); const list=await r.json();
+    const ok=(Array.isArray(list)?list:[]).filter(x=>x&&x.urls&&(typeof x.urls==='string'||Array.isArray(x.urls))).slice(0,8).map(x=>({urls:x.urls,username:x.username,credential:x.credential}));
+    iceCache={at:Date.now(),list:ok}; return {iceServers:base.concat(ok)}; }catch(e){ return {iceServers:base}; } }
 function loadPeerLib(){
   if(window.Peer) return Promise.resolve();
   if(!peerLibPromise) peerLibPromise=new Promise((res,rej)=>{const s=document.createElement('script'); s.src='lib/peerjs.min.js';
@@ -1483,10 +1496,10 @@ function lobbyRetry(ms){ const p=LB.peer; LB.peer=null; LB.isDir=false; LB.dirCo
 function lobbyNeeded(){ return ui.screen==='rooms'||!!myLobbyEntry(); }
 async function lobbyStart(){ if(LB.peer||LB.starting) return; LB.starting=true; LB.status='connecting';
   try{ await loadPeerLib(); }catch(e){ LB.starting=false; LB.status='error'; lobbyRender(); return; }
-  LB.starting=false; if(!lobbyNeeded()||LB.peer) return;
+  LB.ice=await iceConfig(); LB.starting=false; if(!lobbyNeeded()||LB.peer) return;
   clearInterval(LB.timer); LB.timer=setInterval(()=>{ if(!LB.peer) return; if(LB.isDir) lobbyDirUpdate(); else lobbySendAll(); },8000);
   lobbyAsClient(); }
-function lobbyAsClient(){ const p=new Peer({debug:0}); LB.peer=p; LB.isDir=false;
+function lobbyAsClient(){ const p=new Peer({debug:0,config:LB.ice||undefined}); LB.peer=p; LB.isDir=false;
   p.on('open',()=>{ if(LB.peer!==p) return; const c=p.connect(LOBBY_ID,{reliable:true,serialization:'json'}); LB.dirConn=c;
     c.on('open',()=>{ if(LB.peer!==p) return; LB.status='ok'; lobbySendAll(); lobbyRender(); });
     c.on('data',m=>{ if(LB.peer!==p||!m||m.t!=='list'||!Array.isArray(m.rooms)) return;
@@ -1495,7 +1508,7 @@ function lobbyAsClient(){ const p=new Peer({debug:0}); LB.peer=p; LB.isDir=false
   // nessuno tiene la bacheca: la prendo io
   p.on('error',e=>{ if(LB.peer!==p) return; if(e.type==='peer-unavailable'){ LB.peer=null; try{p.destroy();}catch(x){} lobbyAsDir(); }
     else { LB.status='error'; lobbyRender(); lobbyRetry(5000); } }); }
-function lobbyAsDir(){ const p=new Peer(LOBBY_ID,{debug:0}); LB.peer=p; LB.isDir=true; LB.conns=new Map();
+function lobbyAsDir(){ const p=new Peer(LOBBY_ID,{debug:0,config:LB.ice||undefined}); LB.peer=p; LB.isDir=true; LB.conns=new Map();
   p.on('open',()=>{ if(LB.peer!==p) return; LB.status='ok'; lobbyDirUpdate(); });
   p.on('connection',c=>{ if(LB.peer!==p) return; if(LB.conns.size>=80){ setTimeout(()=>c.close(),500); return; }
     LB.conns.set(c,{e:null,w:false,at:Date.now()});
@@ -1531,7 +1544,8 @@ async function createRoom(opts){
   ui.names[0]=ui.myName||''; ui.names[1]=''; ui.screen='lobby'; ui.game=null; ui.flip=null; render();
   try{ await loadPeerLib(); }catch(e){ o.status='error'; render(); return; }
   if(ui.online!==o) return;
-  const peer=new Peer(ONLINE_PREFIX+o.code,{debug:0}); o.peer=peer;
+  const ice=await iceConfig(); if(ui.online!==o) return;
+  const peer=new Peer(ONLINE_PREFIX+o.code,{debug:0,config:ice}); o.peer=peer;
   peer.on('open',()=>{ if(ui.online===o){ o.status=o.conn&&o.conn.open?'connected':'waiting'; render(); } });
   peer.on('error',e=>{ if(ui.online!==o) return;
     if(e.type==='unavailable-id'){ peer.destroy(); ui.online=null; if(o.random) findOpponent(o.slot); else createRoom(); return; }
@@ -1551,13 +1565,14 @@ async function joinRoom(code,opts){
   ui.screen='lobby'; ui.msg=''; render();
   try{ await loadPeerLib(); }catch(e){ o.status='error'; render(); return; }
   if(ui.online!==o) return;
-  const peer=new Peer({debug:0}); o.peer=peer;
+  const ice=await iceConfig(); if(ui.online!==o) return;
+  const peer=new Peer({debug:0,config:ice}); o.peer=peer;
   peer.on('open',()=>{ if(ui.online===o) attachConn(o,peer.connect(ONLINE_PREFIX+code,{reliable:true,serialization:'json'})); });
   peer.on('error',e=>{ if(ui.online!==o) return;
     // partita casuale e posto libero: lo occupo e aspetto un avversario
     if(o.random&&e.type==='peer-unavailable'){ try{peer.destroy();}catch(x){} ui.online=null; createRoom({code:o.code,random:true,slot:o.slot}); return; }
     o.status=e.type==='peer-unavailable'?'notfound':'error'; render(); });
-  setTimeout(()=>{ if(ui.online===o&&(o.status==='connecting'||o.status==='searching')){ o.status='error'; render(); } },20000);
+  setTimeout(()=>{ if(ui.online===o&&(o.status==='connecting'||o.status==='searching')){ o.status=TURN_CFG.url?'error':'blocked'; render(); } },15000);
 }
 function attachConn(o,conn){
   o.conn=conn;
@@ -1695,7 +1710,8 @@ function vLobby(){
      ${o.status==='queuefull'?`<div class="err" role="alert">${t('online.queueFull')}</div>`:''}
      ${o.status==='error'?`<div class="err" role="alert">${t('online.error')}</div>`:''}
      ${isHost()&&conn&&o.status==='connected'?`<div class="note ok">${t('online.joined',name(1))}</div><div class="center"><button class="btn big" data-act="toflip">${t('toflip')}</button></div>`:''}
-     ${['queuefull','error'].includes(o.status)?`<div class="row" style="justify-content:center"><button class="btn sm" data-act="findagain">${t('online.rejoin')}</button></div>`:''}`;
+     ${o.status==='blocked'?`<div class="err" role="alert">${t('online.blocked')}</div>`:''}
+     ${['queuefull','error','blocked'].includes(o.status)?`<div class="row" style="justify-content:center"><button class="btn sm" data-act="findagain">${t('online.rejoin')}</button></div>`:''}`;
   } else if(isHost()){
     const link=roomLink(o.code);
     body=`<span class="label">${t('online.code')}</span><div class="roomcode">${esc(o.code)}</div>
@@ -1710,6 +1726,7 @@ function vLobby(){
     body=`${o.board?'':`<span class="label">${t('online.code')}</span><div class="roomcode">${esc(o.code)}</div>`}
      ${o.status==='connecting'?`<p class="waitdots">${t('online.connecting',esc(o.code))}</p>`:''}
      ${o.status==='connected'?`<p class="waitdots">${t('online.connected',name(0))}</p>`:''}
+     ${o.status==='blocked'?`<div class="err" role="alert">${t('online.blocked')}</div><div class="row" style="justify-content:center"><button class="btn sm" data-act="rejoin">${t('online.rejoin')}</button></div>`:''}
      ${o.status==='notfound'?`<div class="err" role="alert">${t('online.notfound',esc(o.code))}</div>`:''}
      ${o.status==='full'?`<div class="err" role="alert">${t('online.full')}</div>`:''}
      ${o.status==='error'?`<div class="err" role="alert">${t('online.error')}</div>`:''}
