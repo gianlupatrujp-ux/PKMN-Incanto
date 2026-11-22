@@ -974,7 +974,7 @@ function prompt(){
   const sid=need('p1')?'p1':(O.mode==='two'&&need('p2')?'p2':null);
   if(!sid){ $('ctrl').innerHTML=`<p class="lt-wait">${O.role?'In attesa di '+PN('p2')+'…':'In attesa…'}</p>`; return; }
   if(O.mode==='two'&&B.passTo!==sid){ B.passTo=null; draw();
-    $('ctrl').innerHTML=`<div class="pass"><span class="who ${sid}">${PN(sid)}</span><p>Tocca a <b>${PN(sid)}</b> scegliere. Passa il dispositivo e premi il pulsante${O.showOpp?'':' (l\'altro non guardi: vedrai mosse e strumenti della tua squadra)'}.</p><button class="btn ${sid==='p2'?'play2':''}" data-lt="iam" data-s="${sid}">Sono ${PN(sid)}</button><span class="tmr" id="lt-tm"></span></div>`; timerArm(sid); return; }
+    $('ctrl').innerHTML=`<div class="pass"><span class="who ${sid}">${PN(sid)}</span><p>${O.lang==='en'?`It's <b>${PN(sid)}</b>'s turn to choose. Pass the device and press the button${O.showOpp?'':' (the other player should look away: you will see your team\'s moves and items)'}.`:`Tocca a <b>${PN(sid)}</b> scegliere. Passa il dispositivo e premi il pulsante${O.showOpp?'':' (l\'altro non guardi: vedrai mosse e strumenti della tua squadra)'}.`}</p><button class="btn ${sid==='p2'?'play2':''}" data-lt="iam" data-s="${sid}">Sono ${PN(sid)}</button><span class="tmr" id="lt-tm"></span></div>`; timerArm(sid); return; }
   ui(sid);
 }
 function ui(sid){
@@ -990,7 +990,7 @@ function ui(sid){
     h+=`<div class="cq"><span class="who ${sid}">${PN(sid)}</span> Chi mandi in campo?</div><div class="lt-team">${team.map((m,i)=>tm(m,i,'switch')).join('')}</div>`;
   } else {
     const a=r.active[0], me=team.find(x=>x.active), hp=me?parseHP(me.condition):null;
-    h+=`<div class="cq"><span class="who ${sid}">${PN(sid)}</span> <span>Cosa farà <b>${esc(me?me.details.split(',')[0]:'')}</b>?</span> ${hp?`<span class="hpchip">PS ${hp.hp}/${hp.max}</span>`:''}</div>
+    h+=`<div class="cq"><span class="who ${sid}">${PN(sid)}</span> <span>${O.lang==='en'?'What will':'Cosa farà'} <b>${esc(me?me.details.split(',')[0]:'')}</b>${O.lang==='en'?' do':''}?</span> ${hp?`<span class="hpchip">PS ${hp.hp}/${hp.max}</span>`:''}</div>
      <div class="sec">Attacca</div><div class="moves">${a.moves.map((m,i)=>{ const d=Dex.moves.get(m.id); const col=TYPE_COLORS[d.type]||'#666'; const e=effOf(m.id,sid);
       return `<button class="mv" style="--tc:${col}" data-tip="move:${esc(m.id)}:${sid}" ${m.disabled||m.pp===0?'disabled':`data-lt="pick" data-c="move ${i+1}"`}>${e?effSpan(e):'<span class="effl none"></span>'}<b>${esc(m.move)}</b><span class="mt"><i class="tdot"></i>${TIPI[d.type]||d.type}</span><span class="pp">${m.pp??'–'}/${m.maxpp??'–'}</span></button>`; }).join('')}</div>`;
     if(a.canTerastallize) h+=`<label class="tera"><input type="checkbox" id="lt-tera"> Teracristallizza <span class="st" style="background:${TYPE_COLORS[a.canTerastallize]||'#666'}">${(TIPI[a.canTerastallize]||esc(a.canTerastallize)).toUpperCase()}</span></label>`;
@@ -1177,6 +1177,95 @@ function net(m){
 }
 function sfxChat(){ if(SND.sfx) try{ tone(880,.08,'sine',.05); tone(1175,.1,'sine',.05,.07); }catch(e){} }
 
+// ---------- lotta in inglese: i testi italiani mostrati nella schermata vengono tradotti al volo (O.lang==='en') ----------
+const TYPE_EN={Normale:'Normal',Fuoco:'Fire',Acqua:'Water',Elettro:'Electric',Erba:'Grass',Ghiaccio:'Ice',Lotta:'Fighting',Veleno:'Poison',Terra:'Ground',Volante:'Flying',Psico:'Psychic',Coleottero:'Bug',Roccia:'Rock',Spettro:'Ghost',Drago:'Dragon',Buio:'Dark',Acciaio:'Steel',Folletto:'Fairy',Astrale:'Stellar'};
+const STAT_EN={'PS':'HP','Attacco':'Attack','Difesa':'Defense','Att. Sp.':'Sp. Atk','Dif. Sp.':'Sp. Def','Velocità':'Speed','Precisione':'accuracy','Elusione':'evasiveness'};
+const SHORT_EN={PS:'HP',Att:'Atk',Dif:'Def',AtSp:'SpA',DfSp:'SpD',Vel:'Spe',Prec:'Acc',Elus:'Eva'};
+const WEATHER_EN={'Pioggia':'Rain','Sole intenso':'Harsh sunlight','Tempesta di sabbia':'Sandstorm','Neve':'Snow','Grandine':'Hail','Sole estremo':'Extremely harsh sunlight','Diluvio':'Heavy rain','Correnti misteriose':'Strong winds'};
+const COND_EN={'Rocce aguzze':'Stealth Rock','Punte':'Spikes','Fielepunte':'Toxic Spikes','Rete vischiosa':'Sticky Web','Riflesso':'Reflect','Schermoluce':'Light Screen','Velo Aurora':'Aurora Veil','Vento in coda':'Tailwind','Salvaguardia':'Safeguard','Nebbia':'Mist'};
+const CAUSE_EN={'il veleno':'poison','la scottatura':'its burn','le rocce aguzze':'the pointed stones','le punte':'the spikes','la tempesta di sabbia':'the sandstorm','la grandine':'the hail','il contraccolpo':'recoil','la confusione':'confusion'};
+const VERB_EN={'scottare':'burn','paralizzare':'paralyze','avvelenare':'poison','avvelenare gravemente':'badly poison','addormentare':'put to sleep','congelare':'freeze','far tentennare':'make flinch','confondere':'confuse','far innamorare':'infatuate','intrappolare per 4-5 turni':'trap for 4-5 turns','provocare (solo mosse d\'attacco per 3 turni)':'taunt (attacks only for 3 turns)','costringere a ripetere la mossa':'force to repeat its move','far addormentare al turno dopo':'make drowsy (sleeps next turn)','piantare un seme che ruba PS ogni turno':'seed (drains HP every turn)','maledire':'curse','salare (danni ogni turno)':'salt cure (damage every turn)','impedire di usare la stessa mossa due volte':'torment','bloccare l\'ultima mossa usata':'disable the last move used'};
+const SCENE_EN={'Prato':'Meadow','Spiaggia':'Beach','Foresta':'Forest','Grotta':'Cave','Stadio in città':'City stadium'};
+const SIDE_EN={'Rocce aguzze fluttuano intorno alla squadra di':n=>`Pointed stones float in the air around ${n}'s team!`,'Punte sparse sotto la squadra di':n=>`Spikes were scattered on the ground around ${n}'s team!`,
+  'Punte velenose sparse sotto la squadra di':n=>`Poison spikes were scattered on the ground around ${n}'s team!`,'Una rete vischiosa è tesa sotto la squadra di':n=>`A sticky web spreads out on the ground around ${n}'s team!`,
+  'Riflesso protegge la squadra di':n=>`Reflect made ${n}'s team stronger against physical moves!`,'Schermoluce protegge la squadra di':n=>`Light Screen made ${n}'s team stronger against special moves!`,
+  'Velo Aurora protegge la squadra di':n=>`Aurora Veil made ${n}'s team stronger against physical and special moves!`,'Il vento in coda soffia alle spalle di':n=>`The Tailwind blew from behind ${n}'s team!`,
+  'Salvaguardia protegge la squadra di':n=>`${n}'s team cloaked itself in a mystical veil!`,'La nebbia avvolge la squadra di':n=>`${n}'s team became shrouded in mist!`};
+const EN_EXACT={'Lotta':'Battle','Esci dalla lotta':'Leave battle','Sicuro? Premi di nuovo':'Sure? Press again','🏳 Arrenditi':'🏳 Forfeit','📜 Cronaca':'📜 Log','💬 Chat':'💬 Chat','⏱ Timer':'⏱ Timer','⏱ Timer attivo':'⏱ Timer on',
+  'Cronaca della lotta':'Battle log','Scrivi al tuo avversario. Sii gentile!':'Write to your opponent. Be nice!','Invia':'Send','Scrivi un messaggio…':'Write a message…','Attacca':'Attack','Cambia':'Switch',
+  'Teracristallizza':'Terastallize','Chi mandi in campo per primo?':'Who will you send out first?','Chi mandi in campo?':'Who will you send out?','Non puoi cambiare Pokémon.':'You can\'t switch.','Il turno è in corso…':'The turn is in progress…',
+  'In attesa…':'Waiting…','Nuova lotta':'New battle','Chiudi la lotta':'Close the battle','Chiudi':'Close','La lotta sta per cominciare!':'The battle is about to begin!','È superefficace!':'It\'s super effective!','Non è molto efficace…':'It\'s not very effective…',
+  'Brutto colpo!':'A critical hit!','Ma non ha effetto!':'But it failed!','Tutte le modifiche alle statistiche spariscono!':'All stat changes were eliminated!','Il tempo torna normale.':'The weather became clear.','Il sostituto incassa il colpo!':'The substitute took damage for it!',
+  'Pareggio!':'Tie!','Timer attivato: 60 secondi per ogni scelta.':'Timer on: 60 seconds for each choice.','Timer disattivato.':'Timer off.','Troppi messaggi: aspetta qualche secondo.':'Too many messages: wait a few seconds.','Sistema':'System',
+  'Inizia a piovere!':'It started to rain!','La luce del sole è intensa!':'The sunlight turned harsh!','Si alza una tempesta di sabbia!':'A sandstorm kicked up!','Inizia a nevicare!':'It started to snow!','Inizia a grandinare!':'It started to hail!',
+  'Il sole è diventato rovente!':'The sunlight turned extremely harsh!','Inizia un diluvio!':'A heavy rain began to fall!','Soffiano correnti misteriose!':'Mysterious strong winds are protecting Flying-type Pokémon!',
+  'Fisica':'Physical','Speciale':'Special','Stato':'Status','Mossa':'Move','Cat.':'Cat.','Pot.':'Pow.','Prec.':'Acc.','Mosse viste':'Moves seen','Abilità':'Ability','Abilità possibili':'Possible abilities','Strumento':'Item','nessuno':'none','Natura':'Nature',
+  'EV':'EVs','Tera':'Tera','Statistiche':'Stats','Base':'Base stats','Modifiche':'Boosts','Categoria':'Category','Potenza':'Power','Precisione':'Accuracy','PP':'PP','Priorità':'Priority','Sul bersaglio':'On the target','Contatto':'Contact','sì':'yes',
+  'Statistiche modificate:':'Stat changes:','Sul campo:':'Field:','Dalla sua parte:':'Its side:','infallibile':'never misses','esausto':'fainted','(neutra)':'(neutral)','Nessun effetto':'No effect','Iper efficace ×4':'Super effective ×4','Superefficace ×2':'Super effective ×2',
+  'Poco efficace ×½':'Not very effective ×½','Per niente efficace ×¼':'Barely effective ×¼','Le mosse, lo strumento e l\'abilità si scoprono durante la lotta.':'Moves, item and ability are revealed during the battle.',
+  'L\'efficacia non tiene conto delle abilità (es. Levitate).':'Effectiveness ignores abilities (e.g. Levitate).','Strumento sconosciuto':'Unknown item','Lo scoprirai quando entra in azione.':'You\'ll find out when it activates.','Nessuno strumento':'No item',
+  'KO in un colpo se va a segno':'One-hit KO if it hits','Sempre brutto colpo':'Always lands a critical hit','Alta probabilità di brutto colpo':'High critical-hit ratio','Chi la usa perde metà dei suoi PS':'The user loses half its max HP',
+  'Dopo, chi la usa torna nella squadra e ne entra un altro':'Afterwards the user switches out','Costringe il bersaglio a cambiare':'Forces the target to switch out','Protegge per un turno (meno affidabile se ripetuta)':'Protects for one turn (less reliable if repeated)',
+  'Supera le protezioni':'Bypasses protection','Il turno dopo chi la usa deve riposare':'The user must recharge next turn',
+  'Punta col mouse (o tieni premuto, da telefono) Pokémon, Poké Ball, strumenti e mosse per vedere le informazioni. Calcoli del simulatore di Pokémon Showdown (MIT).':'Hover (or long-press on a phone) Pokémon, Poké Balls, items and moves to see their details. Calculations by the Pokémon Showdown simulator (MIT).',
+  'Riduci la cronaca':'Collapse the log','Apri la cronaca della lotta':'Open the battle log','Riduci la chat':'Collapse the chat','Apri la chat':'Open the chat','Messaggio':'Message','Effetti e versi':'Sound effects and cries','Musica':'Music','Timer: 60 secondi per scelta':'Timer: 60 seconds per choice','Strumento ':'Item '};
+for(const k in TYPE_EN){ EN_EXACT[k]=TYPE_EN[k]; EN_EXACT[k.toUpperCase()]=TYPE_EN[k].toUpperCase(); }
+for(const k in WEATHER_EN) EN_EXACT[k]=WEATHER_EN[k]; for(const k in COND_EN) EN_EXACT[k]=COND_EN[k];
+const stRx='(Attacco|Difesa|Att\\. Sp\\.|Dif\\. Sp\\.|Velocità|Precisione|Elusione|PS)';
+const statsIn=s=>s.replace(new RegExp(stRx,'g'),m=>STAT_EN[m]||m);
+const lab=s=>{ const m=/^(.+) di (.+)$/.exec(s); return m?`${m[2]}'s ${m[1]}`:s; };
+const EN_RX=[
+  [/^(.+?) usa$/,(m,a)=>`${lab(a)} used`],[/^(.+) manda in campo$/,(m,a)=>`${a} sent out`],
+  [/^(.+?) recupera PS( \((.+)\))?\.$/,(m,a,b,c)=>`${lab(a)} restored HP${c?' ('+c+')':''}.`],[/^(.+?) subisce danni per (.+)\.$/,(m,a,b)=>`${lab(a)} was hurt by ${CAUSE_EN[b]||b}.`],
+  [/^(.+?) è esausto!$/,(m,a)=>`${lab(a)} fainted!`],[/^Non ha effetto su (.+?)…$/,(m,a)=>`It doesn't affect ${lab(a)}…`],[/^(.+?) manca il bersaglio!$/,(m,a)=>`${lab(a)}'s attack missed!`],
+  [/^(.+?) è scottato!$/,(m,a)=>`${lab(a)} was burned!`],[/^(.+?) è paralizzato e potrebbe non muoversi!$/,(m,a)=>`${lab(a)} is paralyzed! It may be unable to move!`],[/^(.+?) si è addormentato!$/,(m,a)=>`${lab(a)} fell asleep!`],
+  [/^(.+?) è gravemente avvelenato!$/,(m,a)=>`${lab(a)} was badly poisoned!`],[/^(.+?) è avvelenato!$/,(m,a)=>`${lab(a)} was poisoned!`],[/^(.+?) è congelato!$/,(m,a)=>`${lab(a)} was frozen solid!`],
+  [/^(.+?) è guarito\.$/,(m,a)=>`${lab(a)} was cured.`],[/^(.+?) è paralizzato! Non riesce a muoversi!$/,(m,a)=>`${lab(a)} is paralyzed! It can't move!`],[/^(.+?) dorme profondamente\.$/,(m,a)=>`${lab(a)} is fast asleep.`],
+  [/^(.+?) tentenna e non attacca!$/,(m,a)=>`${lab(a)} flinched and couldn't move!`],[/^(.+?) deve riprendersi\.$/,(m,a)=>`${lab(a)} must recharge!`],[/^(.+?) non può muoversi\.$/,(m,a)=>`${lab(a)} can't move!`],
+  [new RegExp('^'+stRx+' di (.+?) (aumenta|diminuisce)( molto| tantissimo)?!$'),(m,s,a,v,q)=>`${lab(a)}'s ${STAT_EN[s]} ${v==='aumenta'?'rose':'fell'}${q===' molto'?(v==='aumenta'?' sharply':' harshly'):q===' tantissimo'?' drastically':''}!`],
+  [new RegExp('^'+stRx+' di (.+?) non può cambiare oltre!$'),(m,s,a)=>`${lab(a)}'s ${STAT_EN[s]} won't go any further!`],
+  [new RegExp('^'+stRx+' al massimo!$'),(m,s)=>`${STAT_EN[s]} maximized!`],[new RegExp('^'+stRx+' (↑+|↓+)$'),(m,s,a)=>`${STAT_EN[s]} ${a}`],
+  [/^(.+?) svanisce\.$/,(m,a)=>`${a} ended.`],[/^(.+?) sparisce dalla parte di (.+)\.$/,(m,a,b)=>`${COND_EN[a]||a} disappeared from ${b}'s side.`],
+  [/^(.+?) si teracristallizza: tipo (.+)!$/,(m,a,b)=>`${lab(a)} has Terastallized into the ${TYPE_EN[b]||b} type!`],[/^\[Abilità di (.+?): (.+)\]$/,(m,a,b)=>`[${lab(a)}'s ${b}]`],
+  [/^(.+?) ottiene (.+)\.$/,(m,a,b)=>`${lab(a)} obtained ${b}.`],[/^(.+?) mangia (.+)!$/,(m,a,b)=>`${lab(a)} ate its ${b}!`],[/^(.+?) perde (.+)\.$/,(m,a,b)=>`${lab(a)} lost its ${b}.`],
+  [/^(.+?) crea un sostituto!$/,(m,a)=>`${lab(a)} put in a substitute!`],[/^(.+?) è confuso!$/,(m,a)=>`${lab(a)} became confused!`],[/^Il sostituto di (.+?) svanisce!$/,(m,a)=>`${lab(a)}'s substitute faded!`],
+  [/^(.+?) si protegge!$/,(m,a)=>`${lab(a)} protected itself!`],[/^(.+?) megaevolve!$/,(m,a)=>`${lab(a)} has Mega Evolved!`],[/^(.+?) cambia forma!$/,(m,a)=>`${lab(a)} transformed!`],
+  [/^Turno (\d+)$/,(m,a)=>`Turn ${a}`],[/^— Turno (\d+) —$/,(m,a)=>`— Turn ${a} —`],[/^Vince (.+)!$/,(m,a)=>`${a} won the battle!`],[/^(.+?) si arrende!$/,(m,a)=>`${a} forfeited.`],[/^(.+?) ha lasciato la lotta\.$/,(m,a)=>`${a} left the battle.`],
+  [/^In attesa che (.+) faccia partire la lotta…$/,(m,a)=>`Waiting for ${a} to start the battle…`],[/^In attesa di (.+)…$/,(m,a)=>`Waiting for ${a}…`],[/^Sono (.+)$/,(m,a)=>`I'm ${a}`],
+  [/^Si arrende (.+)\? Premi di nuovo$/,(m,a)=>`Does ${a} forfeit? Press again`],[/^Tempo scaduto per la terza volta: (.+) perde la lotta\.$/,(m,a)=>`Time ran out for the third time: ${a} loses the battle.`],
+  [/^Tempo scaduto! Per (.+) viene scelta una mossa a caso \((\d)\/3\)\.$/,(m,a,b)=>`Time's up! A random move was chosen for ${a} (${b}/3).`],
+  [/^Tocca a $/,()=>'It\'s '],[/^ scegliere\. Passa il dispositivo e premi il pulsante(.*)\.$/,(m,a)=>`'s turn to choose. Pass the device and press the button${a?' (the other player should look away: you will see your team\'s moves and items)':''}.`],
+  [/^Cosa farà $/,()=>'What will '],[/^ do\?$/,()=>' do?'],[/^PS (\d+)\/(\d+)$/,(m,a,b)=>`HP ${a}/${b}`],[/^\+(\d+) PS$/,(m,a)=>`+${a} HP`],
+  [/^TERA (.+)$/,(m,a)=>`TERA ${(TYPE_EN[a.charAt(0)+a.slice(1).toLowerCase()]||a).toUpperCase()}`],[/^(Att|Dif|AtSp|DfSp|Vel|Prec|Elus)([+−]\d)$/,(m,a,b)=>SHORT_EN[a]+b],
+  [/^· Sfondo: (.+)$/,(m,a)=>`· Background: ${SCENE_EN[a]||a}`],[/^Serve a (.+) il bersaglio$/,(m,a)=>`Used to ${VERB_EN[a]||a} the target`],
+  [/^(\d+)% di probabilità di (.+?) il bersaglio$/,(m,a,b)=>`${a}% chance to ${VERB_EN[b]||b} the target`],[/^(\d+)% di probabilità di cambiare le statistiche del bersaglio: (.+)$/,(m,a,b)=>`${a}% chance to change the target's stats: ${statsIn(b)}`],
+  [/^(\d+)% di probabilità di cambiare le statistiche di chi la usa: (.+)$/,(m,a,b)=>`${a}% chance to change the user's stats: ${statsIn(b)}`],[/^Cambia le statistiche di chi la usa: (.+)$/,(m,a)=>`Changes the user's stats: ${statsIn(a)}`],
+  [/^Cambia le statistiche del bersaglio: (.+)$/,(m,a)=>`Changes the target's stats: ${statsIn(a)}`],[/^Poi a chi la usa: (.+)$/,(m,a)=>`Then to the user: ${statsIn(a)}`],
+  [/^Colpisce (.+) volte$/,(m,a)=>`Hits ${a} times`],[/^Contraccolpo: perde (.+) del danno inflitto$/,(m,a)=>`Recoil: loses ${a} of the damage dealt`],[/^Recupera (.+) del danno inflitto$/,(m,a)=>`Heals ${a} of the damage dealt`],
+  [/^Cura (.+) dei PS massimi$/,(m,a)=>`Heals ${a} of max HP`],[/^Effetto che resta sul campo: (.+)$/,(m,a)=>`Lasting side effect: ${COND_EN[a]||a}`],[/^Cambia il meteo: (.+)$/,(m,a)=>`Changes the weather: ${WEATHER_EN[a]||a}`],
+  [/^Crea il campo: (.+)$/,(m,a)=>`Sets the terrain: ${a}`],[/^Effetto su tutto il campo: (.+)$/,(m,a)=>`Field effect: ${a}`],
+  [/^Tipo di mossa: (.+)$/,(m,a)=>'Move flags: '+a.replace('contatto','contact').replace('sonora','sound').replace('pugno','punch').replace('morso','bite').replace('taglio','slicing').replace('aura/pulsar','pulse').replace('proiettile','bullet').replace('vento','wind').replace('si carica per un turno','charges for a turn')],
+  [/^(.+?) \(agisce (prima|dopo)\)$/,(m,a,b)=>`${a} (moves ${b==='prima'?'first':'last'})`],[/^(.+?) non ha \(più\) uno strumento\.$/,(m,a)=>`${a} has no item (anymore).`],[/^Abilità (.+?):$/,(m,a)=>`Ability ${a}:`],
+  [/^(Rocce aguzze fluttuano intorno alla squadra di|Punte sparse sotto la squadra di|Punte velenose sparse sotto la squadra di|Una rete vischiosa è tesa sotto la squadra di|Riflesso protegge la squadra di|Schermoluce protegge la squadra di|Velo Aurora protegge la squadra di|Il vento in coda soffia alle spalle di|Salvaguardia protegge la squadra di|La nebbia avvolge la squadra di) (.+)!$/,(m,a,b)=>SIDE_EN[a](b)],
+  [/^(.+) \(ancora (\d+) turni, (\d+) con lo strumento adatto\)$/,(m,a,b,c)=>`${a} (${b} turns left, ${c} with the right item)`],[/^(.+) \(ancora (\d+) turn[oi]\)$/,(m,a,b)=>`${a} (${b} turn${b==='1'?'':'s'} left)`],
+  [/^[\d ]+(PS|Att|Dif|AtSp|DfSp|Vel)( \/ [\d ]+(PS|Att|Dif|AtSp|DfSp|Vel))*$/,m=>m.replace(/PS|AtSp|DfSp|Att|Dif|Vel/g,x=>SHORT_EN[x])],
+  [/^(PS|Att|Dif|AtSp|DfSp|Vel) \d+( · (PS|Att|Dif|AtSp|DfSp|Vel) \d+)*$/,m=>m.replace(/PS|AtSp|DfSp|Att|Dif|Vel/g,x=>SHORT_EN[x])],
+  [/^([+−])(Attacco|Difesa|Att\. Sp\.|Dif\. Sp\.|Velocità)$/,(m,a,b)=>a+STAT_EN[b]],[/^(.+?), (.+)$/,m=>m.split(', ').every(x=>WEATHER_EN[x]||COND_EN[x]||/Terrain|Room|Gravity/.test(x))?m.split(', ').map(x=>WEATHER_EN[x]||COND_EN[x]||x).join(', '):m],
+];
+function trText(s){
+  const t=s.trim(); if(!t) return s; let r=EN_EXACT[t];
+  if(r===undefined){ for(const [re,f] of EN_RX){ if(re.test(t)){ r=t.replace(re,f); break; } } }
+  if(r===undefined||r===t) return s; return s.replace(t,r); }
+function trTree(n){
+  if(n.nodeType===3){ const v=trText(n.nodeValue); if(v!==n.nodeValue) n.nodeValue=v; return; }
+  if(n.nodeType!==1) return;
+  for(const at of ['placeholder','title','aria-label']) if(n.hasAttribute&&n.hasAttribute(at)){ const v=trText(n.getAttribute(at)); if(v!==n.getAttribute(at)) n.setAttribute(at,v); }
+  for(const c of n.childNodes) trTree(c); }
+let TR_OBS=null;
+function startTranslate(){ if(TR_OBS) TR_OBS.disconnect(); TR_OBS=null; if(!O||O.lang!=='en') return; trTree(root);
+  TR_OBS=new MutationObserver(ms=>{ for(const m of ms){ if(m.type==='characterData') trTree(m.target); else for(const a of m.addedNodes) trTree(a); } });
+  TR_OBS.observe(root,{subtree:true,childList:true,characterData:true}); }
+
 // ---------- apertura e chiusura ----------
 async function readSide(g,sid,stream){
   for await(const chunk of stream){ if(g!==gen) return;
@@ -1196,6 +1285,7 @@ function close(silent){
   audioStopAll(); if(B&&B.tick) clearInterval(B.tick);
   gen++; if(B&&B.streams) try{ B.streams.omniscient.writeEnd(); }catch(e){}
   for(const [ev,fn] of EVTS) document.removeEventListener(ev,fn); document.removeEventListener('click',onClickCapture,true); removeEventListener('scroll',hideTip);
+  if(TR_OBS){ TR_OBS.disconnect(); TR_OBS=null; }
   if(root) root.remove(); root=null; document.documentElement.style.overflow='';
   const f=O&&O.onClose; O=null; B=null; if(!silent&&f) f();
 }
@@ -1204,7 +1294,7 @@ function open(opts){
   O=Object.assign({mode:'two',showOpp:true,names:{p1:'Giocatore 1',p2:'Giocatore 2'},formatid:'gen9nationaldexag'},opts);
   if(!document.getElementById('lotta-css')){ const s=document.createElement('style'); s.id='lotta-css'; s.textContent=CSS; document.head.appendChild(s); }
   root=document.createElement('div'); root.id='lotta'; root.setAttribute('role','dialog'); root.setAttribute('aria-label','Lotta');
-  root.innerHTML=`<div class="lt-wrap"><div class="lt-top"><h2 class="lt-title">Lotta</h2><span class="lt-muted">${esc(O.formatName||'')}<span id="lt-scene"></span></span><button class="tool lt-chatopen" data-lt="chatmin" aria-label="Apri la chat">💬 Chat<b class="unread" id="lt-unread" hidden></b></button><button class="tool lt-reopen" data-lt="logmin" aria-label="Apri la cronaca della lotta" title="Apri la cronaca della lotta">📜 Cronaca</button><span class="lt-tools" id="lt-tools"></span><button class="btn ghost ff" data-lt="ff">🏳 Arrenditi</button><button class="btn ghost" data-lt="exit">Esci dalla lotta</button></div>
+  root.innerHTML=`<div class="lt-wrap"><div class="lt-top"><h2 class="lt-title">${O.lang==='en'?'Battle':'Lotta'}</h2><span class="lt-muted">${esc(O.formatName||'')}<span id="lt-scene"></span></span><button class="tool lt-chatopen" data-lt="chatmin" aria-label="Apri la chat">💬 Chat<b class="unread" id="lt-unread" hidden></b></button><button class="tool lt-reopen" data-lt="logmin" aria-label="Apri la cronaca della lotta" title="Apri la cronaca della lotta">📜 Cronaca</button><span class="lt-tools" id="lt-tools"></span><button class="btn ghost ff" data-lt="ff">🏳 Arrenditi</button><button class="btn ghost" data-lt="exit">Esci dalla lotta</button></div>
    <div class="lt-main"><div class="lt-left">
    <div class="lt-info"><span class="turnb" id="lt-turn" hidden></span><span class="wlabel" id="lt-wlabel" hidden></span></div>
    <div class="arena" id="lt-arena">
@@ -1225,7 +1315,7 @@ function open(opts){
     <div class="lt-chatin"><input type="text" id="lt-chatin" maxlength="200" placeholder="Scrivi un messaggio…" autocomplete="off" aria-label="Messaggio"><button class="btn" data-lt="chatsend">Invia</button></div></aside></div></div>
    <p class="lt-muted lt-hint">Punta col mouse (o tieni premuto, da telefono) Pokémon, Poké Ball, strumenti e mosse per vedere le informazioni. Calcoli del simulatore di Pokémon Showdown (MIT).</p></div>
    <div class="lt-tip" id="lt-tip" hidden></div>`;
-  document.body.appendChild(root); document.documentElement.style.overflow='hidden';
+  document.body.appendChild(root); document.documentElement.style.overflow='hidden'; startTranslate();
   for(const [ev,fn] of EVTS) document.addEventListener(ev,fn); document.addEventListener('click',onClickCapture,true); addEventListener('scroll',hideTip,{passive:true,capture:true});
   root.addEventListener('click',onClick); addEventListener('resize',()=>{ if(root&&B) drawField(); }); if(LS('lt-logmin',false)) root.classList.add('logmin');
   root.addEventListener('pointerdown',audioUnlock); root.addEventListener('keydown',audioUnlock); root.addEventListener('keydown',onChatKey);
