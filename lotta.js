@@ -510,7 +510,8 @@ function descIt(k,id,en){ if(O&&O.lang==='en'||typeof DESC_IT==='undefined') ret
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const toID=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
 const other=s=>s==='p1'?'p2':'p1';
-const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+// window.__LOTTA_FAST: modalità di prova senza animazioni (solo per i test automatici)
+const sleep=ms=>new Promise(r=>setTimeout(r,window.__LOTTA_FAST?0:ms));
 const SPR=()=>typeof SPRITE_DATA!=='undefined'?SPRITE_DATA:{};
 
 let root=null, O=null, B=null, gen=0;
@@ -752,7 +753,7 @@ async function shot(from,to,color,status){ const a=$('arena');
   const o=document.createElement('div'); o.className='orb'; o.style.setProperty('--c',color); const cf=cen(from), ct2=cen(to); o.style.left=cf[0]+'%'; o.style.top=cf[1]+'%'; a.appendChild(o);
   await sleep(20); o.style.left=ct2[0]+'%'; o.style.top=ct2[1]+'%'; await sleep(400); o.style.opacity=0; setTimeout(()=>o.remove(),250); }
 // La barra scende (o sale) un PS alla volta: la durata dipende da quanti PS cambiano
-function animHP(sid,m,to){ return new Promise(res=>{ const from=m.shown, d=Math.abs(to-from);
+function animHP(sid,m,to){ return new Promise(res=>{ if(window.__LOTTA_FAST){ m.shown=to; for(const q of [sid,sid+'b']) if(actMon(q)===m) hpView(q); return res(); } const from=m.shown, d=Math.abs(to-from);
   if(!d||!m.max){ m.shown=to; hpView(sid); return res(); }
   const dur=Math.min(2200,Math.max(350,d/m.max*2400)), t0=performance.now();
   const step=now=>{ if(!root) return res(); const k=Math.min(1,(now-t0)/dur); m.shown=from+(to-from)*k; for(const q of [sid,sid+'b']) if(actMon(q)===m) hpView(q); if(k<1) requestAnimationFrame(step); else res(); };
@@ -765,7 +766,7 @@ function animHP(sid,m,to){ return new Promise(res=>{ const from=m.shown, d=Math.
 // 200 = lato del giocatore 2, campo 640×360) vengono convertite misurando dove stanno davvero i nostri Pokémon.
 let psReady=null;
 function loadJS(src){ return new Promise((res,rej)=>{ if(document.querySelector('script[data-src="'+src+'"]')) return res(); const s=document.createElement('script'); s.src=src; s.dataset.src=src; s.onload=res; s.onerror=()=>rej(new Error(src)); document.head.appendChild(s); }); }
-function loadPS(){
+function loadPS(){ if(window.__LOTTA_FAST) return Promise.resolve(false);
   if(!psReady) psReady=(async()=>{
     if(!window.jQuery) await loadJS('lib/jquery.min.js');
     if(!window.PSAnimData) await loadJS('lib/ps-anims.js');
@@ -937,7 +938,7 @@ const fromOf=p=>{ const f=p.find(x=>x&&x.startsWith('[from]')); return f?f.slice
 const baseSp=s=>String(s||'').replace(/-Mega(-[XY])?$/,'').replace(/-(Busted|Blade|Hero|Primal|Crowned|Tera|Terastal|Stellar|Eternamax|Meteor|School|Complete|Zen|Pirouette|Sunshine|Gulping|Gorging|Hangry|Noice|Resolute)$/,'');
 function track(p){ if(!B) return; const S=B.stats||(B.stats={p1:{used:{},moves:{},kos:{}},p2:{used:{},moves:{},kos:{}}}); const k=p[1];
   const who=x=>{ const id=parseId(x); if(!id||!S[id.side]) return null; const m=B.side[id.side]&&B.side[id.side].team[id.nick]; return {side:id.side,key:id.side+':'+id.nick,sp:baseSp(m&&m.species||id.nick)}; };
-  if(k==='switch'||k==='drag'){ const w=who(p[2]); if(w){ const sp=baseSp(String(p[3]||'').split(',')[0]); S[w.side].used[sp]=1; } }
+  if(k==='switch'||k==='drag'){ const id0=parseId(p[2]); if(id0) (B.aiFresh=B.aiFresh||{})[id0.pos]=(B.turn||0)+1; const w=who(p[2]); if(w){ const sp=baseSp(String(p[3]||'').split(',')[0]); S[w.side].used[sp]=1; } }
   else if(k==='move'&&!p.some(x=>x&&x.startsWith('[from]'))){ const w=who(p[2]); if(w){ S[w.side].moves[p[3]]=(S[w.side].moves[p[3]]||0)+1; B.lastActor=w; } }
   else if(k==='-damage'&&!p.slice(4).some(x=>x&&x.startsWith('[from]'))){ const w=who(p[2]); if(w&&B.lastActor&&B.lastActor.side!==w.side){ (B.lastHit||(B.lastHit={}))[w.key]=B.lastActor; } }
   else if(k==='faint'){ const w=who(p[2]); const h=w&&B.lastHit&&B.lastHit[w.key]; if(h){ S[h.side].kos[h.sp]=(S[h.side].kos[h.sp]||0)+1; delete B.lastHit[w.key]; } }
@@ -1071,16 +1072,16 @@ function aiMon(side,sp,extra){ const s=Dex.species.get(sp); const lvl=100, b=s.b
   const o={sp:s.name,types:s.types.slice(),lvl,hpStat:aiStat(b.hp,lvl,true),atk:aiStat(b.atk,lvl),def:aiStat(b.def,lvl),spa:aiStat(b.spa,lvl),spd:aiStat(b.spd,lvl),spe:aiStat(b.spe,lvl),boosts:{},st:'',ability:Object.values(s.abilities)[0]};
   return Object.assign(o,extra||{}); }
 function cpuSmart(r,level){
-  if(r.teamPreview) return pickN(r)?cpuSingle(r):'team 1';
+  if(r.teamPreview) return aiPreview(r,level);
   const me=r.side.pokemon, act=me.find(x=>x.active)||me[0], foeM=actMon('p1');
   const bench=me.map((m,i)=>({m,i})).filter(x=>!x.m.active&&!x.m.condition.endsWith(' fnt'));
   const myInfo=x=>{ const sp=x.details.split(',')[0]; const m=aiMon('p2',sp); const S=x.stats||{}; Object.assign(m,{atk:S.atk||m.atk,def:S.def||m.def,spa:S.spa||m.spa,spd:S.spd||m.spd,spe:S.spe||m.spe});
     const hp=parseHP(x.condition); m.hpStat=hp&&hp.max||m.hpStat; m.hpPct=hp&&hp.max?hp.hp/hp.max*100:0; m.st=hp&&hp.st||''; m.ability=Dex.abilities.get(x.ability||x.baseAbility).name; m.adapt=m.ability==='Adaptability';
     const tm=B.side.p2.team[x.ident.split(': ')[1]]; if(tm){ m.boosts=tm.boosts||{}; if(tm.tera) m.types=[tm.tera]; } if(x.terastallized) m.types=[x.terastallized]; return m; };
-  const foe=foeM?aiMon('p1',foeM.species,{boosts:foeM.boosts||{},st:foeM.st||'',hpPct:foeM.max?foeM.hp/foeM.max*100:100}):null;
+  const foe=level>=4?aiFoe('p1',level):foeM?aiMon('p1',foeM.species,{boosts:foeM.boosts||{},st:foeM.st||'',hpPct:foeM.max?foeM.hp/foeM.max*100:100}):null;
   if(foe&&foeM.tera) foe.types=[foeM.tera];
   // la peggior mossa che l'avversario può avere: i suoi tipi (STAB) con potenza 90
-  const threat=(def)=>{ if(!foe) return 0; let best=0; for(const ty of foe.types){ const fake={id:'x',type:ty,basePower:90,category:foe.atk>=foe.spa?'Physical':'Special'}; best=Math.max(best,aiDmg(fake,foe,def)); } return best; };
+  const threat=(def)=>{ if(!foe) return 0; if(level>=4&&foe.moves) return aiThreat(foe,def); let best=0; for(const ty of foe.types){ const fake={id:'x',type:ty,basePower:90,category:foe.atk>=foe.spa?'Physical':'Special'}; best=Math.max(best,aiDmg(fake,foe,def)); } return best; };
   const sw=()=>{ if(!bench.length) return null; let best=null; for(const x of bench){ const m=myInfo(x.m); const th=threat(m), hit=foe?Math.max(...m.types.map(ty=>aiDmg({id:'x',type:ty,basePower:80,category:m.atk>=m.spa?'Physical':'Special'},m,foe))):0;
       const sc=-th*1.2+hit*.8+m.hpPct*.3; if(!best||sc>best.sc) best={i:x.i,sc}; } return best; };
   if(r.forceSwitch){ const b=sw(); return b?'switch '+(b.i+1):'pass'; }
@@ -1125,7 +1126,104 @@ function cpuSmart(r,level){
     const defensive=level>=3&&danger>=myHp&&threat(Object.assign({},mine,{types:[tt]}))<danger*.5; if(useT&&(best.s>=60||myHp<60)||defensive) ch+=' terastallize'; }
   return ch; }
 
-function cpuChoice(r){ if(isDbl()) return cpuDbl(r); if(O.ai>0){ try{ return cpuSmart(r,O.ai); }catch(e){ console.warn('IA',e); } } return cpuSingle(r); }
+// ---------- IA avanzata (livello 4) e IA tattica del doppio ----------
+// Livello 4 ("Asso"): come le IA più dure delle ROM modificate, conosce la tua squadra (statistiche e mosse vere) e la usa
+// per calcolare i danni che riceve e quelli che infligge, invece di stimarli dalle statistiche base.
+function aiFoe(pos,level){ const fm=actMon(pos); if(!fm||fm.st==='fnt') return null;
+  const o=aiMon('p1',fm.species,{boosts:fm.boosts||{},st:fm.st||'',hpPct:fm.max?fm.hp/fm.max*100:100,pos});
+  if(fm.tera) o.types=[fm.tera]; else if(fm.tchange&&fm.tchange.length) o.types=fm.tchange.slice();
+  if(level>=4&&B.req&&B.req.p1&&B.req.p1.side){ const rp=B.req.p1.side.pokemon.find(x=>String(x.ident||'').split(': ')[1]===fm.nick);
+    if(rp){ const S=rp.stats||{}; Object.assign(o,{atk:S.atk||o.atk,def:S.def||o.def,spa:S.spa||o.spa,spd:S.spd||o.spd,spe:S.spe||o.spe,moves:(rp.moves||[]).map(id=>Dex.moves.get(id)).filter(m=>m.exists)});
+      const h=parseHP(rp.condition); if(h&&h.max) o.hpStat=h.max; o.ability=Dex.abilities.get(rp.ability||rp.baseAbility).name; } }
+  return o; }
+// danno massimo che "foe" può fare a "def": con il livello 4 le sue mosse vere, altrimenti uno STAB da 90 di potenza
+function aiThreat(foe,def){ if(!foe||!def) return 0; let best=0;
+  if(foe.moves&&foe.moves.length){ for(const m of foe.moves) best=Math.max(best,aiDmg(m,foe,def)*(['allAdjacentFoes','allAdjacent'].includes(m.target)&&isDbl()?.75:1)); return best; }
+  for(const ty of foe.types){ const fake={id:'x',type:ty,basePower:90,category:foe.atk>=foe.spa?'Physical':'Special'}; best=Math.max(best,aiDmg(fake,foe,def)); } return best; }
+function aiSpe(x){ return x.spe*aiMul((x.boosts||{}).spe||0)*(x.st==='par'?.5:1); }
+// scelta dei Pokémon alla schermata della squadra (Champions e doppio): i migliori contro la squadra avversaria
+function aiPreview(r,level){ const N=pickN(r)||(isDbl()?2:1), team=r.side.pokemon;
+  if(level<3) return 'team '+shuffleArr(team.map((x,i)=>i+1)).slice(0,Math.max(N,isDbl()?2:1)).join('');
+  const foes=(B.sets.p1||[]).map(s=>aiMon('p1',s.species));
+  const score=team.map((p,i)=>{ const sp=p.details.split(',')[0], me=aiMon('p2',sp); const S=p.stats||{}; Object.assign(me,{atk:S.atk||me.atk,def:S.def||me.def,spa:S.spa||me.spa,spd:S.spd||me.spd,spe:S.spe||me.spe});
+    let s=0; for(const f of foes){ const off=Math.max(...me.types.map(ty=>aiDmg({id:'x',type:ty,basePower:90,category:me.atk>=me.spa?'Physical':'Special'},me,f))); const def=aiThreat(f,me); s+=Math.min(off,100)-Math.min(def,100)*0.8; }
+    if(isDbl()&&(p.moves||[]).some(m=>['fakeout','tailwind','trickroom','followme','ragepowder','helpinghand'].includes(m))) s+=40;
+    return {i,s}; }).sort((a,b)=>b.s-a.s);
+  return 'team '+score.slice(0,Math.max(N,isDbl()?2:1)).map(x=>x.i+1).join(''); }
+const AI_SPREAD=['allAdjacentFoes','allAdjacent'];
+function cpuDblSmart(r,level){
+  const team=r.side.pokemon;
+  if(r.teamPreview) return aiPreview(r,level);
+  const foesPos=['p1','p1b'], foes=foesPos.map(p=>aiFoe(p,level)), myPos=['p2','p2b'];
+  const info=x=>{ const sp=x.details.split(',')[0]; const m=aiMon('p2',sp); const S=x.stats||{}; Object.assign(m,{atk:S.atk||m.atk,def:S.def||m.def,spa:S.spa||m.spa,spd:S.spd||m.spd,spe:S.spe||m.spe});
+    const hp=parseHP(x.condition); m.hpStat=hp&&hp.max||m.hpStat; m.hpPct=hp&&hp.max?hp.hp/hp.max*100:0; m.st=hp&&hp.st||''; m.ability=Dex.abilities.get(x.ability||x.baseAbility).name; m.adapt=m.ability==='Adaptability';
+    const tm=B.side.p2.team[String(x.ident).split(': ')[1]]; if(tm){ m.boosts=tm.boosts||{}; if(tm.tera) m.types=[tm.tera]; else if(tm.tchange&&tm.tchange.length) m.types=tm.tchange.slice(); } if(x.terastallized) m.types=[x.terastallized]; return m; };
+  const bench=team.map((p,j)=>({p,j})).filter(x=>!x.p.active&&!x.p.condition.endsWith(' fnt'));
+  // panchina: chi regge meglio i due avversari in campo e li colpisce meglio
+  const benchScore=x=>{ const m=info(x.p); let s=m.hpPct*.3; for(const f of foes) if(f){ s-=aiThreat(f,m)*.9; s+=Math.max(...m.types.map(ty=>aiDmg({id:'x',type:ty,basePower:80,category:m.atk>=m.spa?'Physical':'Special'},m,f)))*.5; } return s; };
+  const used=[];
+  if(r.forceSwitch){ return r.forceSwitch.map((need,i)=>{ if(!need) return 'pass'; const c=bench.filter(x=>!used.includes(x.j)).map(x=>({x,s:benchScore(x)})).sort((a,b)=>b.s-a.s)[0]; if(!c) return 'pass'; used.push(c.x.j); return 'switch '+(c.x.j+1); }).join(', '); }
+  const mine=[0,1].map(i=>team[i]&&!team[i].condition.endsWith(' fnt')?info(team[i]):null);
+  const tailOn=!!(B.cond.p2&&B.cond.p2.tailwind), trOn=!!(B.field&&B.field.trickroom);
+  const mySpe=mine.filter(Boolean).map(aiSpe), foeSpe=foes.filter(Boolean).map(aiSpe), avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
+  const slower=avg(mySpe)<avg(foeSpe);
+  const plans=[null,null]; let megaUsed=false, teraUsed=false;
+  B.aiProt=B.aiProt||{};
+  for(let i=0;i<2;i++){
+    const a=r.active&&r.active[i], me=mine[i]; if(!a||!me){ plans[i]='pass'; continue; }
+    const ally=mine[1-i], allyPos=myPos[1-i];
+    const danger=foes.reduce((t,f)=>t+(f?aiThreat(f,me):0),0), single=Math.max(0,...foes.map(f=>f?aiThreat(f,me):0));
+    const opts=[];
+    a.moves.forEach((m,j)=>{ if(m.disabled||(m.pp!==undefined&&m.pp<=0)) return; const d=Dex.moves.get(m.id); const t=m.target||d.target; let base=0;
+      const add=(tgt,s,note)=>opts.push({j,tgt,s,d,note});
+      if(d.category!=='Status'){
+        if(AI_SPREAD.includes(t)){ let s=0, kos=0; foes.forEach(f=>{ if(!f) return; const dm=aiDmg(d,me,f)*.75; s+=Math.min(dm,f.hpPct); if(dm>=f.hpPct) kos++; });
+          if(t==='allAdjacent'&&ally){ const hurt=aiDmg(d,me,ally)*.75; s-=hurt*1.3; if(hurt>=ally.hpPct) s-=80; }
+          if(['icywind','electroweb','bulldoze','snarl'].includes(d.id)) s+=12; add(null,s+kos*45); }
+        else { foes.forEach((f,k)=>{ if(!f) return; const dm=aiDmg(d,me,f); let s=Math.min(dm,f.hpPct); if(dm>=f.hpPct) s+=50+(d.priority>0?20:0);
+            if(d.id==='fakeout'){ if(B.aiFresh&&B.aiFresh[myPos[i]]===B.turn&&!f.types.includes('Ghost')) s+=48+aiThreat(f,ally||me)*.2; else s=-50; }
+            add(String(k+1),s); }); }
+      } else {
+        const id=d.id; let s=0;
+        if(PROTECTS_ID.has(id)) s=(B.aiProt[myPos[i]]===B.turn-1)?-40:(danger>=me.hpPct?42:single>=me.hpPct*.7?22:4)+(ally&&foes.some(f=>f&&aiThreat(ally,f)>=f.hpPct)?10:0);
+        else if(id==='tailwind') s=tailOn?-30:(slower?46:18);
+        else if(id==='trickroom') s=trOn?-40:(slower?50:-20);
+        else if(id==='followme'||id==='ragepowder') s=ally&&ally.hpPct>40&&foes.some(f=>f&&aiThreat(f,ally)>=ally.hpPct*.6)?36:6;
+        else if(id==='helpinghand') s=ally?14+Math.min(40,foes.reduce((t,f)=>t+(f?aiThreat(ally,f):0),0)*.2):-20;
+        else if(id==='wideguard') s=foes.some(f=>f&&f.moves&&f.moves.some(m=>AI_SPREAD.includes(m.target)&&m.category!=='Status'))?34:(level>=4?0:8);
+        else if(id==='spore'||id==='sleeppowder'||id==='hypnosis'||id==='yawn'){ const tgt=foes.map((f,k)=>({f,k})).filter(x=>x.f&&!x.f.st&&!(id!=='yawn'&&x.f.types.includes('Grass'))).sort((x,y)=>aiThreat(y.f,me)-aiThreat(x.f,me))[0]; if(tgt) opts.push({j,tgt:String(tgt.k+1),s:id==='spore'?48:36,d}); return; }
+        else if(id==='thunderwave'||id==='glare'||id==='willowisp'||id==='taunt'||id==='encore'){ const tgt=foes.map((f,k)=>({f,k})).filter(x=>x.f&&!x.f.st&&!(id==='thunderwave'&&(x.f.types.includes('Ground')||x.f.types.includes('Electric')))&&!(id==='willowisp'&&x.f.types.includes('Fire'))).sort((x,y)=>aiThreat(y.f,me)-aiThreat(x.f,me))[0];
+          if(tgt) opts.push({j,tgt:String(tgt.k+1),s:id==='willowisp'&&tgt.f.atk>tgt.f.spa?34:id==='taunt'?18:22,d}); return; }
+        else if(AI_SETUP[id]) s=danger<me.hpPct*.5?30*AI_SETUP[id]:0;
+        else if(AI_HEAL[id]) s=me.hpPct<45?40:me.hpPct<65?12:0;
+        else if(id==='partingshot') s=danger>=me.hpPct&&bench.length?30:10;
+        else s=6;
+        const needT=T_ONE.includes(t)&&t!=='adjacentAlly'&&t!=='adjacentAllyOrSelf';
+        if(needT){ const k=foes.findIndex(f=>f); add(String(k+1),s); }
+        else if(t==='adjacentAlly'){ if(ally) add(String(-((i===0)?2:1)),s); }
+        else if(t==='adjacentAllyOrSelf') add(String(-(i+1)),s);
+        else add(null,s); }
+    });
+    if(!opts.length){ plans[i]='move 1'; continue; }
+    // attacco concentrato: se il compagno ha già scelto un bersaglio e insieme lo mandate KO, bonus
+    if(i===1&&plans[0]&&plans[0].tgt){ const k=+plans[0].tgt-1, f=foes[k]; if(f){ const left=f.hpPct-plans[0].dmg; for(const o of opts) if(o.tgt===plans[0].tgt&&o.d.category!=='Status'){ const dm=aiDmg(o.d,me,f); if(plans[0].dmg<f.hpPct&&plans[0].dmg+dm>=f.hpPct) o.s+=40; } } }
+    const noise=level<=1?25:level===2?10:level===3?3:1;
+    for(const o of opts) o.s+=Math.random()*noise;
+    opts.sort((x,y)=>y.s-x.s); const best=opts[0];
+    // cambio se in grave pericolo e la panchina regge meglio
+    if(level>=2&&bench.length&&!a.trapped&&!a.maybeTrapped&&danger>=me.hpPct*1.1&&best.s<45){ const c=bench.filter(x=>!used.includes(x.j)).map(x=>({x,s:benchScore(x)})).sort((p,q)=>q.s-p.s)[0];
+      if(c&&c.s>-danger*.6&&(level>=3||Math.random()<.6)){ used.push(c.x.j); plans[i]={sw:c.x.j}; continue; } }
+    plans[i]={j:best.j,tgt:best.tgt,d:best.d,s:best.s,dmg:best.tgt&&foes[+best.tgt-1]?aiDmg(best.d,me,foes[+best.tgt-1]):0,canMega:a.canMegaEvo,canTera:a.canTerastallize};
+  }
+  return plans.map((p,i)=>{ if(p==='pass'||typeof p==='string') return p; if(p.sw!=null) return 'switch '+(p.sw+1);
+    let ch='move '+(p.j+1)+(p.tgt?' '+p.tgt:'');
+    if(PROTECTS_ID.has(p.d.id)) B.aiProt[myPos[i]]=B.turn;
+    if(p.canMega&&!megaUsed){ ch+=' mega'; megaUsed=true; }
+    else if(p.canTera&&!teraUsed&&level>=2&&p.d.category!=='Status'&&(p.d.type===p.canTera)&&p.s>=50){ ch+=' terastallize'; teraUsed=true; }
+    return ch; }).join(', '); }
+const PROTECTS_ID=new Set(['protect','detect','kingsshield','spikyshield','banefulbunker','silktrap','burningbulwark','obstruct','maxguard']);
+
+function cpuChoice(r){ if(isDbl()){ if(O.ai>0){ try{ return cpuDblSmart(r,O.ai); }catch(e){ console.warn('IA doppio',e); } } return cpuDbl(r); } if(O.ai>0){ try{ return cpuSmart(r,O.ai); }catch(e){ console.warn('IA',e); } } return cpuSingle(r); }
 function cpuSingle(r){
   if(r.teamPreview) return pickN(r)?'team '+shuffleArr([1,2,3,4,5,6].slice(0,r.side.pokemon.length)).slice(0,pickN(r)).join(''):'team 1';
   const sw=r.side.pokemon.map((m,i)=>({m,i})).filter(x=>!x.m.active&&!x.m.condition.endsWith(' fnt'));
@@ -1208,6 +1306,8 @@ function uiDbl(sid){
   const n=r.teamPreview?Math.min(2,team.length):(r.forceSwitch?r.forceSwitch.length:(r.active?r.active.length:1));
   if(!r.teamPreview) while(P.parts.length<n){ const i=P.parts.length;
     if(r.forceSwitch&&!r.forceSwitch[i]){ P.parts.push('pass'); continue; }
+    // cambio obbligato ma nessuno rimasto in panchina (es. entrambi KO e un solo Pokémon dietro): quel posto passa
+    if(r.forceSwitch){ const chosen=P.parts.filter(x=>x.startsWith('switch')).map(x=>+x.split(' ')[1]); if(!team.some((m,j)=>!m.active&&!m.condition.endsWith(' fnt')&&!chosen.includes(j+1))){ P.parts.push('pass'); continue; } }
     if(!r.forceSwitch&&(!r.active[i]||!team[i]||team[i].condition.endsWith(' fnt'))){ P.parts.push('pass'); continue; }
     break; }
   if(!r.teamPreview&&P.parts.length>=n){ const ch=P.parts.join(', '); B.pick=null; if(O.mode==='two') B.passTo=null; send(sid,ch); return; }
