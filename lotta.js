@@ -55,6 +55,14 @@ const CSS=`#lotta{position:fixed;inset:0;z-index:60;overflow:auto;background:#F6
 #lotta .bchip.up{background:#2E8B3E}#lotta .bchip.down{background:#C21F1F}
 #lotta .pop{position:absolute;z-index:8;font:900 clamp(13px,2.6vw,18px) 'Inter',sans-serif;padding:2px 10px;border-radius:99px;border:2px solid var(--line);color:#fff;pointer-events:none;animation:pop 1.3s ease-out forwards;white-space:nowrap}
 #lotta .pop.up{background:#2E8B3E}#lotta .pop.down{background:#C21F1F}#lotta .pop.heal{background:#3FA9F5}
+#lotta .pop.miss{background:#fff;color:#1F2A44;font-style:italic}
+#lotta .st.vol{background:#5B4A9E;color:#fff;font-weight:700}
+#lotta .le.hp{color:#5B6684;font-size:.9em}
+#lotta .abar{position:absolute;z-index:9;display:flex;flex-direction:column;background:#FFFFFF;border:3px solid #1F2A44;border-radius:10px;padding:3px 12px;font:600 clamp(11px,2.2vw,14px) 'Inter',sans-serif;color:#1F2A44;box-shadow:0 3px 0 #1F2A44;pointer-events:none;animation:abar 1.9s ease forwards;white-space:nowrap}
+#lotta .abar b{font-size:.85em;color:#5B6684;font-weight:700}#lotta .abar span{font-weight:900}
+#lotta .abar.foe{top:30%;right:2%}#lotta .abar.me{bottom:30%;left:2%}
+@keyframes abar{0%{opacity:0;transform:translateX(var(--dx,30px))}12%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}
+#lotta .abar.me{--dx:-30px}
 @keyframes pop{0%{opacity:0;transform:translate(-50%,10px) scale(.7)}15%{opacity:1;transform:translate(-50%,0) scale(1.08)}75%{opacity:1;transform:translate(-50%,-26px)}100%{opacity:0;transform:translate(-50%,-40px)}}
 
 /* Poké Ball della squadra (si possono puntare per vedere i Pokémon) */
@@ -542,6 +550,15 @@ function hpView(sid){ const m=actMon(sid); if(!m) return;
   f.style.width=pct+'%'; f.className='fill '+(pct<=20?'low':pct<=50?'mid':'');
   pc.textContent=Math.ceil(pct)+'%'; n.textContent=exactHP(sideOfPos(sid))?`${Math.max(0,Math.round(m.shown))}/${m.max}`:''; }
 function drawSide(x){ if(String(x).length>2){ drawPos(x); return; } drawPos(x); drawPos(x+'b'); }
+// effetti temporanei mostrati come su Showdown (etichette sotto la barra dei PS)
+const VOL={confusion:'Confuso',leechseed:'Parassiseme',taunt:'Provocato',encore:'Ripeti',yawn:'Sonnolenza',focusenergy:'Focalizzato',attract:'Infatuato',curse:'Maledetto',disable:'Inibitore',embargo:'Embargo',healblock:'Anticura',magnetrise:'Magnetascesa',aquaring:'Acquanello',ingrain:'Radicamento',flashfire:'Fuocodentro',slowstart:'Avvio lento',protosynthesis:'Paleosintesi',quarkdrive:'Carica quark',charge:'Carica',torment:'Attaccalite',nightmare:'Incubo',powertrick:'Ingannoforza',smackdown:'A terra',telekinesis:'Telecinesi',throatchop:'Gola tagliata',saltcure:'Salatura',syrupbomb:'Sciroppo',tarshot:'Catrame',imprison:'Esclusiva',laserfocus:'Concentrato',miracleeye:'Miracolvista',foresight:'Preveggenza',odorsleuth:'Segugio',noretreat:'Nessuna fuga',octolock:'Polipresa',partiallytrapped:'Intrappolato',doomdesire:'Desiderio',futuresight:'Divinazione',gastroacid:'Gastroacido',glaiverush:'Lama lanciata',minimize:'Minimizzato',defensecurl:'Ricciolscudo',dynamax:'Dynamax',substitute:'Sostituto'};
+const STATN={atk:'Att.',def:'Dif.',spa:'Att.Sp.',spd:'Dif.Sp.',spe:'Vel.'};
+function volLabel(n,extra){ const id=toID(n); if(/^perish(\d)$/.test(id)) return 'Ultimocanto '+id.slice(-1); if(/^stockpile(\d)$/.test(id)) return 'Accumulo '+id.slice(-1);
+  if((id==='protosynthesis'||id==='quarkdrive')&&extra){ const s=String(extra).replace(/^(protosynthesis|quarkdrive)/i,'').toLowerCase(); return VOL[id]+(STATN[s]?' '+STATN[s]:''); } return VOL[id]||n; }
+function volChips(m){ const out=[]; if(m.tchange&&m.tchange.length) out.push(`<span class="st vol">${m.tchange.map(x=>(TIPI[x]||x)).join('/')}</span>`);
+  for(const v of Object.values(m.vol||{})) if(v!=='Sostituto') out.push(`<span class="st vol">${esc(v)}</span>`); return out.join(''); }
+const VOLMSG={confusion:a=>`${a} è confuso!`,leechseed:a=>`${a} è stato colpito da Parassiseme!`,taunt:a=>`${a} cade nella provocazione!`,encore:a=>`${a} riceve Ripeti!`,yawn:a=>`${a} diventa sonnolento!`,focusenergy:a=>`${a} si concentra al massimo!`,attract:a=>`${a} si è infatuato!`,curse:a=>`${a} è maledetto!`,disable:(a,x)=>`La mossa ${esc(x||'')} di ${a} è bloccata!`,
+  healblock:a=>`${a} non può curarsi!`,magnetrise:a=>`${a} levita grazie al magnetismo!`,aquaring:a=>`${a} si circonda di un velo d'acqua!`,ingrain:a=>`${a} mette radici!`,flashfire:a=>`La potenza delle mosse Fuoco di ${a} aumenta!`,slowstart:a=>`${a} non riesce a carburare!`,protosynthesis:(a,x)=>`Paleosintesi potenzia ${a}!`,quarkdrive:(a,x)=>`Carica quark potenzia ${a}!`,charge:a=>`${a} si carica di elettricità!`,torment:a=>`${a} è tormentato!`,smackdown:a=>`${a} cade a terra!`,saltcure:a=>`${a} è sotto Salatura!`,tarshot:a=>`${a} diventa più debole al fuoco!`,noretreat:a=>`${a} non può più fuggire!`,partiallytrapped:a=>`${a} è intrappolato!`,futuresight:a=>`${a} prevede un attacco!`,doomdesire:a=>`${a} sceglie Desiderio come destino!`,gastroacid:a=>`L'abilità di ${a} viene annullata!`,laserfocus:a=>`${a} si concentra intensamente!`,minimize:a=>`${a} si rimpicciolisce!`};
 function drawPos(sid){ const side=sideOfPos(sid);
   const s=B.side[side], m=actMon(sid), hud=$('hud'+sid), el=$('mon'+sid); if(!hud||!el) return;
   if(!m){ hud.hidden=true; if(sid!==side){ el.innerHTML=''; el.dataset.sp=''; } return; }
@@ -549,7 +566,7 @@ function drawPos(sid){ const side=sideOfPos(sid);
   const seeItem=setVisible(side)||m.itemSeen;
   hud.innerHTML=`<div class="sb" data-tip="act:${sid}"><div class="sbn"><b>${esc(m.species)}</b>${m.shiny?'<i class="shy">✨</i>':''}<small>L100</small></div>
     <div class="sbbar"><div class="tr"><div class="fill" id="lt-fill${sid}"></div></div><span class="pct" id="lt-pct${sid}"></span></div>
-    <div class="sbst">${m.st&&m.st!=='fnt'?`<span class="st ${m.st}">${m.st.toUpperCase()}</span>`:''}${m.tera?`<span class="st" style="background:${TYPE_COLORS[m.tera]||'#666'}">TERA ${(TIPI[m.tera]||m.tera).toUpperCase()}</span>`:''}${boostChips(m)}<span class="hpn" id="lt-num${sid}"></span></div>
+    <div class="sbst">${m.st&&m.st!=='fnt'?`<span class="st ${m.st}">${m.st.toUpperCase()}</span>`:''}${m.tera?`<span class="st" style="background:${TYPE_COLORS[m.tera]||'#666'}">TERA ${(TIPI[m.tera]||m.tera).toUpperCase()}</span>`:''}${boostChips(m)}${volChips(m)}<span class="hpn" id="lt-num${sid}"></span></div>
     <div class="balls" id="lt-ballsx${sid}"></div></div>`;
   hpView(sid);
   const key=m.species+(m.shiny?'*':'');
@@ -701,6 +718,12 @@ function drawField(){
   $('wlabel').innerHTML=lab.map(x=>`<span>${esc(x)}</span>`).join('');
 }
 function draw(){ drawSide('p1'); drawSide('p2'); drawField(); }
+// riga solo nella cronaca (senza cambiare il messaggio grande)
+function logLine(html,kind){ const box=$('log'); if(!box) return; const d=document.createElement('div'); d.className='le'+(kind?' '+kind:''); d.innerHTML=html; box.appendChild(d); B.log.push(d.textContent); box.scrollTop=box.scrollHeight; }
+// barra dell'abilità che entra in azione (come su Showdown): "Garchomp: Pelle Ruvida"
+function abilBar(pos,ability){ const ar=$('arena'); if(!ar||!ability) return; const id=parseId(pos+': x'); const m=actMon(pos); if(!m) return;
+  const d=document.createElement('div'); d.className='abar '+(sideOfPos(pos)==='p1'?'me':'foe'); d.innerHTML='<b>'+esc(m.species)+'</b><span>'+esc(ability)+'</span>';
+  ar.appendChild(d); setTimeout(()=>d.remove(),1900); }
 function say(html,kind){ $('msg').innerHTML=html; const box=$('log'); if(!box) return;
   const d=document.createElement('div'); d.className='le'+(kind?' '+kind:''); d.innerHTML=html; box.appendChild(d); B.log.push(d.textContent);
   box.scrollTop=box.scrollHeight; }
@@ -903,11 +926,12 @@ function track(p){ if(!B) return; const S=B.stats||(B.stats={p1:{used:{},moves:{
   else if(k==='faint'){ const w=who(p[2]); const h=w&&B.lastHit&&B.lastHit[w.key]; if(h){ S[h.side].kos[h.sp]=(S[h.side].kos[h.sp]||0)+1; delete B.lastHit[w.key]; } }
   else if(k==='turn') B.lastActor=null; }
 async function handle(line){
-  const p=line.split('|'); const k=p[1]; try{ track(p); }catch(e){} const sideOf=id=>(parseId(id)||{}).side;
+  const p=line.split('|'); const k=p[1]; try{ track(p); }catch(e){}
+  try{ const fa=p.find(x=>x&&x.startsWith('[from] ability: ')); if(fa&&k!=='-ability'){ const of=p.find(x=>x&&x.startsWith('[of] ')); const who=parseId(of?of.slice(5):p[2]); if(who){ mon(who.side,who.nick).abilitySeen=fa.slice(16); abilBar(who.pos,fa.slice(16)); } } }catch(e){} const sideOf=id=>(parseId(id)||{}).side;
   switch(k){
     case 'switch': case 'drag': case 'replace': {
       const id=parseId(p[2]); const species=p[3].split(',')[0]; const m=mon(id.side,id.nick); m.species=species; m.shiny=p[3].includes('shiny');
-      const h=parseHP(p[4]); if(h){ m.hp=h.hp; m.max=h.max||m.max; m.shown=h.hp; m.st=h.st; } m.boosts={}; m.sub=false;
+      const h=parseHP(p[4]); if(h){ m.hp=h.hp; m.max=h.max||m.max; m.shown=h.hp; m.st=h.st; } m.boosts={}; m.sub=false; m.vol={}; m.tchange=null;
       const s=B.side[id.side], sk=slotK(id.pos); const el=$('mon'+id.pos);
       if(s[sk]&&s[sk]!==id.nick){ el.classList.add('out'); await sleep(350); }
       s[sk]=id.nick; cry(species); el.classList.remove('faint'); el.dataset.sp=''; draw(); el.classList.add('out'); void el.offsetWidth; el.classList.remove('out');
@@ -927,17 +951,19 @@ async function handle(line){
       if(k==='-damage'&&to<was){ cls(id.pos,'hit',500); if(f!=='Life Orb') sfx(f?'weak':(B.eff||'hit')); B.eff=null; }
       if(k==='-heal'&&to>was) sfx('heal');
       if(k==='-heal'&&to>was) pop(id.pos,'+'+Math.round(exactHP(id.side)?to-was:(to-was)/m.max*100)+(exactHP(id.side)?' PS':'%'),'heal');
-      const anim=animHP(id.side,m,to); m.hp=to;
+      const pctDiff=m.max?Math.round(Math.abs(to-was)/m.max*100):0; const anim=animHP(id.side,m,to); m.hp=to;
       if(k==='-heal') say(`${label(p[2])} recupera PS${f?' ('+esc(f)+')':''}.`);
       else if(f) say(`${label(p[2])} subisce danni per ${esc(CAUSE[f]||f)}.`);
+      if(pctDiff&&k==='-damage'&&to<was) logLine(`(${label(p[2])} perde il ${pctDiff}% dei PS!)`,'hp');
+      else if(pctDiff&&k==='-heal'&&to>was) logLine(`(${label(p[2])} recupera il ${pctDiff}% dei PS!)`,'hp');
       await anim; return k==='-damage'&&!f?150:500; }
     case 'faint': { sfx('faint'); const id=parseId(p[2]); const m=mon(id.side,id.nick); m.hp=0; m.st='fnt'; $('mon'+id.pos).classList.add('faint'); say(`${label(p[2])} è esausto!`); await sleep(900); drawSide(id.side); return 300; }
     case '-supereffective': B.eff='super'; say('È superefficace!'); return 750;
     case '-resisted': B.eff='weak'; say('Non è molto efficace…'); return 750;
-    case '-immune': say(`Non ha effetto su ${label(p[2])}…`); return 800;
+    case '-immune': { const id=parseId(p[2]); if(id) pop(id.pos,'Immune','miss'); say(`Non ha effetto su ${label(p[2])}…`); return 800; }
     case '-crit': say('Brutto colpo!'); return 700;
-    case '-miss': say(`${label(p[2])} manca il bersaglio!`); return 800;
-    case '-fail': say('Ma non ha effetto!'); return 700;
+    case '-miss': { const tg=parseId(p[3]); if(tg) pop(tg.pos,'Miss','miss'); say(`${label(p[2])} manca il bersaglio!`); return 800; }
+    case '-fail': { const id=parseId(p[2]); if(id) pop(id.pos,'Fail','miss'); say('Ma non ha effetto!'); return 700; }
     case '-status': { const id=parseId(p[2]); mon(id.side,id.nick).st=p[3]; drawSide(id.side); if(window.PSAnimData&&window.PSAnimData.BattleStatusAnims[p[3]]) psRun('status',p[3],id.pos,null); say(`${label(p[2])} ${STATUS[p[3]]||esc(p[3])}!`); return 900; }
     case '-curestatus': { const id=parseId(p[2]); if(id){ mon(id.side,id.nick).st=''; drawSide(id.side); say(`${label(p[2])} è guarito.`); return 700; } return 0; }
     case 'cant': { const r={par:'è paralizzato! Non riesce a muoversi!',slp:'dorme profondamente.',frz:'è congelato!',flinch:'tentenna e non attacca!',recharge:'deve riprendersi.'}[p[3]]||'non può muoversi.'; say(`${label(p[2])} ${r}`); return 900; }
@@ -956,16 +982,20 @@ async function handle(line){
       if(k==='-sidestart'){ B.start[sid+id]=[B.turn]; c[id]=(id==='spikes'||id==='toxicspikes')?Math.min(id==='spikes'?3:2,(c[id]||0)+1):1; drawField(); say(SIDECOND[id]?`${SIDECOND[id][1]} ${PN(sid)}!`:`${esc(n)}: ${PN(sid)}.`); return 1000; }
       delete c[id]; drawField(); say(`${SIDECOND[id]?SIDECOND[id][0]:esc(n)} sparisce dalla parte di ${PN(sid)}.`); return 700; }
     case '-terastallize': { const id=parseId(p[2]); mon(id.side,id.nick).tera=p[3]; drawSide(id.side); shot(id.pos,id.pos,TYPE_COLORS[p[3]]||'#fff',true); say(`${label(p[2])} si teracristallizza: tipo ${TIPI[p[3]]||esc(p[3])}!`); return 1100; }
-    case '-ability': { const id=parseId(p[2]); if(id) mon(id.side,id.nick).abilitySeen=p[3]; }
+    case '-ability': { const id=parseId(p[2]); if(id){ mon(id.side,id.nick).abilitySeen=p[3]; abilBar(id.pos,p[3]); } }
       say(`[Abilità di ${label(p[2])}: ${esc(p[3])}]`); return 800;
     case '-item': { const id=parseId(p[2]); const m=mon(id.side,id.nick); m.item=p[3]; m.itemSeen=true; drawSide(id.side); say(`${label(p[2])} ottiene ${esc(p[3])}.`); return 800; }
     case '-enditem': { const id=parseId(p[2]); const m=mon(id.side,id.nick); m.item=null; m.itemSeen=true; drawSide(id.side); say(p.some(x=>x&&x.startsWith('[eat]'))?`${label(p[2])} mangia ${esc(p[3])}!`:`${label(p[2])} perde ${esc(p[3])}.`); return 800; }
-    case '-start': { const id=parseId(p[2]); const n=p[3].replace('move: ','');
+    case '-start': { const id=parseId(p[2]); const n=p[3].replace(/^(move|ability|item): /,''); const mm=mon(id.side,id.nick);
+      if(n==='typechange'){ mm.tchange=String(p[4]||'').split('/').filter(Boolean); drawSide(id.side); say(`${label(p[2])} diventa di tipo ${mm.tchange.map(x=>TIPI[x]||esc(x)).join('/')}!`); return 900; }
+      if(VOL[toID(n)]||/^perish\d$/.test(toID(n))||/^stockpile\d$/.test(toID(n))){ (mm.vol=mm.vol||{})[/^perish/.test(toID(n))?'perish':/^stockpile/.test(toID(n))?'stockpile':toID(n)]=volLabel(n,p[4]); drawSide(id.side); }
+      if(VOLMSG[toID(n)]){ say(VOLMSG[toID(n)](label(p[2]),p[4])); return 800; }
       if(n==='Substitute'){ mon(id.side,id.nick).sub=true; drawSide(id.side); say(`${label(p[2])} crea un sostituto!`); return 900; }
       if(n==='confusion'){ say(`${label(p[2])} è confuso!`); return 800; }
       say(`${label(p[2])}: ${esc(n)}.`); return 700; }
-    case '-end': { const id=parseId(p[2]); const n=p[3].replace('move: ',''); if(n==='Substitute'){ mon(id.side,id.nick).sub=false; drawSide(id.side); say(`Il sostituto di ${label(p[2])} svanisce!`); return 800; } return 0; }
-    case '-activate': { const n=(p[3]||'').replace('move: ',''); if(n==='Protect'||n==='Detect'){ say(`${label(p[2])} si protegge!`); return 800; } if(n==='Substitute'){ say('Il sostituto incassa il colpo!'); return 800; } return 0; }
+    case '-end': { const id=parseId(p[2]); const n=p[3].replace(/^(move|ability|item): /,''); { const mm=mon(id.side,id.nick); if(mm.vol&&p.includes('[partiallytrapped]')&&mm.vol.partiallytrapped){ delete mm.vol.partiallytrapped; drawSide(id.side); } if(mm.vol){ const kk=/^stockpile/.test(toID(n))?'stockpile':toID(n); if(mm.vol[kk]){ delete mm.vol[kk]; drawSide(id.side); } } if(toID(n)==='typechange'){ mm.tchange=null; drawSide(id.side); } } if(n==='Substitute'){ mon(id.side,id.nick).sub=false; drawSide(id.side); say(`Il sostituto di ${label(p[2])} svanisce!`); return 800; } return 0; }
+    case '-activate': { const n=(p[3]||'').replace('move: ','');
+      if(['Bind','Wrap','Fire Spin','Whirlpool','Sand Tomb','Magma Storm','Infestation','Clamp','Snap Trap','Thunder Cage'].includes(n)){ const id=parseId(p[2]); if(id){ const mm=mon(id.side,id.nick); (mm.vol=mm.vol||{}).partiallytrapped='Intrappolato'; drawSide(id.side); say(`${label(p[2])} è intrappolato da ${esc(n)}!`); return 800; } } if(n==='Protect'||n==='Detect'){ say(`${label(p[2])} si protegge!`); return 800; } if(n==='Substitute'){ say('Il sostituto incassa il colpo!'); return 800; } return 0; }
     case '-singleturn': { const n=(p[3]||'').replace('move: ',''); if(n==='Protect'||n==='Detect'){ say(`${label(p[2])} si protegge!`); return 800; } return 0; }
     case '-mega': say(`${label(p[2])} megaevolve!`); return 1000;
     case 'turn': { B.turn=+p[2]||0; const tb=$('turn'); tb.hidden=false; tb.textContent='Turno '+p[2]; say(`Turno ${esc(p[2])}`,'turn'); return 350; }
@@ -987,7 +1017,7 @@ const effSpan=e=>e?`<span class="effl ${e[0]}" title="${e[1]}">${EFF_SYM[e[0]]}<
 function effOf(moveId,sid,fp){
   const mv=Dex.moves.get(moveId); if(mv.category==='Status') return null;
   const m=actMon(fp||other(sid)); if(!m) return null;
-  const types=m.tera&&m.tera!=='Stellar'?[m.tera]:Dex.species.get(m.species).types;
+  const types=m.tera&&m.tera!=='Stellar'?[m.tera]:(m.tchange&&m.tchange.length?m.tchange:Dex.species.get(m.species).types);
   if(!Dex.getImmunity(mv.type,types)) return ['x0','Nessun effetto'];
   const e=Dex.getEffectiveness(mv.type,types);
   return e>=2?['x4','Iper efficace ×4']:e===1?['x2','Superefficace ×2']:e===-1?['x05','Poco efficace ×½']:e<=-2?['x025','Per niente efficace ×¼']:null;
@@ -1259,7 +1289,7 @@ function battleInfo(sid,live){
     if(c.length) h+=`<div><b>Dalla sua parte:</b> ${c.map(esc).join(', ')}</div>`; }
   return wrap(h); }
 function monTipBase(sid,set,live,stats){
-  const sp=Dex.species.get(live&&live.species||set.species); const types=live&&live.tera&&live.tera!=='Stellar'?[live.tera]:sp.types;
+  const sp=Dex.species.get(live&&live.species||set.species); const types=live&&live.tera&&live.tera!=='Stellar'?[live.tera]:(live&&live.tchange&&live.tchange.length?live.tchange:sp.types);
   let h=`<h4>${esc(sp.name)}${live&&live.shiny||set.shiny?' ✨':''} ${types.map(typeChip).join('')}</h4><dl>`;
   if(live&&live.max&&live.st!=='fnt') h+=`<dt>PS</dt><dd>${exactHP(sid)||viewer()===sid?`${Math.round(live.hp)} / ${live.max}`:Math.ceil(live.hp/live.max*100)+'%'}${live.st?' · '+live.st.toUpperCase():''}</dd>`;
   if(live&&live.st==='fnt') h+=`<dt>PS</dt><dd>esausto</dd>`;
@@ -1394,7 +1424,7 @@ const SIDE_EN={'Rocce aguzze fluttuano intorno alla squadra di':n=>`Pointed ston
   'Riflesso protegge la squadra di':n=>`Reflect made ${n}'s team stronger against physical moves!`,'Schermoluce protegge la squadra di':n=>`Light Screen made ${n}'s team stronger against special moves!`,
   'Velo Aurora protegge la squadra di':n=>`Aurora Veil made ${n}'s team stronger against physical and special moves!`,'Il vento in coda soffia alle spalle di':n=>`The Tailwind blew from behind ${n}'s team!`,
   'Salvaguardia protegge la squadra di':n=>`${n}'s team cloaked itself in a mystical veil!`,'La nebbia avvolge la squadra di':n=>`${n}'s team became shrouded in mist!`};
-const EN_EXACT={'Lotta':'Battle','Esci dalla lotta':'Leave battle','Sicuro? Premi di nuovo':'Sure? Press again','🏳 Arrenditi':'🏳 Forfeit','📜 Cronaca':'📜 Log','💬 Chat':'💬 Chat','⏱ Timer':'⏱ Timer','⏱ Timer attivo':'⏱ Timer on',
+const EN_EXACT={"Confuso":"Confused","Parassiseme":"Leech Seed","Provocato":"Taunt","Ripeti":"Encore","Sonnolenza":"Drowsy","Focalizzato":"Focus Energy","Infatuato":"Attract","Maledetto":"Curse","Inibitore":"Disable","Embargo":"Embargo","Anticura":"Heal Block","Magnetascesa":"Magnet Rise","Acquanello":"Aqua Ring","Radicamento":"Ingrain","Fuocodentro":"Flash Fire","Avvio lento":"Slow Start","Paleosintesi":"Protosynthesis","Carica quark":"Quark Drive","Carica":"Charge","Attaccalite":"Torment","Incubo":"Nightmare","Ingannoforza":"Power Trick","A terra":"Smacked Down","Telecinesi":"Telekinesis","Gola tagliata":"Throat Chop","Salatura":"Salt Cure","Sciroppo":"Syrup Bomb","Catrame":"Tar Shot","Esclusiva":"Imprison","Concentrato":"Laser Focus","Miracolvista":"Miracle Eye","Preveggenza":"Foresight","Segugio":"Odor Sleuth","Nessuna fuga":"No Retreat","Polipresa":"Octolock","Intrappolato":"Trapped","Desiderio":"Doom Desire","Divinazione":"Future Sight","Gastroacido":"Gastro Acid","Lama lanciata":"Glaive Rush","Minimizzato":"Minimize","Ricciolscudo":"Defense Curl",'Lotta':'Battle','Esci dalla lotta':'Leave battle','Sicuro? Premi di nuovo':'Sure? Press again','🏳 Arrenditi':'🏳 Forfeit','📜 Cronaca':'📜 Log','💬 Chat':'💬 Chat','⏱ Timer':'⏱ Timer','⏱ Timer attivo':'⏱ Timer on',
   'Cronaca della lotta':'Battle log','Scrivi al tuo avversario. Sii gentile!':'Write to your opponent. Be nice!','Invia':'Send','Scrivi un messaggio…':'Write a message…','Attacca':'Attack','Cambia':'Switch',
   'Teracristallizza':'Terastallize','Chi mandi in campo per primo?':'Who will you send out first?','Chi mandi in campo?':'Who will you send out?','Non puoi cambiare Pokémon.':'You can\'t switch.','Il turno è in corso…':'The turn is in progress…','Scelta non valida, riprova.':'Invalid choice, try again.',
   'In attesa…':'Waiting…','Nuova lotta':'New battle','Chiudi la lotta':'Close the battle','Chiudi':'Close','La lotta sta per cominciare!':'The battle is about to begin!','È superefficace!':'It\'s super effective!','Non è molto efficace…':'It\'s not very effective…',
@@ -1418,6 +1448,11 @@ const stRx='(Attacco|Difesa|Att\\. Sp\\.|Dif\\. Sp\\.|Velocità|Precisione|Elusi
 const statsIn=s=>s.replace(new RegExp(stRx,'g'),m=>STAT_EN[m]||m);
 const lab=s=>{ const m=/^(.+) di (.+)$/.exec(s); return m?`${m[2]}'s ${m[1]}`:s; };
 const EN_RX=[
+  [/^\((.+?) perde il (\d+)% dei PS!\)$/,(m,a,n)=>`(${lab(a)} lost ${n}% of its health!)`],[/^\((.+?) recupera il (\d+)% dei PS!\)$/,(m,a,n)=>`(${lab(a)} had its HP restored: ${n}%!)`],
+  [/^Ultimocanto (\d)$/,(m,n)=>'Perish '+n],[/^Accumulo (\d)$/,(m,n)=>'Stockpile '+n],[/^(Paleosintesi|Carica quark) (Att\.|Dif\.|Att\.Sp\.|Dif\.Sp\.|Vel\.)$/,(m,a,s)=>(a==='Paleosintesi'?'Protosynthesis':'Quark Drive')+' '+({'Att.':'Atk','Dif.':'Def','Att.Sp.':'SpA','Dif.Sp.':'SpD','Vel.':'Spe'})[s]],
+  [/^(.+?) diventa di tipo (.+)!$/,(m,a,t)=>`${lab(a)} transformed into the ${t.split('/').map(x=>TYPE_EN[x]||x).join('/')} type!`],
+  [/^(.+?) è confuso!$/,(m,a)=>`${lab(a)} became confused!`],[/^(.+?) è stato colpito da Parassiseme!$/,(m,a)=>`${lab(a)} was seeded!`],[/^(.+?) cade nella provocazione!$/,(m,a)=>`${lab(a)} fell for the taunt!`],[/^(.+?) riceve Ripeti!$/,(m,a)=>`${lab(a)} must do an encore!`],[/^(.+?) diventa sonnolento!$/,(m,a)=>`${lab(a)} grew drowsy!`],[/^(.+?) si concentra al massimo!$/,(m,a)=>`${lab(a)} is getting pumped!`],[/^(.+?) si è infatuato!$/,(m,a)=>`${lab(a)} fell in love!`],[/^(.+?) è maledetto!$/,(m,a)=>`${lab(a)} was cursed!`],[/^La mossa (.*) di (.+?) è bloccata!$/,(m,x,a)=>`${lab(a)}'s ${x} was disabled!`],
+  [/^(.+?) non può curarsi!$/,(m,a)=>`${lab(a)} was prevented from healing!`],[/^(.+?) levita grazie al magnetismo!$/,(m,a)=>`${lab(a)} levitated with electromagnetism!`],[/^(.+?) si circonda di un velo d'acqua!$/,(m,a)=>`${lab(a)} surrounded itself with a veil of water!`],[/^(.+?) mette radici!$/,(m,a)=>`${lab(a)} planted its roots!`],[/^La potenza delle mosse Fuoco di (.+?) aumenta!$/,(m,a)=>`The power of ${lab(a)}'s Fire-type moves rose!`],[/^(.+?) non riesce a carburare!$/,(m,a)=>`${lab(a)} can't get it going!`],[/^Paleosintesi potenzia (.+?)!$/,(m,a)=>`Protosynthesis boosted ${lab(a)}!`],[/^Carica quark potenzia (.+?)!$/,(m,a)=>`Quark Drive boosted ${lab(a)}!`],[/^(.+?) si carica di elettricità!$/,(m,a)=>`${lab(a)} began charging power!`],[/^(.+?) è tormentato!$/,(m,a)=>`${lab(a)} was subjected to torment!`],[/^(.+?) cade a terra!$/,(m,a)=>`${lab(a)} fell straight down!`],[/^(.+?) è sotto Salatura!$/,(m,a)=>`${lab(a)} is being salt cured!`],[/^(.+?) diventa più debole al fuoco!$/,(m,a)=>`${lab(a)} became weaker to fire!`],[/^(.+?) non può più fuggire!$/,(m,a)=>`${lab(a)} can no longer escape!`],[/^(.+?) è intrappolato da (.+)!$/,(m,a,x)=>`${lab(a)} was trapped by ${x}!`],[/^(.+?) è intrappolato!$/,(m,a)=>`${lab(a)} is trapped!`],[/^(.+?) prevede un attacco!$/,(m,a)=>`${lab(a)} foresaw an attack!`],[/^(.+?) sceglie Desiderio come destino!$/,(m,a)=>`${lab(a)} chose Doom Desire as its destiny!`],[/^L'abilità di (.+?) viene annullata!$/,(m,a)=>`${lab(a)}'s Ability was suppressed!`],[/^(.+?) si concentra intensamente!$/,(m,a)=>`${lab(a)} concentrated intensely!`],[/^(.+?) si rimpicciolisce!$/,(m,a)=>`${lab(a)} shrank!`],
   [/^(.+?) usa$/,(m,a)=>`${lab(a)} used`],[/^(.+) manda in campo$/,(m,a)=>`${a} sent out`],
   [/^(.+?) recupera PS( \((.+)\))?\.$/,(m,a,b,c)=>`${lab(a)} restored HP${c?' ('+c+')':''}.`],[/^(.+?) subisce danni per (.+)\.$/,(m,a,b)=>`${lab(a)} was hurt by ${CAUSE_EN[b]||b}.`],
   [/^(.+?) è esausto!$/,(m,a)=>`${lab(a)} fainted!`],[/^Non ha effetto su (.+?)…$/,(m,a)=>`It doesn't affect ${lab(a)}…`],[/^(.+?) manca il bersaglio!$/,(m,a)=>`${lab(a)}'s attack missed!`],
