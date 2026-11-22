@@ -178,7 +178,8 @@ details.remote ol{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:c
 @media (prefers-reduced-motion:reduce){.snow{display:none}}
 .musicbtn{padding:6px 9px;font-size:14px;line-height:1}
 /* pulsante "Usa questa" nella Torre: 20% più piccolo dei pulsanti piccoli */
-.btn.sm.minibtn{font-size:11px;padding:6px 11px;border-width:2px;box-shadow:0 3px 0 var(--line);margin-left:6px;vertical-align:middle;min-height:0}
+.btn.sm.minibtn{font-size:11px;padding:6px 11px;border-width:2px;box-shadow:0 3px 0 var(--line);min-height:0}
+.twpickrow{display:flex;justify-content:flex-end;margin-top:4px}
 .pgo{justify-content:center;gap:8px;margin:0 0 12px}.pgo .btn{flex:1 1 150px}
 .twmode .opts,.opts.ptabs{display:flex!important;flex-wrap:wrap;gap:6px;margin:4px 0 8px;grid-template-columns:none!important}.twmode .opt,.ptabs .opt{flex:1 1 auto;width:auto;min-height:0;padding:6px 10px;text-align:center;justify-content:center}.opts.ptabs{flex-wrap:nowrap}.ptabs .opt{flex:1 1 0}
 .ptabs{padding:2px 10px!important;font-size:12px!important;min-height:0!important;margin-left:6px;border-width:2px!important;box-shadow:0 2px 0 var(--line)!important;vertical-align:middle}
@@ -1440,7 +1441,7 @@ function vTower(){
   if(!o) o=twNew(M.key);
   const best=cleanStats(profMe().stats).torre[M.key].best, stars=n=>'★'.repeat(n+1)+'☆'.repeat(3-n), tr=o.trainer;
   const chips=names=>`<div class="chips">${names.map(n=>{ const m=MON_BY_NAME.get(n); return `<span class="tchip mon">${spr(m,'mini')}${disp(m)}</span>`; }).join('')}</div>`;
-  const draws=!o.started&&!o.lost?o.draws.map((d,i)=>`<div class="note${i===o.pick?' ok':''}" style="margin:6px 0"><b>${t('tw.teamN',i+1)}</b>${i===o.pick?` · ${t('tw.chosen')}`:` <button class="btn ghost sm minibtn" data-act="twpick" data-v="${i}">${t('tw.useThis')}</button>`}${chips(d.team)}</div>`).join('')
+  const draws=!o.started&&!o.lost?o.draws.map((d,i)=>`<div class="note${i===o.pick?' ok':''}" style="margin:6px 0"><b>${t('tw.teamN',i+1)}</b>${i===o.pick?` · ${t('tw.chosen')}`:''}${chips(d.team)}${i===o.pick?'':`<div class="twpickrow"><button class="btn ghost sm minibtn" data-act="twpick" data-v="${i}">${t('tw.useThis')}</button></div>`}</div>`).join('')
     +(o.draws.length<3?`<div class="center"><button class="btn ghost sm" data-act="twdraw">🎲 ${t('tw.drawAnother',o.draws.length,3)}</button></div>`:`<p class="muted" style="font-size:13px">${t('tw.noMoreDraws')}</p>`):chips(o.team);
   return head+`<section class="card"><span class="label">${t('tw.modeLabel')}</span>${twModePicker(M.key,'twmode')}<p class="muted" style="font-size:12px;margin:6px 0 0">${t('tw.modeHelp')}${M.format==='doppio'?' '+t('tw.dblNote'):''}</p></section>
   <section class="card"><div class="top"><h2 class="nm">${o.lost?t('tw.lostT',o.floor):t('tw.floor',o.floor)}</h2><span class="chip">🏆 ${t('tw.best',best)}</span></div>
