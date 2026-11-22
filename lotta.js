@@ -453,7 +453,10 @@ const CSS=`#lotta{position:fixed;inset:0;z-index:60;overflow:auto;background:#F6
 @media (max-width:820px){#lotta .lt-reopen{font-size:12px;padding:3px 7px}#lotta .lt-top .lt-reopen{margin-left:0;order:3}}
 #lotta .haz.p1,#lotta .haz.p2{left:0!important;right:0!important;top:0!important;bottom:0!important;width:auto!important;height:auto!important;border-radius:0}#lotta .hzi{position:absolute;display:block;pointer-events:none;animation:hzIn .35s ease-out}@keyframes hzIn{from{opacity:0;transform:translateY(-30%)}}
 #lotta .haz.p1,#lotta .haz.p2{z-index:4}
-#lotta .haz.p1{z-index:2!important}`;
+#lotta .haz.p1{z-index:2!important}
+#lotta .lt-side{display:flex;flex-direction:column;gap:10px;min-width:0;position:sticky;top:0}#lotta .lt-side .lt-right{position:static}#lotta .lt-chatp{display:flex;flex-direction:column;background:#fff;border:3px solid var(--line);border-radius:12px;box-shadow:0 4px 0 var(--line);overflow:hidden;max-height:300px}#lotta .lt-chatp[hidden]{display:none}#lotta .lt-chatbox{flex:1;overflow:auto;padding:8px 10px;font-size:13.5px;min-height:90px;max-height:200px}#lotta .cm{margin:2px 0;overflow-wrap:anywhere}#lotta .cm.mine b{color:var(--p1)}#lotta .cm:not(.mine) b{color:var(--p2)}#lotta .lt-chatin{display:flex;gap:6px;padding:6px;border-top:2px solid #E3E8F2}#lotta .lt-chatin input{flex:1;min-width:0;font:15px 'Inter',sans-serif;border:2px solid var(--line);border-radius:8px;padding:7px 9px}#lotta .lt-chatin .btn{padding:6px 12px;font-size:14px;box-shadow:0 2px 0 var(--line)}#lotta .lt-chatopen{display:none}#lotta.online.chatmin .lt-chatopen{display:inline-block}#lotta.chatmin .lt-chatp{display:none}#lotta .unread{display:inline-block;margin-left:4px;background:#E3350D;color:#fff;border-radius:99px;font-size:10px;padding:0 5px}#lotta.logmin .lt-main{grid-template-columns:minmax(0,680px) minmax(260px,1fr)}#lotta.logmin:not(.online) .lt-main,#lotta.logmin.chatmin .lt-main{grid-template-columns:minmax(0,1fr)}#lotta.logmin.online:not(.chatmin) .lt-left{max-width:none;margin:0}#lotta.logmin:not(.online) .lt-side,#lotta.logmin.chatmin .lt-side{display:none}
+@media (max-width:820px){#lotta .lt-side{position:static;order:3}#lotta .lt-chatbox{max-height:160px}#lotta .lt-top .lt-chatopen{order:3}}
+#lotta .lt-chatin input{font-size:16px}`;
 const {BattleStreams, Teams, Dex} = PkmnSim;
 const TYPE_COLORS={Normal:'#A8A77A',Fire:'#EE8130',Water:'#6390F0',Electric:'#D9B300',Grass:'#5FAE34',Ice:'#4FB8C9',Fighting:'#C22E28',
   Poison:'#A33EA1',Ground:'#C9A23E',Flying:'#8A6FE0',Psychic:'#F95587',Bug:'#8FA015',Rock:'#A8922A',Ghost:'#735797',Dragon:'#6F35FC',
@@ -493,9 +496,9 @@ const icon=item=>{ const it=Dex.items.get(item); if(!it.exists) return ''; const
 // ---------- chi può vedere cosa ----------
 // Il set completo (mosse, strumento, natura, EV) di un lato si vede se le squadre sono note (showOpp), oppure se è il lato
 // di chi sta scegliendo (contro il computer: sempre il giocatore 1).
-function viewer(){ return O.mode==='cpu'?'p1':(B.passTo||null); }
+function viewer(){ return O.mode==='cpu'||O.role?'p1':(B.passTo||null); }
 function setVisible(s){ return O.showOpp||viewer()===s; }
-function exactHP(s){ return true; }   // PS mostrati in numeri per entrambi (scelta dell'utente)
+function exactHP(s){ return !(O&&O.role&&s==='p2'); }   // PS mostrati in numeri per entrambi (scelta dell'utente)
 
 // ---------- stato ----------
 function fresh(){ return {streams:null, nreq:0, req:{p1:null,p2:null}, answered:{p1:null,p2:null}, queue:[], busy:false, over:false, log:[],
@@ -858,7 +861,7 @@ function timerClear(){ B.tSid=null; B.tEnd=0; }
 function timerShow(){ const el=$('tm'); if(!el) return; if(!B.timerOn||!B.tSid){ el.textContent=''; return; } const s=Math.max(0,Math.ceil((B.tEnd-Date.now())/1000)); el.textContent='⏱ '+s+'s'; el.classList.toggle('low',s<=10); }
 function timerTick(){ if(!root||!B||!B.timerOn||!B.tSid||B.over) return; timerShow(); if(Date.now()<B.tEnd) return;
   const sid=B.tSid; timerClear(); B.timeouts[sid]=(B.timeouts[sid]||0)+1;
-  if(B.timeouts[sid]>=3){ say(`Tempo scaduto per la terza volta: ${PN(sid)} perde la lotta.`); B.streams.omniscient.write('>forcelose '+sid); return; }
+  if(B.timeouts[sid]>=3){ say(`Tempo scaduto per la terza volta: ${PN(sid)} perde la lotta.`); loseBy(sid); return; }
   if(need(sid)){ say(`Tempo scaduto! Per ${PN(sid)} viene scelta una mossa a caso (${B.timeouts[sid]}/3).`); if(O.mode==='two') B.passTo=null; send(sid,cpuChoice(B.req[sid])); } }
 
 // ---------- messaggi del motore ----------
@@ -956,7 +959,7 @@ function effOf(moveId,sid){
 
 // ---------- scelte ----------
 function need(sid){ const r=B.req[sid]; return r&&!r.wait&&B.answered[sid]!==r.rqid; }
-function send(sid,choice){ if(B.tSid===sid) timerClear(); B.answered[sid]=B.req[sid].rqid; B.err=''; B.streams[sid].write(choice); $('ctrl').innerHTML='<p class="lt-wait">Il turno è in corso…</p>'; hideTip(); setTimeout(prompt,30); }
+function send(sid,choice){ if(B.tSid===sid) timerClear(); B.answered[sid]=B.req[sid].rqid; B.err=''; if(O.role==='guest') O.net.send({t:'bc',c:choice}); else B.streams[sid].write(choice); $('ctrl').innerHTML='<p class="lt-wait">Il turno è in corso…</p>'; hideTip(); setTimeout(prompt,30); }
 function cpuChoice(r){
   if(r.teamPreview) return 'team 1';
   const sw=r.side.pokemon.map((m,i)=>({m,i})).filter(x=>!x.m.active&&!x.m.condition.endsWith(' fnt'));
@@ -969,7 +972,7 @@ function prompt(){
   if(B.over){ $('ctrl').innerHTML=`<div class="end">${$('msg').innerHTML}</div><div class="lt-row" style="justify-content:center">${O.onNew?'<button class="btn" data-lt="new">Nuova lotta</button>':''}<button class="btn ghost" data-lt="close">${esc(O.closeLabel||'Chiudi la lotta')}</button></div>`; return; }
   if(O.mode==='cpu'&&need('p2')){ send('p2',cpuChoice(B.req.p2)); return; }
   const sid=need('p1')?'p1':(O.mode==='two'&&need('p2')?'p2':null);
-  if(!sid){ $('ctrl').innerHTML=`<p class="lt-muted">In attesa…</p>`; return; }
+  if(!sid){ $('ctrl').innerHTML=`<p class="lt-wait">${O.role?'In attesa di '+PN('p2')+'…':'In attesa…'}</p>`; return; }
   if(O.mode==='two'&&B.passTo!==sid){ B.passTo=null; draw();
     $('ctrl').innerHTML=`<div class="pass"><span class="who ${sid}">${PN(sid)}</span><p>Tocca a <b>${PN(sid)}</b> scegliere. Passa il dispositivo e premi il pulsante${O.showOpp?'':' (l\'altro non guardi: vedrai mosse e strumenti della tua squadra)'}.</p><button class="btn ${sid==='p2'?'play2':''}" data-lt="iam" data-s="${sid}">Sono ${PN(sid)}</button><span class="tmr" id="lt-tm"></span></div>`; timerArm(sid); return; }
   ui(sid);
@@ -1120,24 +1123,64 @@ function onUp(e){ if(e.pointerType==='touch'&&(e.type!=='pointermove'||Math.abs(
 function onClickCapture(e){ if(lpFired){ e.preventDefault(); e.stopPropagation(); lpFired=false; } }   // la pressione lunga non sceglie la mossa
 function onMenu(e){ if(e.target.closest('#lotta [data-tip]')) e.preventDefault(); }
 function onClick(e){ const b=e.target.closest('[data-lt]'); if(!b||!root.contains(b)) return; const a=b.dataset.lt;
-  if(a==='pick'){ const sid=O.mode==='cpu'?'p1':B.passTo; if(sid&&need(sid)) pick(sid,b.dataset.c); }
+  if(a==='pick'){ const sid=O.mode==='cpu'||O.role?'p1':B.passTo; if(sid&&need(sid)) pick(sid,b.dataset.c); }
   else if(a==='iam'){ B.passTo=b.dataset.s; prompt(); }
   else if(a==='new'){ const f=O.onNew; close(true); f&&f(); }
   else if(a==='close') close();
   else if(a==='sfx'){ SND.sfx=!SND.sfx; LSset('lt-sfx',SND.sfx); if(SND.sfx) sfx('hit'); drawTools(); }
   else if(a==='music'){ SND.music=!SND.music; LSset('lt-music',SND.music); if(SND.music) musicStart(); else musicStop(); drawTools(); }
-  else if(a==='timer'){ B.timerOn=!B.timerOn; if(!B.timerOn) timerClear(); else { const s=O.mode==='cpu'?(need('p1')?'p1':null):(need('p1')?'p1':need('p2')?'p2':null); if(s) timerArm(s); } say(B.timerOn?'Timer attivato: 60 secondi per ogni scelta.':'Timer disattivato.'); drawTools(); timerShow(); }
+  else if(a==='timer'){ B.timerOn=!B.timerOn; if(!B.timerOn) timerClear(); else { const s=O.mode==='cpu'||O.role?(need('p1')?'p1':null):(need('p1')?'p1':need('p2')?'p2':null); if(s) timerArm(s); } say(B.timerOn?'Timer attivato: 60 secondi per ogni scelta.':'Timer disattivato.'); drawTools(); timerShow(); }
+  else if(a==='chatmin'){ root.classList.toggle('chatmin'); LSset('lt-chatmin',root.classList.contains('chatmin')); if(!root.classList.contains('chatmin')){ B.unread=0; drawUnread(); const box=$('chat'); box.scrollTop=box.scrollHeight; } }
+  else if(a==='chatsend') chatSend();
   else if(a==='logmin'){ root.classList.toggle('logmin'); LSset('lt-logmin',root.classList.contains('logmin')); const box=$('log'); if(box) box.scrollTop=box.scrollHeight; }
-  else if(a==='ff'){ if(!B||B.over) return; const sid=O.mode==='cpu'?'p1':(B.passTo||(need('p1')?'p1':need('p2')?'p2':'p1'));
-    if(b.dataset.sure){ delete b.dataset.sure; b.textContent='🏳 Arrenditi'; timerClear(); say(`${PN(sid)} si arrende!`); B.streams.omniscient.write('>forcelose '+sid); }
-    else { b.dataset.sure='1'; b.textContent=O.mode==='cpu'?'Sicuro? Premi di nuovo':`Si arrende ${O.names[sid]}? Premi di nuovo`; setTimeout(()=>{ if(b.isConnected&&b.dataset.sure){ delete b.dataset.sure; b.textContent='🏳 Arrenditi'; } },3500); } }
+  else if(a==='ff'){ if(!B||B.over) return; const sid=O.mode==='cpu'||O.role?'p1':(B.passTo||(need('p1')?'p1':need('p2')?'p2':'p1'));
+    if(b.dataset.sure){ delete b.dataset.sure; b.textContent='🏳 Arrenditi'; timerClear(); say(`${PN(sid)} si arrende!`); loseBy(sid); }
+    else { b.dataset.sure='1'; b.textContent=O.mode==='cpu'||O.role?'Sicuro? Premi di nuovo':`Si arrende ${O.names[sid]}? Premi di nuovo`; setTimeout(()=>{ if(b.isConnected&&b.dataset.sure){ delete b.dataset.sure; b.textContent='🏳 Arrenditi'; } },3500); } }
   else if(a==='exit'){ if(b.dataset.sure){ close(); } else { b.dataset.sure='1'; b.textContent='Sicuro? Premi di nuovo'; setTimeout(()=>{ if(b.isConnected){ delete b.dataset.sure; b.textContent='Esci dalla lotta'; } },3000); } }
 }
 const EVTS=[['pointerover',onOver],['pointerdown',onDown],['pointerup',onUp],['pointercancel',onUp],['pointermove',onUp],['contextmenu',onMenu]];
 
+
+// ---------- lotta online (collegamento diretto già aperto dal gioco, vedi pokemon-incanto.html) ----------
+// L'host fa girare il motore; all'amico arrivano solo i messaggi del motore per il suo lato (quello che vedrebbe su Showdown)
+// e lui manda solo le sue scelte, che l'host controlla. L'amico vede la lotta dal suo punto di vista: i lati p1/p2 vengono scambiati.
+const swapPS=s=>String(s).replace(/\bp([12])(?=[a-d]?[:|\s,"]|[a-d]?$)/g,(m,n)=>'p'+(3-n));
+const CHOICE_OK=/^(move [1-4]( terastallize| mega)?|switch [1-6]|team [1-6]{1,6}|pass|default)$/;
+function loseBy(sid){ if(O.role==='guest'){ O.net.send({t:'bff'}); } else B.streams.omniscient.write('>forcelose '+sid); }
+function drawUnread(){ const u=$('unread'); if(!u) return; u.hidden=!B.unread; u.textContent=B.unread>9?'9+':String(B.unread||''); }
+function chatAdd(who,text,mine){ const box=$('chat'); if(!box) return; const d=document.createElement('div'); d.className='cm'+(mine?' mine':'');
+  d.innerHTML='<b>'+esc(who)+':</b> '+esc(text); box.appendChild(d); while(box.children.length>200) box.removeChild(box.firstChild); box.scrollTop=box.scrollHeight;
+  if(!mine&&root.classList.contains('chatmin')){ B.unread=(B.unread||0)+1; drawUnread(); } }
+function chatSend(){ const i=$('chatin'); if(!i) return; const x=i.value.replace(/\s+/g,' ').trim().slice(0,200); if(!x) return;
+  const now=Date.now(); B.sent=(B.sent||[]).filter(t=>now-t<8000); if(B.sent.length>=6){ chatAdd('Sistema','Troppi messaggi: aspetta qualche secondo.',true); return; }
+  B.sent.push(now); O.net.send({t:'chat',x}); chatAdd(O.names.p1,x,true); i.value=''; }
+function onChatKey(e){ if(e.key==='Enter'&&e.target&&e.target.id==='lt-chatin'){ e.preventDefault(); chatSend(); } }
+// messaggi dall'altro giocatore (chiamata dal gioco)
+function net(m){
+  if(!root||!B||!O||!O.net||!m||typeof m!=='object') return;
+  if(m.t==='chat'){ const now=Date.now(); B.rcv=(B.rcv||[]).filter(t=>now-t<8000); if(B.rcv.length>=10) return; B.rcv.push(now);
+    chatAdd(O.names.p2,String(m.x||'').replace(/\s+/g,' ').trim().slice(0,200),false); sfxChat(); return; }
+  if(m.t==='bexit'){ if(B.over) return; timerClear(); say(`${PN('p2')} ha lasciato la lotta.`); if(O.role==='host') B.streams.omniscient.write('>forcelose p2'); else { B.over=true; say(`Vince ${PN('p1')}!`,'win'); musicStop(); prompt(); } return; }
+  if(O.role==='host'){
+    if(m.t==='bc'){ const c=String(m.c||''); if(CHOICE_OK.test(c)&&!B.over) B.streams.p2.write(c); }
+    else if(m.t==='bff'){ if(!B.over){ say(`${PN('p2')} si arrende!`); B.streams.omniscient.write('>forcelose p2'); } }
+    return; }
+  if(O.role==='guest'&&m.t==='bl'){ const chunk=String(m.c||''); if(chunk.length>200000) return;
+    if(!B.started){ B.started=true; say('La lotta sta per cominciare!'); }
+    for(const raw of chunk.split('\n')){ if(!raw.startsWith('|')) continue; const line=swapPS(raw);
+      if(line.startsWith('|request|')){ let r; try{ r=JSON.parse(line.slice(9)); }catch(e){ continue; } if(!r||typeof r!=='object') continue; r.rqid=++B.nreq; B.req.p1=r;
+        if(r.side&&Array.isArray(r.side.pokemon)) for(const rp of r.side.pokemon){ const nick=String(rp.ident||'').split(': ')[1]; const mm=B.side.p1.team[nick]; if(mm) mm.item=rp.item?Dex.items.get(rp.item).name:null; }
+        setTimeout(prompt,0); }
+      else if(line.startsWith('|error|')){ B.err=line; B.answered.p1=null; setTimeout(prompt,0); }
+      else B.queue.push(line); }
+    pump(); }
+}
+function sfxChat(){ if(SND.sfx) try{ tone(880,.08,'sine',.05); tone(1175,.1,'sine',.05,.07); }catch(e){} }
+
 // ---------- apertura e chiusura ----------
 async function readSide(g,sid,stream){
   for await(const chunk of stream){ if(g!==gen) return;
+    if(O.role==='host'&&sid==='p2'){ O.net.send({t:'bl',c:chunk}); continue; }
     for(const line of chunk.split('\n')){
       if(line.startsWith('|request|')){ const r=JSON.parse(line.slice(9)); r.rqid=++B.nreq; B.req[sid]=r;
         if(r.side) for(const rp of r.side.pokemon){ const nick=rp.ident.split(': ')[1]; const m=B.side[sid].team[nick]; if(m) m.item=rp.item?Dex.items.get(rp.item).name:null; }
@@ -1149,6 +1192,7 @@ async function readLog(g,stream){
   for await(const chunk of stream){ if(g!==gen) return; for(const line of chunk.split('\n')) if(line.startsWith('|')) B.queue.push(line); pump(); }
 }
 function close(silent){
+  if(O&&O.net&&B&&!B.over) try{ O.net.send({t:'bexit'}); }catch(e){}
   audioStopAll(); if(B&&B.tick) clearInterval(B.tick);
   gen++; if(B&&B.streams) try{ B.streams.omniscient.writeEnd(); }catch(e){}
   for(const [ev,fn] of EVTS) document.removeEventListener(ev,fn); document.removeEventListener('click',onClickCapture,true); removeEventListener('scroll',hideTip);
@@ -1160,7 +1204,7 @@ function open(opts){
   O=Object.assign({mode:'two',showOpp:true,names:{p1:'Giocatore 1',p2:'Giocatore 2'},formatid:'gen9nationaldexag'},opts);
   if(!document.getElementById('lotta-css')){ const s=document.createElement('style'); s.id='lotta-css'; s.textContent=CSS; document.head.appendChild(s); }
   root=document.createElement('div'); root.id='lotta'; root.setAttribute('role','dialog'); root.setAttribute('aria-label','Lotta');
-  root.innerHTML=`<div class="lt-wrap"><div class="lt-top"><h2 class="lt-title">Lotta</h2><span class="lt-muted">${esc(O.formatName||'')}<span id="lt-scene"></span></span><button class="tool lt-reopen" data-lt="logmin" aria-label="Apri la cronaca della lotta" title="Apri la cronaca della lotta">📜 Cronaca</button><span class="lt-tools" id="lt-tools"></span><button class="btn ghost ff" data-lt="ff">🏳 Arrenditi</button><button class="btn ghost" data-lt="exit">Esci dalla lotta</button></div>
+  root.innerHTML=`<div class="lt-wrap"><div class="lt-top"><h2 class="lt-title">Lotta</h2><span class="lt-muted">${esc(O.formatName||'')}<span id="lt-scene"></span></span><button class="tool lt-chatopen" data-lt="chatmin" aria-label="Apri la chat">💬 Chat<b class="unread" id="lt-unread" hidden></b></button><button class="tool lt-reopen" data-lt="logmin" aria-label="Apri la cronaca della lotta" title="Apri la cronaca della lotta">📜 Cronaca</button><span class="lt-tools" id="lt-tools"></span><button class="btn ghost ff" data-lt="ff">🏳 Arrenditi</button><button class="btn ghost" data-lt="exit">Esci dalla lotta</button></div>
    <div class="lt-main"><div class="lt-left">
    <div class="lt-info"><span class="turnb" id="lt-turn" hidden></span><span class="wlabel" id="lt-wlabel" hidden></span></div>
    <div class="arena" id="lt-arena">
@@ -1176,18 +1220,24 @@ function open(opts){
    </div>
    <div class="lt-msg" id="lt-msg" aria-live="polite"></div>
    <section class="ctrl" id="lt-ctrl"></section></div>
-   <aside class="lt-right" id="lt-right"><button class="lt-logh" data-lt="logmin" aria-label="Riduci la cronaca">Cronaca della lotta <span class="arr">▾</span></button><div class="lt-logbox" id="lt-log"></div></aside></div>
+   <div class="lt-side"><aside class="lt-right" id="lt-right"><button class="lt-logh" data-lt="logmin" aria-label="Riduci la cronaca">Cronaca della lotta <span class="arr">▾</span></button><div class="lt-logbox" id="lt-log"></div></aside>
+   <aside class="lt-chatp" id="lt-chatp" hidden><button class="lt-logh" data-lt="chatmin" aria-label="Riduci la chat">Chat <span class="arr">▾</span></button><div class="lt-chatbox" id="lt-chat"><p class="lt-muted">Scrivi al tuo avversario. Sii gentile!</p></div>
+    <div class="lt-chatin"><input type="text" id="lt-chatin" maxlength="200" placeholder="Scrivi un messaggio…" autocomplete="off" aria-label="Messaggio"><button class="btn" data-lt="chatsend">Invia</button></div></aside></div></div>
    <p class="lt-muted lt-hint">Punta col mouse (o tieni premuto, da telefono) Pokémon, Poké Ball, strumenti e mosse per vedere le informazioni. Calcoli del simulatore di Pokémon Showdown (MIT).</p></div>
    <div class="lt-tip" id="lt-tip" hidden></div>`;
   document.body.appendChild(root); document.documentElement.style.overflow='hidden';
   for(const [ev,fn] of EVTS) document.addEventListener(ev,fn); document.addEventListener('click',onClickCapture,true); addEventListener('scroll',hideTip,{passive:true,capture:true});
   root.addEventListener('click',onClick); addEventListener('resize',()=>{ if(root&&B) drawField(); }); if(LS('lt-logmin',false)) root.classList.add('logmin');
-  root.addEventListener('pointerdown',audioUnlock); root.addEventListener('keydown',audioUnlock);
+  root.addEventListener('pointerdown',audioUnlock); root.addEventListener('keydown',audioUnlock); root.addEventListener('keydown',onChatKey);
   gen++; B=fresh(); const g=gen;
-  B.sets.p1=Teams.import(O.teams.p1)||[]; B.sets.p2=Teams.import(O.teams.p2)||[];
+  B.sets.p1=Teams.import(O.teams.p1)||[];
+  // l'amico conosce della squadra dell'host solo le specie (come nell'anteprima squadre di Showdown)
+  B.sets.p2=O.role==='guest'?(O.oppSpecies||[]).map(s=>({species:s,name:'',moves:[],ability:'',item:''})):(Teams.import(O.teams.p2)||[]);
+  if(O.net){ root.classList.add('online'); $('chatp').hidden=false; if(LS('lt-chatmin',false)) root.classList.add('chatmin'); }
   const sc=SCENES.includes(O.scene)?O.scene:pickNew(SCENES,'lt-lastscene');
   $('arena').className='arena sc-'+sc; $('bg').innerHTML=sceneSVG(sc); $('scene').textContent=' · Sfondo: '+SCENE_NAMES[sc];
   drawField(); say('La lotta sta per cominciare!'); loadPS(); drawTools(); loadJS('audio-data.js').then(()=>{ if(root) musicStart(); }).catch(()=>{}); B.tick=setInterval(timerTick,250);
+  if(O.role==='guest'){ say(`In attesa che ${PN('p2')} faccia partire la lotta…`); return; }   // l'amico non ha il motore: riceve tutto dall'host
   const streams=BattleStreams.getPlayerStreams(new BattleStreams.BattleStream()); B.streams=streams;
   readSide(g,'p1',streams.p1); readSide(g,'p2',streams.p2); readLog(g,streams.omniscient);
   const pl=s=>JSON.stringify({name:String(O.names[s]).slice(0,18),team:Teams.pack(B.sets[s])});
@@ -1201,5 +1251,5 @@ function demo(o){ if(!B) return; if('weather' in o) B.weather=o.weather||null; i
   draw(); }
 // Solo anteprima: prova un'animazione di mossa
 async function demoMove(name,from,dry){ await loadPS(); return psRun('move',name,from||'p1',(from||'p1')==='p1'?'p2':'p1',false,dry); }
-window.Lotta={_audio:()=>({ctx:SND.ctx&&SND.ctx.state,music:!!SND.mus,track:SND.mus&&SND.mus.m.file,playing:!!(SND.mus&&!SND.mus.el.paused),sfx:SND.sfx,sil:!!SIL}),open,close,demo,demoMove,SCENES,SCENE_NAMES,_B:()=>B};
+window.Lotta={net,isOpen:()=>!!(root&&B),_audio:()=>({ctx:SND.ctx&&SND.ctx.state,music:!!SND.mus,track:SND.mus&&SND.mus.m.file,playing:!!(SND.mus&&!SND.mus.el.paused),sfx:SND.sfx,sil:!!SIL}),open,close,demo,demoMove,SCENES,SCENE_NAMES,_B:()=>B};
 })();

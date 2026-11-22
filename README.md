@@ -27,3 +27,4 @@ Pokémon and the names, images and sprites of the Pokémon are trademarks and co
 
 Il gioco non usa cookie, non ha account e non raccoglie dati personali. / The game uses no cookies, has no accounts and collects no personal data.
 Nella modalità online i due browser si collegano direttamente (si scambiano l'indirizzo IP) tramite il server pubblico di PeerJS. / In online mode the two browsers connect directly (exchanging IP addresses) via the public PeerJS server.
+Nella lotta online squadre, scelte e messaggi della chat passano direttamente tra i due dispositivi e non vengono salvati. / In online battles teams, choices and chat messages go directly between the two devices and are not stored.
