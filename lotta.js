@@ -556,7 +556,11 @@ function hpView(sid){ const m=actMon(sid); if(!m) return;
   pc.textContent=Math.ceil(pct)+'%'; n.textContent=exactHP(sideOfPos(sid))?`${Math.max(0,Math.round(m.shown))}/${m.max}`:''; }
 function drawSide(x){ if(String(x).length>2){ drawPos(x); ballsDbl(); return; } drawPos(x); drawPos(x+'b'); ballsDbl(); }
 // in doppio le Poké Ball dell'avversario vanno sotto la sua seconda barra (così stanno sotto a entrambe, non in mezzo)
-function ballsDbl(){ if(!isDbl()) return; const src=$('ballsxp2'), hb=$('hudp2b'); if(!src) return; const sb=hb&&!hb.hidden&&hb.querySelector('.sb'); let dst=sb&&sb.querySelector('.balls.moved');
+// in doppio le due barre di ogni lato stanno attaccate (6 px), in modo simmetrico: avversario dall'alto, proprio lato dal basso
+function stackDbl(){ if(!isDbl()||!root) return; const ar=$('arena'), h2=$('hudp2'), h2b=$('hudp2b'), h1=$('hudp1'), h1b=$('hudp1b'); if(!ar) return; const gap=6;
+  if(h2&&h2b){ h2b.style.top=(!h2.hidden?h2.offsetTop+h2.offsetHeight+gap:h2.offsetTop)+'px'; }
+  if(h1&&h1b){ h1b.style.bottom=(!h1.hidden?ar.clientHeight-h1.offsetTop+gap:ar.clientHeight-h1.offsetTop-h1.offsetHeight)+'px'; } }
+function ballsDbl(){ if(!isDbl()) return; setTimeout(stackDbl,0); const src=$('ballsxp2'), hb=$('hudp2b'); if(!src) return; const sb=hb&&!hb.hidden&&hb.querySelector('.sb'); let dst=sb&&sb.querySelector('.balls.moved');
   if(!sb){ src.style.visibility=''; return; } if(!dst){ dst=document.createElement('div'); dst.className='balls moved'; sb.appendChild(dst); } dst.innerHTML=src.innerHTML; src.style.visibility='hidden'; src.style.height='0'; }
 // effetti temporanei mostrati come su Showdown (etichette sotto la barra dei PS)
 const VOL={confusion:'Confuso',leechseed:'Leech Seed',taunt:'Taunt',encore:'Encore',yawn:'Yawn',focusenergy:'Focus Energy',attract:'Infatuato',curse:'Curse',disable:'Disable',embargo:'Embargo',healblock:'Heal Block',magnetrise:'Magnet Rise',aquaring:'Aqua Ring',ingrain:'Ingrain',flashfire:'Flash Fire',slowstart:'Slow Start',protosynthesis:'Protosynthesis',quarkdrive:'Quark Drive',charge:'Charge',torment:'Torment',nightmare:'Nightmare',powertrick:'Power Trick',smackdown:'Smack Down',telekinesis:'Telekinesis',throatchop:'Throat Chop',saltcure:'Salt Cure',syrupbomb:'Syrup Bomb',tarshot:'Tar Shot',imprison:'Imprison',laserfocus:'Laser Focus',miracleeye:'Miracle Eye',foresight:'Foresight',odorsleuth:'Odor Sleuth',noretreat:'No Retreat',octolock:'Octolock',partiallytrapped:'Intrappolato',doomdesire:'Doom Desire',futuresight:'Future Sight',gastroacid:'Gastro Acid',glaiverush:'Glaive Rush',minimize:'Minimize',defensecurl:'Defense Curl',dynamax:'Dynamax',substitute:'Substitute'};
@@ -1573,7 +1577,7 @@ function open(opts){
   if(O.dbl) root.classList.add('dbl');
   document.body.appendChild(root); document.documentElement.style.overflow='hidden'; startTranslate();
   for(const [ev,fn] of EVTS) document.addEventListener(ev,fn); document.addEventListener('click',onClickCapture,true); addEventListener('scroll',hideTip,{passive:true,capture:true});
-  root.addEventListener('click',onClick); addEventListener('resize',()=>{ if(root&&B) drawField(); }); if(LS('lt-logmin',false)) root.classList.add('logmin');
+  root.addEventListener('click',onClick); addEventListener('resize',()=>{ if(root&&B){ drawField(); stackDbl(); } }); if(LS('lt-logmin',false)) root.classList.add('logmin');
   root.addEventListener('pointerdown',audioUnlock); root.addEventListener('keydown',audioUnlock); root.addEventListener('keydown',onChatKey);
   gen++; B=fresh(); const g=gen;
   B.sets.p1=Teams.import(O.teams.p1)||[];
