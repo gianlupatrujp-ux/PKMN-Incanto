@@ -91,9 +91,30 @@ async function main() {
   }));
   if (shinyMancanti.length) console.log('Shiny non trovati (' + shinyMancanti.length + '): ' + shinyMancanti.join(', '));
 
+  // Sprite di schiena per la lotta (il proprio Pokémon si vede da dietro): stessa cartella con "-back"
+  // (sprites/ani-back, sprites/ani-back-shiny, sprites/gen5-back...). Se manca, la lotta usa quello frontale girato.
+  console.log('Scarico gli sprite di schiena...');
+  const backMancanti = [];
+  const daFareBack = [];
+  for (const rel of daFare) { daFareBack.push(rel.replace(/^sprites\/(ani|gen5)\//, 'sprites/$1-back/'), rel.replace(/^sprites\/(ani|gen5)\//, 'sprites/$1-back-shiny/')); }
+  let b = 0;
+  await Promise.all(Array.from({ length: CONCORRENZA }, async () => {
+    for (;;) {
+      const rel = daFareBack[b++];
+      if (!rel) return;
+      fs.mkdirSync(path.dirname(path.join(DIR, rel)), { recursive: true });
+      if (!await scaricaFile(BASE + rel.slice('sprites/'.length), path.join(DIR, rel))) backMancanti.push(rel);
+    }
+  }));
+  if (backMancanti.length) console.log('Di schiena non trovati (' + backMancanti.length + '): ' + backMancanti.slice(0, 30).join(', ') + (backMancanti.length > 30 ? '...' : ''));
+
+  // Icone degli strumenti (un solo foglio con tutte le icone 24x24, 16 per riga; la posizione è "spritenum" nei dati di Showdown)
+  await scaricaFile(BASE + 'itemicons-sheet.png', path.join(SPRITE_DIR, 'itemicons-sheet.png'));
+
   fs.writeFileSync(path.join(DIR, 'sprite-data.js'), '// Generato da scarica-sprite.js\nconst SPRITE_DATA = ' + JSON.stringify(mappa) + ';\n');
   let byte = 0;
-  for (const s of fs.readdirSync(SPRITE_DIR)) for (const f of fs.readdirSync(path.join(SPRITE_DIR, s))) byte += fs.statSync(path.join(SPRITE_DIR, s, f)).size;
+  for (const s of fs.readdirSync(SPRITE_DIR)) { const p = path.join(SPRITE_DIR, s);
+    if (fs.statSync(p).isDirectory()) { for (const f of fs.readdirSync(p)) byte += fs.statSync(path.join(p, f)).size; } else byte += fs.statSync(p).size; }
   console.log('\nFatto: ' + Object.keys(mappa).length + ' sprite (' + (byte / 1048576).toFixed(1) + ' MB).');
   if (ripiego.length) console.log('In pixel perché manca l\'animato (' + ripiego.length + '): ' + ripiego.join(', '));
   if (mancanti.length) console.log('SENZA sprite (' + mancanti.length + '): ' + mancanti.join(', '));

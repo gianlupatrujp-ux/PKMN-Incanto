@@ -538,7 +538,7 @@ const I18N={
   'hist':'Aste concluse','col.winner':'Vincitore','col.price':'Prezzo','col.opener':'Apriva',
   'shinyBan':'✨ Pokémon shiny! ✨','formOf':f=>'Forma di '+f,'colorChip':c=>'Colore '+c,'dexNo':'N.','primaryType':'Tipo primario','dexNumber':'Numero di Pokédex','color':'Colore',
   'endTitle':'Squadre complete','spent':(s,l)=>`${s} spese · ${l} avanzate`,'setsLabel':'Set di ogni Pokémon','noSet':'nessun set: solo il nome',
-  'textLabel':'Testo per Pokémon Showdown','fmtLine':'Formato da scegliere su Showdown:','copy':'Copia testo',
+  'textLabel':'Testo per Pokémon Showdown','fmtLine':'Formato da scegliere su Showdown:','copy':'Copia testo','openSD':'Apri Pokémon Showdown ↗','openSDhint':'Si apre il sito ufficiale di Showdown in una nuova scheda: vai su Teambuilder → New Team → Import from text e incolla il testo copiato.',
   'copied':f=>'Copiato. Formato: '+f,'selected':'Selezionato: copia con Ctrl+C',
   'endIntro':(dbl,f,custom,note)=>`Set pronti per il ${dbl?'doppio':'singolo'}, presi dalle Random Battle di Pokémon Showdown. Dove ci sono più set puoi sceglierli dal menu. Su Showdown: Teambuilder, nuova squadra, "Import from text", incolla. Formato: <strong>${f}</strong>${custom?' (sfida diretta: non controlla le squadre, quindi accetta tutto)':', dove queste squadre sono valide'}${note}.`,
   'noSetsFile':'File set-data.js non trovato: il testo contiene solo i nomi. Si crea con: node scarica-set.js','again':'Nuova partita',
@@ -626,7 +626,7 @@ const I18N={
   'hist':'Finished auctions','col.winner':'Winner','col.price':'Price','col.opener':'Opener',
   'shinyBan':'✨ Shiny Pokémon! ✨','formOf':f=>f+' form','colorChip':c=>'Color: '+c,'dexNo':'No.','primaryType':'Primary type','dexNumber':'Pokédex number','color':'Color',
   'endTitle':'Teams complete','spent':(s,l)=>`${s} spent · ${l} left`,'setsLabel':'Set for each Pokémon','noSet':'no set: name only',
-  'textLabel':'Text for Pokémon Showdown','fmtLine':'Format to choose on Showdown:','copy':'Copy text',
+  'textLabel':'Text for Pokémon Showdown','fmtLine':'Format to choose on Showdown:','copy':'Copy text','openSD':'Open Pokémon Showdown ↗','openSDhint':'The official Showdown site opens in a new tab: go to Teambuilder → New Team → Import from text and paste the copied text.',
   'copied':f=>'Copied. Format: '+f,'selected':'Selected: copy with Ctrl+C',
   'endIntro':(dbl,f,custom,note)=>`Sets ready for ${dbl?'doubles':'singles'}, taken from Pokémon Showdown's Random Battles. Where there are several sets, pick one from the menu. On Showdown: Teambuilder, new team, "Import from text", paste. Format: <strong>${f}</strong>${custom?' (direct challenge: it does not check teams, so anything goes)':', where these teams are legal'}${note}.`,
   'noSetsFile':'File set-data.js not found: the text only contains names. Create it with: node scarica-set.js','again':'New game',
@@ -922,7 +922,7 @@ function legalBody(){
    <li>Online mode: ${L('https://peerjs.com','PeerJS')} (© Michelle Bu and Eric Zhang, MIT License; license in <code>lib</code>).</li></ul>
    <h3>Privacy</h3>
    <p>The game uses <strong>no cookies</strong>, has no accounts and does not collect or send personal data. Games stay in your browser; only the chosen language is saved (in the browser's local storage).</p>
-   <p>The site is hosted by GitHub Pages (GitHub, Inc.), which may log visitors' IP addresses for security: see ${L('https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement','GitHub\'s privacy statement')}. When it opens, the game reads Showdown's public list of formats from GitHub (raw.githubusercontent.com) to show the current VGC regulation. No other external service is contacted when playing on one device. The site is not indexed by search engines.</p>
+   <p>The site is hosted by GitHub Pages (GitHub, Inc.), which may log visitors' IP addresses for security: see ${L('https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement','GitHub\'s privacy statement')}. When it opens, the game reads Showdown's public list of formats from GitHub (raw.githubusercontent.com) to show the current VGC regulation. No other external service is contacted when playing on one device. The &quot;Open Pokémon Showdown&quot; button is a plain link: it opens the Showdown site, which has its own privacy rules; the game sends it nothing (you paste the team yourself). The site is not indexed by search engines.</p>
    <p><strong>Online mode</strong> (only if you choose it): the two browsers connect directly to each other, so each one sees the other's IP address. To find each other they use the free public PeerJS server (0.peerjs.com) and, if needed, connection servers (Google STUN, PeerJS TURN), which see the IP addresses involved. Only the game data are exchanged (names, bids, Pokémon); nothing is saved. With <strong>Find a random opponent</strong> you may play with a stranger, who will see your IP address like a friend would.</p>`;
   return `
    <h3>Gioco amatoriale non ufficiale, senza scopo di lucro</h3>
@@ -939,7 +939,7 @@ function legalBody(){
    <li>Modalità online: ${L('https://peerjs.com','PeerJS')} (© Michelle Bu ed Eric Zhang, licenza MIT; licenza nella cartella <code>lib</code>).</li></ul>
    <h3>Privacy</h3>
    <p>Il gioco <strong>non usa cookie</strong>, non ha account e non raccoglie né invia dati personali. Le partite restano nel tuo browser; viene salvata solo la lingua scelta (nella memoria locale del browser).</p>
-   <p>Il sito è ospitato da GitHub Pages (GitHub, Inc.), che per motivi di sicurezza può registrare l'indirizzo IP dei visitatori: vedi ${L('https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement','l\'informativa privacy di GitHub')}. All'apertura il gioco legge da GitHub (raw.githubusercontent.com) l'elenco pubblico dei formati di Showdown, per indicare il regolamento VGC aggiornato. Giocando su un solo dispositivo nessun altro servizio esterno viene contattato. Il sito non è indicizzato dai motori di ricerca.</p>
+   <p>Il sito è ospitato da GitHub Pages (GitHub, Inc.), che per motivi di sicurezza può registrare l'indirizzo IP dei visitatori: vedi ${L('https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement','l\'informativa privacy di GitHub')}. All'apertura il gioco legge da GitHub (raw.githubusercontent.com) l'elenco pubblico dei formati di Showdown, per indicare il regolamento VGC aggiornato. Giocando su un solo dispositivo nessun altro servizio esterno viene contattato. Il pulsante &quot;Apri Pokémon Showdown&quot; è un semplice collegamento: apre il sito di Showdown, che ha le sue regole sulla privacy; il gioco non gli invia nulla (la squadra la incolli tu). Il sito non è indicizzato dai motori di ricerca.</p>
    <p><strong>Modalità online</strong> (solo se la scegli): i due browser si collegano direttamente tra loro, quindi ognuno vede l'indirizzo IP dell'altro. Per trovarsi usano il server pubblico gratuito di PeerJS (0.peerjs.com) e, se serve, server di collegamento (STUN di Google, TURN di PeerJS), che vedono gli indirizzi IP coinvolti. Vengono scambiati solo i dati della partita (nomi, offerte, Pokémon); niente viene salvato. Con <strong>Trova avversario casuale</strong> puoi giocare con uno sconosciuto, che vedrà il tuo indirizzo IP come lo vedrebbe un amico.</p>`;
 }
 function vModal(kind){
@@ -1101,7 +1101,7 @@ function vEnd(){
      <span class="label">${t('setsLabel')}</span><div class="setlist">${(eff=>g.teams[i].map((m,j)=>setPicker(m,g,eff[j])).join(''))(teamSets(g.teams[i],g.format,ui.setChoice,g.tier))}</div>
      <span class="label">${t('textLabel')}</span>
      <div class="fmtline">${t('fmtLine')} <strong>${showdownFormat(g.format,g.tier)}</strong>${fmtNote(g.format,g.tier)}</div><pre id="ex${i}">${esc(exportText(g.teams[i],g.format,ui.setChoice,g.tier))}</pre>
-     <div class="row"><button class="btn ghost" data-act="copy" data-i="${i}">${t('copy')}</button><span class="muted" id="cp${i}" aria-live="polite"></span></div></section>`;}).join('');
+     <div class="row"><button class="btn ghost" data-act="copy" data-i="${i}">${t('copy')}</button><a class="btn play2" href="https://play.pokemonshowdown.com/teambuilder" target="_blank" rel="noopener noreferrer" style="text-decoration:none">${t('openSD')}</a><span class="muted" id="cp${i}" aria-live="polite"></span></div><p class="muted" style="font-size:12px">${t('openSDhint')}</p></section>`;}).join('');
   const intro=Object.keys(SETS).length
     ?t('endIntro',g.format==='doppio',showdownFormat(g.format,g.tier),g.format==='doppio'&&g.tier!=='champions',fmtNote(g.format,g.tier))
     :t('noSetsFile');
