@@ -170,7 +170,9 @@ select:focus-visible{outline:3px solid var(--p2);outline-offset:2px}
 details.remote summary{cursor:pointer;font-size:14px}
 details.remote ol{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:14px}
 /* Tasto Regole sempre disponibile */
-.rulesbtn{position:fixed;left:max(12px,env(safe-area-inset-left,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));z-index:5;font:600 12px var(--font-body);
+.fixbar{position:fixed;left:max(12px,env(safe-area-inset-left,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));z-index:5;display:flex;gap:8px;align-items:center}
+.homebtn svg{width:18px;height:18px;flex:none}
+.rulesbtn{font:600 12px var(--font-body);
   display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:99px;border:2px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.2)}
 .rulesbtn b{display:inline-flex;width:16px;height:16px;border-radius:50%;background:#8E3FD6;color:#fff;align-items:center;justify-content:center;font-size:11px}
 /* Pulsanti principali: centrati e più grandi */
@@ -544,7 +546,7 @@ const I18N={
   'endIntro':(dbl,f,custom,note)=>`Set pronti per il ${dbl?'doppio':'singolo'}, presi dalle Random Battle di Pokémon Showdown. Dove ci sono più set puoi sceglierli dal menu. Su Showdown: Teambuilder, nuova squadra, "Import from text", incolla. Formato: <strong>${f}</strong>${custom?' (sfida diretta: non controlla le squadre, quindi accetta tutto)':', dove queste squadre sono valide'}${note}.`,
   'noSetsFile':'File set-data.js non trovato: il testo contiene solo i nomi. Si crea con: node scarica-set.js','again':'Nuova partita',
   'exit.title':'Uscire dalla partita?','exit.desc':'La partita in corso andrà persa: squadre, monete e aste fatte finora. Tornerai al menu iniziale, dove restano le impostazioni scelte.',
-  'cancel':'Annulla','exit.confirm':'Esci dalla partita','rulesBtn':'Regole','rulesAria':'Apri il regolamento','close':'Chiudi',
+  'cancel':'Annulla','exit.confirm':'Esci dalla partita','rulesBtn':'Regole','homeBtn':'Home','homeAria':'Torna al menu iniziale','rulesAria':'Apri il regolamento','close':'Chiudi',
   'err.turn':'Non è il tuo turno','err.int':'Inserisci un numero intero','err.min':b=>"L'offerta deve superare "+b,'err.max':n=>'Puoi offrire al massimo '+n,
   'rolePrefix':'Mega, ',
   'undo':'↶ Annulla asta','undo.title':"Annullare l'ultima asta?",
@@ -632,7 +634,7 @@ const I18N={
   'endIntro':(dbl,f,custom,note)=>`Sets ready for ${dbl?'doubles':'singles'}, taken from Pokémon Showdown's Random Battles. Where there are several sets, pick one from the menu. On Showdown: Teambuilder, new team, "Import from text", paste. Format: <strong>${f}</strong>${custom?' (direct challenge: it does not check teams, so anything goes)':', where these teams are legal'}${note}.`,
   'noSetsFile':'File set-data.js not found: the text only contains names. Create it with: node scarica-set.js','again':'New game',
   'exit.title':'Leave the game?','exit.desc':'The current game will be lost: teams, coins and auctions so far. You will go back to the start menu, where your settings are kept.',
-  'cancel':'Cancel','exit.confirm':'Leave the game','rulesBtn':'Rules','rulesAria':'Open the rules','close':'Close',
+  'cancel':'Cancel','exit.confirm':'Leave the game','rulesBtn':'Rules','homeBtn':'Home','homeAria':'Back to the main menu','rulesAria':'Open the rules','close':'Close',
   'err.turn':'Not your turn','err.int':'Enter a whole number','err.min':b=>'The bid must be higher than '+b,'err.max':n=>'You can bid at most '+n,
   'rolePrefix':'Mega, ',
   'undo':'↶ Undo auction','undo.title':'Undo the last auction?',
@@ -1185,6 +1187,7 @@ function vUndo(){
    <p id="unD" class="muted">${t('undo.desc',(m=>m.hidden?t('mystery'):disp(m))(V(h.mon,h.winner)),name(h.winner),h.price)}${g.auction?t('undo.next'):''}</p>
    <div class="row"><button class="btn ghost" data-act="noundo" id="unNo">${t('undo.back')}</button><button class="btn danger" data-act="undo">${ui.online?t('online.undoAsk',oppName()):t('undo.confirm')}</button></div></div></div>`;
 }
+const MASTER_BALL='<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14.5" fill="#fff" stroke="#1F2A44" stroke-width="2.4"/><path d="M1.5 16a14.5 14.5 0 0 1 29 0z" fill="#7B3FC4" stroke="#1F2A44" stroke-width="2.4"/><circle cx="9" cy="9.5" r="2.6" fill="#E85FA8"/><circle cx="23" cy="9.5" r="2.6" fill="#E85FA8"/><path d="M12.2 13.2V7.6l3.8 3.6 3.8-3.6v5.6" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><line x1="1.5" y1="16" x2="30.5" y2="16" stroke="#1F2A44" stroke-width="2.4"/><circle cx="16" cy="16" r="4" fill="#fff" stroke="#1F2A44" stroke-width="2.4"/></svg>';
 function vExit(){
   return `<div class="modal-bg" data-act="noexit"><div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="exT" aria-describedby="exD">
    <h2 id="exT">${t('exit.title')}</h2>
@@ -1518,7 +1521,7 @@ function render(){
   const undoReq=!!(ui.online&&ui.online.undoReq&&ui.online.undoReq.from!==ui.online.me&&ui.game&&ui.screen!=='lobby');
   const modal=ui.askExit||ui.modal||ui.askUndo||undoReq;
   $app.innerHTML=({title:vTitle,setup:vSetup,flip:vFlip,game:vGame,end:vEnd,online:vOnline,lobby:vLobby,rooms:vRooms})[ui.screen]()
-    +(ui.screen!=='title'&&!modal?`<button class="rulesbtn" data-act="rules" aria-label="${t('rulesAria')}"><b aria-hidden="true">?</b>${t('rulesBtn')}</button>`:'')
+    +(ui.screen!=='title'&&!modal?`<div class="fixbar"><button class="rulesbtn" data-act="rules" aria-label="${t('rulesAria')}"><b aria-hidden="true">?</b>${t('rulesBtn')}</button><button class="rulesbtn homebtn" data-act="home" aria-label="${t('homeAria')}">${MASTER_BALL}${t('homeBtn')}</button></div>`:'')
     +(ui.askExit?vExit():'')+(ui.askUndo?vUndo():'')+(undoReq&&!ui.askUndo?vUndoReq():'')+(ui.modal?vModal(ui.modal):'');
   if(ui.askExit) document.getElementById('exNo').focus();
   else if(ui.askUndo) document.getElementById('unNo').focus();
@@ -1556,6 +1559,7 @@ function act(a,d){
   else if(a==='again'&&ui.online){ if(isHost()){ hostApply('newround',{},0); broadcast(); } }
   else if(a==='again'){ui.screen='setup';ui.game=null;ui.flip=null;ui.msg='';}
   else if(a==='askexit'){ui.askExit=true;}
+  else if(a==='home'){ if(ui.game||ui.flip||ui.online) ui.askExit='home'; else { ui.setupOnline=false; ui.screen='title'; ui.msg=''; } }
   else if(a==='askundo'){ if(ui.online){ if((isHost()?canUndo(g):ui.online.canUndo)&&!ui.online.undoReq) ui.askUndo=true; } else if(g&&canUndo(g)) ui.askUndo=true; }
   else if(a==='noundo'){ui.askUndo=false;}
   else if(a==='undo'){ui.askUndo=false;
@@ -1592,6 +1596,7 @@ function act(a,d){
   else if(a==='rules'){ui.modal='rules';}
   else if(a==='legal'){ui.modal='legal';}
   else if(a==='closemodal'){ui.modal=null;}
+  else if(a==='exit'&&ui.askExit==='home'){ui.askExit=false;if(ui.online)leaveOnline();ui.setupOnline=false;ui.game=null;ui.flip=null;ui.screen='title';ui.msg='';ui.draft='';}
   else if(a==='exit'&&ui.online){ui.askExit=false;leaveOnline();ui.setupOnline=false;ui.screen='title';ui.msg='';}
   else if(a==='exit'){ui.askExit=false;ui.screen='setup';ui.game=null;ui.flip=null;ui.msg='';ui.draft='';}
   else if(a==='fight'){ startFight(); return; }
