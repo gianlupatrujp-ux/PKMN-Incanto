@@ -15,6 +15,7 @@ Pokémon and the names, images and sprites of the Pokémon are trademarks and co
 
 - Dati di gioco, set e formati / Game data, sets and formats: [Pokémon Showdown](https://github.com/smogon/pokemon-showdown) (© Guangcong Luo and contributors, MIT License).
 - Elenco dei Pokémon / Pokémon list: [PokéAPI](https://pokeapi.co).
+- Descrizioni in italiano di mosse, abilità e strumenti / Italian move, ability and item descriptions: testi dei giochi Pokémon / Pokémon game texts (© Nintendo / Creatures Inc. / GAME FREAK inc. / The Pokémon Company) via [PokéAPI](https://pokeapi.co); rimossi su richiesta / removed on request.
 - Sprite: da / from [Pokémon Showdown](https://play.pokemonshowdown.com); immagini / images © Nintendo / Creatures Inc. / GAME FREAK inc.; alcuni sprite sono di artisti della community / some sprites by community artists (Smogon Sprite Project). Icone degli strumenti / item icons: Pokémon Showdown.
 - Font: Inter, Space Grotesk, Cinzel Decorative (SIL Open Font License 1.1), Luckiest Guy (Apache License 2.0); licenze in / licenses in `fonts/LICENZE`.
 - Lotta / Battles: [@pkmn/sim](https://github.com/pkmn/ps), simulatore di / simulator of Pokémon Showdown (© Guangcong Luo and contributors, MIT License); licenza in / license in `lib/PKMN-SIM-LICENSE.txt`. Grafica e testi della lotta originali / original battle graphics and texts.

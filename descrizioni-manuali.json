@@ -1,0 +1,21 @@
+{
+  "_nota": "Descrizioni in italiano scritte da noi per ciò che i giochi non hanno ancora in italiano su PokéAPI (abilità e Megapietre nuove). Stesso stile e stessa terminologia dei testi ufficiali.",
+  "a": {
+    "megasol": "Il Pokémon usa le sue mosse come se splendesse un sole intenso, anche quando il tempo atmosferico è diverso.",
+    "dragonize": "Trasforma le mosse di tipo Normale del Pokémon in mosse di tipo Drago e ne aumenta leggermente la potenza.",
+    "auraguard": "Il Pokémon subisce la metà dei danni dalle mosse che prevedono un contatto fisico.",
+    "piercingdrill": "Le mosse con contatto del Pokémon superano le protezioni del bersaglio, ma infliggono solo un quarto dei danni normali.",
+    "eelevate": "Il Pokémon è immune alle mosse di tipo Terra. Quando manda KO un altro Pokémon, la sua statistica più alta aumenta.",
+    "firemane": "Quando il Pokémon usa una mossa di tipo Fuoco, la sua statistica d'attacco aumenta di una volta e mezza.",
+    "spicyspray": "Se il Pokémon viene colpito da una mossa, chi lo ha attaccato viene scottato.",
+    "embodyaspectteal": "Il ricordo del passato fa brillare la Teal Mask: quando il Pokémon entra in campo, la sua Velocità aumenta.",
+    "embodyaspectcornerstone": "Il ricordo del passato fa brillare la Cornerstone Mask: quando il Pokémon entra in campo, la sua Difesa aumenta.",
+    "embodyaspecthearthflame": "Il ricordo del passato fa brillare la Hearthflame Mask: quando il Pokémon entra in campo, il suo Attacco aumenta.",
+    "embodyaspectwellspring": "Il ricordo del passato fa brillare la Wellspring Mask: quando il Pokémon entra in campo, la sua Difesa Speciale aumenta.",
+    "asonespectrier": "Combina le abilità Unnerve e Grim Neigh: gli avversari sono troppo nervosi per mangiare le bacche e, quando il Pokémon manda KO un avversario, il suo Attacco Speciale aumenta.",
+    "asoneglastrier": "Combina le abilità Unnerve e Chilling Neigh: gli avversari sono troppo nervosi per mangiare le bacche e, quando il Pokémon manda KO un avversario, il suo Attacco aumenta."
+  },
+  "i": {
+    "leek": "Strumento da dare a Farfetch'd o a Sirfetch'd. Un lungo gambo di porro che aumenta di molto la probabilità di brutti colpi delle sue mosse."
+  }
+}
