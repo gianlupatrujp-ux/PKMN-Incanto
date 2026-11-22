@@ -170,6 +170,13 @@ select:focus-visible{outline:3px solid var(--p2);outline-offset:2px}
 details.remote summary{cursor:pointer;font-size:14px}
 details.remote ol{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:14px}
 /* Tasto Regole sempre disponibile */
+.n-hat{position:relative;display:inline-block}
+.hat{position:absolute;width:.6em;left:-.06em;top:-.3em;transform:rotate(16deg);pointer-events:none;filter:drop-shadow(0 2px 0 rgba(31,42,68,.35))}
+.snow{position:fixed;inset:0;pointer-events:none;z-index:3;overflow:hidden}
+.snow i{position:absolute;top:-24px;color:#fff;font-style:normal;text-shadow:0 0 2px #8FB4E8,0 0 1px #5A7FB8;animation:snowfall linear infinite}
+@keyframes snowfall{0%{transform:translate(0,-30px) rotate(0)}50%{transform:translate(14px,50vh) rotate(160deg)}100%{transform:translate(-8px,105vh) rotate(320deg)}}
+@media (prefers-reduced-motion:reduce){.snow{display:none}}
+.musicbtn{padding:6px 9px;font-size:14px;line-height:1}
 .fixbar{position:fixed;left:max(12px,env(safe-area-inset-left,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));z-index:5;display:flex;gap:8px;align-items:center}
 .homebtn svg{width:18px;height:18px;flex:none}
 .rulesbtn{font:600 12px var(--font-body);
@@ -355,6 +362,7 @@ html,body{margin:0}
 <script src="set-data.js"></script>
 <script src="mega-data.js"></script>
 <script src="versi-data.js"></script>
+<script src="musica.js"></script>
 <script src="sprite-data.js"></script>
 <script>
 /*CORE-START*/
@@ -552,7 +560,7 @@ const I18N={
   'endIntro':(dbl,f,custom,note)=>`Set pronti per il ${dbl?'doppio':'singolo'}, presi dalle Random Battle di Pokémon Showdown. Dove ci sono più set puoi sceglierli dal menu. Su Showdown: Teambuilder, nuova squadra, "Import from text", incolla. Formato: <strong>${f}</strong>${custom?' (sfida diretta: non controlla le squadre, quindi accetta tutto)':', dove queste squadre sono valide'}${note}.`,
   'noSetsFile':'File set-data.js non trovato: il testo contiene solo i nomi. Si crea con: node scarica-set.js','again':'Nuova partita',
   'exit.title':'Uscire dalla partita?','exit.desc':'La partita in corso andrà persa: squadre, monete e aste fatte finora. Tornerai al menu iniziale, dove restano le impostazioni scelte.',
-  'cancel':'Annulla','exit.confirm':'Esci dalla partita','rulesBtn':'Regole','homeBtn':'Home','homeAria':'Torna al menu iniziale','rulesAria':'Apri il regolamento','close':'Chiudi',
+  'cancel':'Annulla','exit.confirm':'Esci dalla partita','rulesBtn':'Regole','music.on':'Accendi la musica','music.off':'Spegni la musica','homeBtn':'Home','homeAria':'Torna al menu iniziale','rulesAria':'Apri il regolamento','close':'Chiudi',
   'err.turn':'Non è il tuo turno','err.int':'Inserisci un numero intero','err.min':b=>"L'offerta deve superare "+b,'err.max':n=>'Puoi offrire al massimo '+n,
   'rolePrefix':'Mega, ',
   'undo':'↶ Annulla asta','undo.title':"Annullare l'ultima asta?",
@@ -640,7 +648,7 @@ const I18N={
   'endIntro':(dbl,f,custom,note)=>`Sets ready for ${dbl?'doubles':'singles'}, taken from Pokémon Showdown's Random Battles. Where there are several sets, pick one from the menu. On Showdown: Teambuilder, new team, "Import from text", paste. Format: <strong>${f}</strong>${custom?' (direct challenge: it does not check teams, so anything goes)':', where these teams are legal'}${note}.`,
   'noSetsFile':'File set-data.js not found: the text only contains names. Create it with: node scarica-set.js','again':'New game',
   'exit.title':'Leave the game?','exit.desc':'The current game will be lost: teams, coins and auctions so far. You will go back to the start menu, where your settings are kept.',
-  'cancel':'Cancel','exit.confirm':'Leave the game','rulesBtn':'Rules','homeBtn':'Home','homeAria':'Back to the main menu','rulesAria':'Open the rules','close':'Close',
+  'cancel':'Cancel','exit.confirm':'Leave the game','rulesBtn':'Rules','music.on':'Turn music on','music.off':'Turn music off','homeBtn':'Home','homeAria':'Back to the main menu','rulesAria':'Open the rules','close':'Close',
   'err.turn':'Not your turn','err.int':'Enter a whole number','err.min':b=>'The bid must be higher than '+b,'err.max':n=>'You can bid at most '+n,
   'rolePrefix':'Mega, ',
   'undo':'↶ Undo auction','undo.title':'Undo the last auction?',
@@ -853,8 +861,10 @@ function sceneCycle(scene){
 ['animationstart','animationiteration'].forEach(ev=>document.addEventListener(ev,e=>{
   if(e.animationName==='scard'){ const sc=e.target.closest&&e.target.closest('.scene'); if(sc) sceneCycle(sc); }
 }));
+// neve leggera nella schermata iniziale (posizioni fisse per pagina, così non salta a ogni disegno)
+const SNOW=Array.from({length:22},(_,i)=>`<i style="left:${(i*4.6+Math.random()*4).toFixed(1)}%;animation-duration:${(9+Math.random()*9).toFixed(1)}s;animation-delay:-${(Math.random()*18).toFixed(1)}s;font-size:${(8+Math.random()*10).toFixed(0)}px;opacity:${(.45+Math.random()*.45).toFixed(2)}">❄</i>`).join('');
 function vTitle(){
-  return `<section class="title">${SCENE()}<div class="logo"><div class="poke">Pokémon</div><div class="incwrap">${CLOUD('back')}${CLOUD('')}<div class="incanto">Incanto</div></div></div>
+  return `<div class="snow" aria-hidden="true">${SNOW}</div><section class="title">${SCENE()}<div class="logo"><div class="poke">Pokémo<span class="n-hat">n<svg class="hat" viewBox="0 0 60 56" aria-hidden="true"><path d="M8 44 C14 22 26 8 44 6 C52 6 56 14 54 22 C50 16 44 16 40 22 C34 30 32 38 32 44 Z" fill="#E3262E" stroke="#7A0E14" stroke-width="2.5" stroke-linejoin="round"/><path d="M40 22 C44 16 50 16 54 22" fill="none" stroke="#B5141C" stroke-width="2"/><rect x="2" y="40" width="40" height="12" rx="6" fill="#fff" stroke="#C9D2E8" stroke-width="2"/><circle cx="54" cy="24" r="6.5" fill="#fff" stroke="#C9D2E8" stroke-width="2"/></svg></span></div><div class="incwrap">${CLOUD('back')}${CLOUD('')}<div class="incanto">Incanto</div></div></div>
    <div class="langs" role="group" aria-label="${t('lang')}">${LANGS.map(([k,n])=>`<button class="opt sm" data-act="lang" data-v="${k}" aria-pressed="${ui.lang===k}" lang="${k}"><strong>${n}</strong></button>`).join('')}</div>
    <div class="menu"><button class="btn play" data-act="play">${t('menu.local')}</button><button class="btn play2" data-act="online">${t('menu.online')}</button><button class="btn ghost" data-act="rules">${t('menu.rules')}</button></div>
    <p class="credit">${t('credit')} <button class="linkbtn" data-act="legal">${t('menu.legal')}</button></p></section>`;
@@ -932,7 +942,7 @@ function legalBody(){
    <li>Online mode: ${L('https://peerjs.com','PeerJS')} (© Michelle Bu and Eric Zhang, MIT License; license in <code>lib</code>).</li>
    <li>In-game battles: ${L('https://github.com/pkmn/ps','@pkmn/sim')}, the Pokémon Showdown simulator (© Guangcong Luo and contributors, MIT License; license in <code>lib</code>). The battle screen and texts are original.</li>
    <li>Move animations: from the ${L('https://github.com/smogon/pokemon-showdown-client','Pokémon Showdown client')} (animation engine: MIT License; move animations and most effect images: CC0, public domain; © Guangcong Luo and contributors, artists Kevin Lau, Ridaz and others). icicle.png, icicle-pink.png and lightning.png by Clint Bellanger, CC-BY-SA 3.0. rock1.png and rock2.png (rocks) by "Gilad" of Pokémon Online, GPLv3 License. Uses ${L('https://jquery.com','jQuery')} (MIT License). Licenses in <code>lib</code>.</li>
-   <li>Battle music and Pokémon cries: from ${L('https://play.pokemonshowdown.com','Pokémon Showdown')}; they are works of Nintendo / Creatures Inc. / GAME FREAK inc. / The Pokémon Company, used here non-commercially and removed on request of the rights holders. The hit (normal, super effective, not very effective), stat and faint sounds come from the ${L('https://github.com/pagefaultgames/pokerogue-assets','PokéRogue')} project and are also works of Nintendo / Creatures Inc. / GAME FREAK inc., used the same way. The healing sound is generated by the game.</li></ul>
+   <li>Battle music and Pokémon cries: from ${L('https://play.pokemonshowdown.com','Pokémon Showdown')}; they are works of Nintendo / Creatures Inc. / GAME FREAK inc. / The Pokémon Company, used here non-commercially and removed on request of the rights holders. The hit (normal, super effective, not very effective), stat and faint sounds come from the ${L('https://github.com/pagefaultgames/pokerogue-assets','PokéRogue')} project and are also works of Nintendo / Creatures Inc. / GAME FREAK inc., used the same way. The healing sound is generated by the game. Menu music, played by the game: "Jingle Bells" (James Lord Pierpont, 1857, public domain) in our own arrangement and "Centro Ristoro", an original melody.</li></ul>
    <h3>Privacy</h3>
    <p>The game uses <strong>no cookies</strong>, has no accounts and does not collect or send personal data. Games stay in your browser; only the chosen language and the battle preferences (sound, music, battle log open or closed, last background and music, so they don't repeat) are saved in the browser's local storage.</p>
    <p>The site is hosted by GitHub Pages (GitHub, Inc.), which may log visitors' IP addresses for security: see ${L('https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement','GitHub\'s privacy statement')}. When it opens, the game reads Showdown's public list of formats from GitHub (raw.githubusercontent.com) to show the current VGC regulation. No other external service is contacted when playing on one device. The &quot;rooms board&quot; shows waiting players' names and rules to anyone who opens it, through the same public PeerJS service used for online games. In online battles, the team, the chosen moves and the chat messages go directly between the two devices and are not stored anywhere. The &quot;Open Pokémon Showdown&quot; button is a plain link: it opens the Showdown site, which has its own privacy rules; the game sends it nothing (you paste the team yourself). The site is not indexed by search engines.</p>
@@ -952,7 +962,7 @@ function legalBody(){
    <li>Modalità online: ${L('https://peerjs.com','PeerJS')} (© Michelle Bu ed Eric Zhang, licenza MIT; licenza nella cartella <code>lib</code>).</li>
    <li>Lotta dentro il gioco: ${L('https://github.com/pkmn/ps','@pkmn/sim')}, il simulatore di Pokémon Showdown (© Guangcong Luo e collaboratori, licenza MIT; licenza nella cartella <code>lib</code>). Schermata di lotta e testi sono originali.</li>
    <li>Animazioni delle mosse: dal ${L('https://github.com/smogon/pokemon-showdown-client','client di Pokémon Showdown')} (motore delle animazioni: licenza MIT; animazioni delle mosse e quasi tutte le immagini degli effetti: CC0, pubblico dominio; © Guangcong Luo e collaboratori, artisti Kevin Lau, Ridaz e altri). icicle.png, icicle-pink.png e lightning.png di Clint Bellanger, CC-BY-SA 3.0. rock1.png e rock2.png (rocce) di "Gilad" di Pokémon Online, licenza GPLv3. Usa ${L('https://jquery.com','jQuery')} (licenza MIT). Licenze nella cartella <code>lib</code>.</li>
-   <li>Musiche di battaglia e versi dei Pokémon: da ${L('https://play.pokemonshowdown.com','Pokémon Showdown')}; sono opere di Nintendo / Creatures Inc. / GAME FREAK inc. / The Pokémon Company, usate senza scopo di lucro e rimosse su richiesta dei titolari. I suoni dei colpi (normale, super efficace, poco efficace), delle statistiche e del KO vengono dal progetto ${L('https://github.com/pagefaultgames/pokerogue-assets','PokéRogue')} e sono anch'essi opere di Nintendo / Creatures Inc. / GAME FREAK inc., usate allo stesso modo. Il suono della cura è generato dal gioco.</li></ul>
+   <li>Musiche di battaglia e versi dei Pokémon: da ${L('https://play.pokemonshowdown.com','Pokémon Showdown')}; sono opere di Nintendo / Creatures Inc. / GAME FREAK inc. / The Pokémon Company, usate senza scopo di lucro e rimosse su richiesta dei titolari. I suoni dei colpi (normale, super efficace, poco efficace), delle statistiche e del KO vengono dal progetto ${L('https://github.com/pagefaultgames/pokerogue-assets','PokéRogue')} e sono anch'essi opere di Nintendo / Creatures Inc. / GAME FREAK inc., usate allo stesso modo. Il suono della cura è generato dal gioco. Musica dei menu, suonata dal gioco: "Jingle Bells" (James Lord Pierpont, 1857, pubblico dominio) in un arrangiamento nostro e "Centro Ristoro", melodia originale.</li></ul>
    <h3>Privacy</h3>
    <p>Il gioco <strong>non usa cookie</strong>, non ha account e non raccoglie né invia dati personali. Le partite restano nel tuo browser; nella memoria locale del browser vengono salvate solo la lingua scelta e le preferenze della lotta (audio, musica, cronaca aperta o chiusa, ultimo sfondo e ultima musica, per non ripeterli).</p>
    <p>Il sito è ospitato da GitHub Pages (GitHub, Inc.), che per motivi di sicurezza può registrare l'indirizzo IP dei visitatori: vedi ${L('https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement','l\'informativa privacy di GitHub')}. All'apertura il gioco legge da GitHub (raw.githubusercontent.com) l'elenco pubblico dei formati di Showdown, per indicare il regolamento VGC aggiornato. Giocando su un solo dispositivo nessun altro servizio esterno viene contattato. La &quot;bacheca delle stanze&quot; mostra a chiunque la apra il nome e le regole di chi aspetta, tramite lo stesso servizio pubblico PeerJS usato per le partite online. Nella lotta online la squadra, le mosse scelte e i messaggi della chat passano direttamente tra i due dispositivi e non vengono salvati da nessuna parte. Il pulsante &quot;Apri Pokémon Showdown&quot; è un semplice collegamento: apre il sito di Showdown, che ha le sue regole sulla privacy; il gioco non gli invia nulla (la squadra la incolli tu). Il sito non è indicizzato dai motori di ricerca.</p>
@@ -1240,6 +1250,7 @@ function copyText(s){
   const old=()=>{ try{ const ta=document.createElement('textarea'); ta.value=s; ta.setAttribute('readonly',''); ta.style.cssText='position:fixed;top:0;left:0;opacity:0'; document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0,s.length); const r=document.execCommand('copy'); ta.remove(); return r; }catch(e){ return false; } };
   try{ if(navigator.clipboard&&window.isSecureContext) return navigator.clipboard.writeText(s).then(()=>true,()=>old()); }catch(e){}
   return Promise.resolve(old()); }
+function musicBtn(){ const on=typeof Musica!=='undefined'&&Musica.isOn(); return `<button class="rulesbtn musicbtn" data-act="music" aria-pressed="${on}" aria-label="${t(on?'music.off':'music.on')}" title="${t(on?'music.off':'music.on')}">${on?'🎵':'🔇'}</button>`; }
 function vExit(){
   return `<div class="modal-bg" data-act="noexit"><div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="exT" aria-describedby="exD">
    <h2 id="exT">${t('exit.title')}</h2>
@@ -1575,7 +1586,8 @@ function render(){
   const undoReq=!!(ui.online&&ui.online.undoReq&&ui.online.undoReq.from!==ui.online.me&&ui.game&&ui.screen!=='lobby');
   const modal=ui.askExit||ui.modal||ui.askUndo||undoReq;
   $app.innerHTML=({title:vTitle,setup:vSetup,flip:vFlip,game:vGame,end:vEnd,online:vOnline,lobby:vLobby,rooms:vRooms})[ui.screen]()
-    +(ui.screen!=='title'&&!modal?`<div class="fixbar"><button class="rulesbtn" data-act="rules" aria-label="${t('rulesAria')}"><b aria-hidden="true">?</b>${t('rulesBtn')}</button><button class="rulesbtn homebtn" data-act="home" aria-label="${t('homeAria')}">${MASTER_BALL}${t('homeBtn')}</button></div>`:'')
+    +(ui.screen==='title'&&!modal?`<div class="fixbar">${musicBtn()}</div>`:'')
+    +(ui.screen!=='title'&&!modal?`<div class="fixbar">${musicBtn()}<button class="rulesbtn" data-act="rules" aria-label="${t('rulesAria')}"><b aria-hidden="true">?</b>${t('rulesBtn')}</button><button class="rulesbtn homebtn" data-act="home" aria-label="${t('homeAria')}">${MASTER_BALL}${t('homeBtn')}</button></div>`:'')
     +(ui.askExit?vExit():'')+(ui.askUndo?vUndo():'')+(undoReq&&!ui.askUndo?vUndoReq():'')+(ui.modal?vModal(ui.modal):'');
   if(ui.askExit) document.getElementById('exNo').focus();
   else if(ui.askUndo) document.getElementById('unNo').focus();
@@ -1583,6 +1595,7 @@ function render(){
   else if(ui.modal) document.getElementById('rlClose').focus();
   try{ lobbySync(); }catch(e){}
   try{ cryAuto(); }catch(e){}
+  try{ if(typeof Musica!=='undefined') Musica.want(ui.screen==='title'?'natale':'centro'); }catch(e){}
 }
 
 function act(a,d){
@@ -1658,6 +1671,7 @@ function act(a,d){
   else if(a==='exit'&&ui.online){ui.askExit=false;leaveOnline();ui.setupOnline=false;ui.screen='title';ui.msg='';}
   else if(a==='exit'){ui.askExit=false;ui.screen='setup';ui.game=null;ui.flip=null;ui.msg='';ui.draft='';}
   else if(a==='fight'){ ui.series=null; startFight(); return; }
+  else if(a==='music'){ if(typeof Musica!=='undefined') Musica.toggle(); }
   else if(a==='cryok'){ ui.cryOk=!ui.cryOk; ui.msg=''; }
   else if(a==='playcry'){ playCry(true); return; }
   else if(a==='bo'){ ui.bo=d.v==='3'?3:1; }
