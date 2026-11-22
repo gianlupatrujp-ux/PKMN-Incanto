@@ -1173,7 +1173,7 @@ function vEnd(){
   const intro=Object.keys(SETS).length
     ?t('endIntro',g.format==='doppio',showdownFormat(g.format,g.tier),g.format==='doppio'&&g.tier!=='champions',fmtNote(g.format,g.tier))
     :t('noSetsFile');
-  return `<header class="brand"><h1>${t('endTitle')}</h1><p class="muted">${intro}</p></header>
+  return `${onlineBanner()}<header class="brand"><h1>${t('endTitle')}</h1><p class="muted">${intro}</p></header>
    <div class="note remote">📡 ${t('remote.end')}</div>
    ${fightCard(g)}
    <div class="teams">${blocks}</div>${isGuest()?`<p class="muted" style="text-align:center">${t('online.newGameGuest',name(0))}</p>`:`<div class="center"><button class="btn big" data-act="again">${ui.online?t('online.newGame'):t('again')}</button></div>`}`;
@@ -1566,7 +1566,7 @@ function act(a,d){
   else if(a==='online'){ui.setupOnline='online';ui.names=[ui.myName||'',''];ui.screen='setup';ui.msg='';}
   else if(a==='onlinecreate'){ui.setupOnline=true;ui.names=[ui.myName||'',''];ui.screen='setup';ui.msg='';}
   else if(a==='onlinejoin'){joinRoom(ui.joinCode);return;}
-  else if(a==='rejoin'){ if(ui.online&&ui.online.random) joinRoom(ui.online.code,{random:false,raw:true}); else joinRoom(ui.online?ui.online.code:ui.joinCode); return;}
+  else if(a==='rejoin'){ const o=ui.online; if(o&&(o.random||o.board)) joinRoom(o.code,{random:false,raw:true,fromBoard:o.board}); else joinRoom(o?o.code:ui.joinCode); return;}
   else if(a==='findrandom'){ui.setupOnline='random';ui.names=[ui.myName||'',''];ui.screen='setup';ui.msg='';}
   else if(a==='findagain'){ findOpponent(1); return; }
   else if(a==='rooms'){ ui.myName=ui.names[0]||ui.myName||''; ui.screen='rooms'; ui.msg=''; }
