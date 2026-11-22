@@ -556,10 +556,10 @@ function hpView(sid){ const m=actMon(sid); if(!m) return;
   pc.textContent=Math.ceil(pct)+'%'; n.textContent=exactHP(sideOfPos(sid))?`${Math.max(0,Math.round(m.shown))}/${m.max}`:''; }
 function drawSide(x){ if(String(x).length>2){ drawPos(x); ballsDbl(); return; } drawPos(x); drawPos(x+'b'); ballsDbl(); }
 // in doppio le Poké Ball dell'avversario vanno sotto la sua seconda barra (così stanno sotto a entrambe, non in mezzo)
-// in doppio le due barre di ogni lato stanno attaccate (6 px), in modo simmetrico: avversario dall'alto, proprio lato dal basso
-function stackDbl(){ if(!isDbl()||!root) return; const ar=$('arena'), h2=$('hudp2'), h2b=$('hudp2b'), h1=$('hudp1'), h1b=$('hudp1b'); if(!ar) return; const gap=6;
+// in doppio le due barre di ogni lato stanno attaccate (si toccano quasi), in modo simmetrico: avversario dall'alto, proprio lato dal basso
+function stackDbl(){ if(!isDbl()||!root) return; const ar=$('arena'), h2=$('hudp2'), h2b=$('hudp2b'), h1=$('hudp1'), h1b=$('hudp1b'); if(!ar) return; const gap=-3;
   if(h2&&h2b){ h2b.style.top=(!h2.hidden?h2.offsetTop+h2.offsetHeight+gap:h2.offsetTop)+'px'; }
-  if(h1&&h1b){ h1b.style.bottom=(!h1.hidden?ar.clientHeight-h1.offsetTop+gap:ar.clientHeight-h1.offsetTop-h1.offsetHeight)+'px'; } }
+  if(h1&&h1b){ h1b.style.bottom=(!h1.hidden?ar.clientHeight-h1.offsetTop+gap+3:ar.clientHeight-h1.offsetTop-h1.offsetHeight)+'px'; } }
 function ballsDbl(){ if(!isDbl()) return; setTimeout(stackDbl,0); const src=$('ballsxp2'), hb=$('hudp2b'); if(!src) return; const sb=hb&&!hb.hidden&&hb.querySelector('.sb'); let dst=sb&&sb.querySelector('.balls.moved');
   if(!sb){ src.style.visibility=''; return; } if(!dst){ dst=document.createElement('div'); dst.className='balls moved'; sb.appendChild(dst); } dst.innerHTML=src.innerHTML; src.style.visibility='hidden'; src.style.height='0'; }
 // effetti temporanei mostrati come su Showdown (etichette sotto la barra dei PS)
