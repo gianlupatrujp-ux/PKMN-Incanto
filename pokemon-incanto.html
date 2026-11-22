@@ -541,7 +541,7 @@ const I18N={
   'hist':'Aste concluse','col.winner':'Vincitore','col.price':'Prezzo','col.opener':'Apriva',
   'shinyBan':'✨ Pokémon shiny! ✨','formOf':f=>'Forma di '+f,'colorChip':c=>'Colore '+c,'dexNo':'N.','primaryType':'Tipo primario','dexNumber':'Numero di Pokédex','color':'Colore',
   'endTitle':'Squadre complete','spent':(s,l)=>`${s} spese · ${l} avanzate`,'setsLabel':'Set di ogni Pokémon','noSet':'nessun set: solo il nome',
-  'textLabel':'Testo per Pokémon Showdown','fmtLine':'Formato da scegliere su Showdown:','copy':'Copia testo','openSD':'Apri Pokémon Showdown ↗','fight.label':'Lotta','fight.champ':'Pokémon Champions qui si gioca con le regole libere di Showdown (il motore non conosce ancora Champions): i "Stat Points" diventano EV e le Megaevoluzioni nuove potrebbero non funzionare.','fight.textOnline':n=>`Lottate qui contro ${n}, ognuno dal suo dispositivo, con la chat per scrivervi. Chi ha creato la stanza fa girare la lotta: dell'avversario vedrai solo quello che si scopre lottando, come su Showdown.`,'fight.waitHost':n=>`In attesa che ${n} apra la lotta…`,'fight.btn':'Gioca qui','fight.loading':'Caricamento della lotta…','fight.back':'Torna alle squadre','fight.text':'Fate lottare le due squadre qui, su questo dispositivo: a ogni turno ognuno sceglie la sua mossa a turno (passandosi il dispositivo). I calcoli sono quelli di Pokémon Showdown. Oppure copiate il testo qui sotto e giocate su Showdown.','fight.beta':'Novità in prova: per ora la lotta è solo in italiano.','fight.loadErr':'Non riesco a caricare la lotta. Riprova.','fight.notYet':'Per ora la lotta dentro il gioco c’è solo nel singolo con i formati National Dex (non con Pokémon Champions né nel doppio). Usate il testo qui sotto per lottare su Pokémon Showdown.','openSDhint':'Si apre il sito ufficiale di Showdown in una nuova scheda: vai su Teambuilder → New Team → Import from text e incolla il testo copiato.',
+  'textLabel':'Testo per Pokémon Showdown','fmtLine':'Formato da scegliere su Showdown:','copy':'Copia testo','openSD':'Apri Pokémon Showdown ↗','fight.label':'Lotta','bo.aria':'Numero di lotte','bo.one':'Lotta singola','bo.three':'Al meglio di 3 (BO3)','bo.help':'Si gioca finché un giocatore vince 2 lotte, con le stesse squadre.','bo.label':(n,a,x,y,b)=>`Lotta ${n} di 3 · ${a} ${x}–${y} ${b}`,'bo.won':(n,s)=>`🏆 ${n} vince la serie ${s}!`,'bo.score':(a,s,b)=>`Serie: ${a} ${s} ${b}`,'bo.next':n=>`▶ Lotta ${n} di 3`,'fight.champ':'Pokémon Champions qui si gioca con le regole libere di Showdown (il motore non conosce ancora Champions): i "Stat Points" diventano EV e le Megaevoluzioni nuove potrebbero non funzionare.','fight.textOnline':n=>`Lottate qui contro ${n}, ognuno dal suo dispositivo, con la chat per scrivervi. Chi ha creato la stanza fa girare la lotta: dell'avversario vedrai solo quello che si scopre lottando, come su Showdown.`,'fight.waitHost':n=>`In attesa che ${n} apra la lotta…`,'fight.btn':'Gioca qui','fight.loading':'Caricamento della lotta…','fight.back':'Torna alle squadre','fight.text':'Fate lottare le due squadre qui, su questo dispositivo: a ogni turno ognuno sceglie la sua mossa a turno (passandosi il dispositivo). I calcoli sono quelli di Pokémon Showdown. Oppure copiate il testo qui sotto e giocate su Showdown.','fight.beta':'Novità in prova: per ora la lotta è solo in italiano.','fight.loadErr':'Non riesco a caricare la lotta. Riprova.','fight.notYet':'Per ora la lotta dentro il gioco c’è solo nel singolo con i formati National Dex (non con Pokémon Champions né nel doppio). Usate il testo qui sotto per lottare su Pokémon Showdown.','openSDhint':'Si apre il sito ufficiale di Showdown in una nuova scheda: vai su Teambuilder → New Team → Import from text e incolla il testo copiato.',
   'copied':f=>'Copiato. Formato: '+f,'selected':'Selezionato: copia con Ctrl+C',
   'endIntro':(dbl,f,custom,note)=>`Set pronti per il ${dbl?'doppio':'singolo'}, presi dalle Random Battle di Pokémon Showdown. Dove ci sono più set puoi sceglierli dal menu. Su Showdown: Teambuilder, nuova squadra, "Import from text", incolla. Formato: <strong>${f}</strong>${custom?' (sfida diretta: non controlla le squadre, quindi accetta tutto)':', dove queste squadre sono valide'}${note}.`,
   'noSetsFile':'File set-data.js non trovato: il testo contiene solo i nomi. Si crea con: node scarica-set.js','again':'Nuova partita',
@@ -629,7 +629,7 @@ const I18N={
   'hist':'Finished auctions','col.winner':'Winner','col.price':'Price','col.opener':'Opener',
   'shinyBan':'✨ Shiny Pokémon! ✨','formOf':f=>f+' form','colorChip':c=>'Color: '+c,'dexNo':'No.','primaryType':'Primary type','dexNumber':'Pokédex number','color':'Color',
   'endTitle':'Teams complete','spent':(s,l)=>`${s} spent · ${l} left`,'setsLabel':'Set for each Pokémon','noSet':'no set: name only',
-  'textLabel':'Text for Pokémon Showdown','fmtLine':'Format to choose on Showdown:','copy':'Copy text','openSD':'Open Pokémon Showdown ↗','fight.label':'Battle','fight.champ':'Pokémon Champions is played here with Showdown\'s free rules (the engine doesn\'t know Champions yet): "Stat Points" become EVs and the new Mega Evolutions may not work.','fight.textOnline':n=>`Battle ${n} here, each on your own device, with chat. The room creator runs the battle: you only see what is revealed while battling, as on Showdown.`,'fight.waitHost':n=>`Waiting for ${n} to open the battle…`,'fight.btn':'Play here','fight.loading':'Loading the battle…','fight.back':'Back to the teams','fight.text':'Let the two teams battle here, on this device: each turn both players pick their move in turn (passing the device). Calculations are Pokémon Showdown’s. Or copy the text below and play on Showdown.','fight.beta':'New and in testing: for now the battle texts are in Italian only.','fight.loadErr':'Could not load the battle. Please try again.','fight.notYet':'For now the in-game battle is only available in singles with the National Dex formats (not Pokémon Champions nor doubles). Use the text below to battle on Pokémon Showdown.','openSDhint':'The official Showdown site opens in a new tab: go to Teambuilder → New Team → Import from text and paste the copied text.',
+  'textLabel':'Text for Pokémon Showdown','fmtLine':'Format to choose on Showdown:','copy':'Copy text','openSD':'Open Pokémon Showdown ↗','fight.label':'Battle','bo.aria':'Number of battles','bo.one':'Single battle','bo.three':'Best of 3 (BO3)','bo.help':'Play until one player wins 2 battles, with the same teams.','bo.label':(n,a,x,y,b)=>`Battle ${n} of 3 · ${a} ${x}–${y} ${b}`,'bo.won':(n,s)=>`🏆 ${n} wins the series ${s}!`,'bo.score':(a,s,b)=>`Series: ${a} ${s} ${b}`,'bo.next':n=>`▶ Battle ${n} of 3`,'fight.champ':'Pokémon Champions is played here with Showdown\'s free rules (the engine doesn\'t know Champions yet): "Stat Points" become EVs and the new Mega Evolutions may not work.','fight.textOnline':n=>`Battle ${n} here, each on your own device, with chat. The room creator runs the battle: you only see what is revealed while battling, as on Showdown.`,'fight.waitHost':n=>`Waiting for ${n} to open the battle…`,'fight.btn':'Play here','fight.loading':'Loading the battle…','fight.back':'Back to the teams','fight.text':'Let the two teams battle here, on this device: each turn both players pick their move in turn (passing the device). Calculations are Pokémon Showdown’s. Or copy the text below and play on Showdown.','fight.beta':'New and in testing: for now the battle texts are in Italian only.','fight.loadErr':'Could not load the battle. Please try again.','fight.notYet':'For now the in-game battle is only available in singles with the National Dex formats (not Pokémon Champions nor doubles). Use the text below to battle on Pokémon Showdown.','openSDhint':'The official Showdown site opens in a new tab: go to Teambuilder → New Team → Import from text and paste the copied text.',
   'copied':f=>'Copied. Format: '+f,'selected':'Selected: copy with Ctrl+C',
   'endIntro':(dbl,f,custom,note)=>`Sets ready for ${dbl?'doubles':'singles'}, taken from Pokémon Showdown's Random Battles. Where there are several sets, pick one from the menu. On Showdown: Teambuilder, new team, "Import from text", paste. Format: <strong>${f}</strong>${custom?' (direct challenge: it does not check teams, so anything goes)':', where these teams are legal'}${note}.`,
   'noSetsFile':'File set-data.js not found: the text only contains names. Create it with: node scarica-set.js','again':'New game',
@@ -1108,7 +1108,7 @@ function fightTeam(g,i,choice){ let tx=exportText(g.teams[i],g.format,choice,g.t
 function fightCard(g){
   const ok=fightOk(g);
   return `<section class="card"><span class="label">${t('fight.label')}</span>
-   ${ok?`<p class="muted">${ui.online?t('fight.textOnline',ui.names[1-ui.online.me]||t('player',2-ui.online.me)):t('fight.text')}</p><div class="center"><button class="btn big" data-act="fight" id="fightBtn">⚔ ${t('fight.btn')}</button></div><p class="muted" style="font-size:12px;text-align:center">${g.tier==='champions'?t('fight.champ'):''}</p>`
+   ${ok?`<p class="muted">${ui.online?t('fight.textOnline',ui.names[1-ui.online.me]||t('player',2-ui.online.me)):t('fight.text')}</p><div class="opts" style="justify-content:center;margin-bottom:10px" role="group" aria-label="${t('bo.aria')}"><button class="opt sm" data-act="bo" data-v="1" aria-pressed="${(ui.bo||1)===1}"><strong>${t('bo.one')}</strong></button><button class="opt sm" data-act="bo" data-v="3" aria-pressed="${ui.bo===3}"><strong>${t('bo.three')}</strong></button></div>${ui.bo===3?`<p class="muted" style="font-size:13px;text-align:center">${t('bo.help')}</p>`:''}<div class="center"><button class="btn big" data-act="fight" id="fightBtn">⚔ ${t('fight.btn')}</button></div><p class="muted" style="font-size:12px;text-align:center">${g.tier==='champions'?t('fight.champ'):''}</p>`
        :`<p class="muted">${t('fight.notYet')}</p>`}</section>`;
 }
 function loadScript(src){ return new Promise((res,rej)=>{ if(document.querySelector('script[data-src="'+src+'"]')) return res();
@@ -1116,38 +1116,51 @@ function loadScript(src){ return new Promise((res,rej)=>{ if(document.querySelec
 // Scelte dei set mandate dall'amico: solo Pokémon esistenti e numeri piccoli
 function cleanChoice(c){ const o={}; if(c&&typeof c==='object') for(const k of Object.keys(c).slice(0,12)) if(MON_BY_NAME.has(k)) o[k]=wInt(c[k],0,9,0); return o; }
 async function loadFight(){ if(typeof PkmnSim==='undefined') await loadScript('lib/pkmn-sim.js'); if(typeof Lotta==='undefined') await loadScript('lotta.js'); }
+// Al meglio di 3: chi arriva a 2 vittorie vince la serie. Restituisce alla lotta il messaggio e il pulsante successivo.
+function seriesWin(i,nm0,nm1){ const S=ui.series; if(!S||S.bo!==3) return null; S.wins[i]++;
+  const nm=[nm0,nm1], score=S.wins[0]+'–'+S.wins[1];
+  const label=t('bo.label',Math.min(3,S.n),nm0,S.wins[0],S.wins[1],nm1);
+  if(S.wins[i]>=2){ S.done=true; return {msg:t('bo.won',nm[i],score),label}; }
+  S.n++; return {msg:t('bo.score',nm0,score,nm1), next:isGuest()?null:t('bo.next',S.n), label}; }
 async function startFight(){
   const g=ui.game, b=document.getElementById('fightBtn');
   if(ui.online&&isGuest()){ // l'amico chiede all'host di far partire la lotta (con i suoi set scelti)
     const mine={}; for(const m of g.teams[1]) if(m&&!m.hidden&&ui.setChoice[m.name]!=null) mine[m.name]=ui.setChoice[m.name];
-    onlineSend({t:'act',a:'fight',d:{choice:mine}}); if(b){ b.disabled=true; b.textContent=t('fight.waitHost',name(0)); }
+    onlineSend({t:'act',a:'fight',d:{choice:mine,bo:ui.bo===3?3:1}}); if(b){ b.disabled=true; b.textContent=t('fight.waitHost',name(0)); }
     loadFight().catch(()=>{}); return; }
   if(ui.online&&!(ui.online.conn&&ui.online.conn.open)) return;
   if(b){ b.disabled=true; b.textContent=t('fight.loading'); }
   try{ await loadFight(); }
   catch(e){ if(b){ b.disabled=false; b.textContent='⚔ '+t('fight.btn'); } alert(t('fight.loadErr')); return; }
   const fmt=showdownFormat(g.format,g.tier);
+  if(!ui.series) ui.series={bo:ui.bo===3?3:1,wins:[0,0],n:1};
+  const S=ui.series, nm0=ui.names[0]||t('player',1), nm1Raw=ui.names[1]||t('player',2), nm1=nm1Raw===nm0?nm1Raw+' (2)':nm1Raw;
+  // in lotta i nomi devono essere diversi: dal nome del vincitore si capisce chi ha vinto
+  const ser=S.bo===3?{series:t('bo.label',S.n,nm0,S.wins[0],S.wins[1],nm1), onEnd:w=>seriesWin(w===nm0?0:1,nm0,nm1), onNew:()=>startFight()}:{};
   const showOpp=g.mode==='classica'||!g.hide||g.hide==='subito'||(ui.revealLocal[0]&&ui.revealLocal[1]);
   if(ui.online){ // host: fa girare la lotta e manda all'amico solo la sua squadra e le specie dell'host
     const fid=fightFormat(g), ch=Object.assign({},ui.setChoice,ui.online.guestChoice||{});
     const tHost=fightTeam(g,0,ui.setChoice), tGuest=fightTeam(g,1,ch);
-    const nH=ui.names[0]||t('player',1), nG=ui.names[1]||t('player',2);
-    Lotta.open({lang:ui.lang, mode:'online', role:'host', showOpp:false, net:{send:onlineSend}, formatid:fid, formatName:fmt, names:{p1:nH,p2:nG},
-      teams:{p1:tHost,p2:tGuest}, closeLabel:t('fight.back'), onClose:()=>render() });
-    onlineSend({t:'bstart', formatid:fid, formatName:fmt, names:{p1:nG,p2:nH}, myTeam:tGuest, oppSpecies:g.teams[0].map(m=>m.name)});
+    const nH=nm0, nG=nm1;
+    Lotta.open(Object.assign({lang:ui.lang, mode:'online', role:'host', showOpp:false, net:{send:onlineSend}, formatid:fid, formatName:fmt, names:{p1:nH,p2:nG},
+      teams:{p1:tHost,p2:tGuest}, closeLabel:t('fight.back'), onClose:()=>render() },ser));
+    onlineSend({t:'bstart', formatid:fid, formatName:fmt, names:{p1:nG,p2:nH}, myTeam:tGuest, oppSpecies:g.teams[0].map(m=>m.name), series:S.bo===3?{n:S.n,w:S.wins}:null});
     return; }
-  Lotta.open({lang:ui.lang, mode:'two', showOpp, formatid:fightFormat(g), formatName:fmt,
-    names:{p1:ui.names[0]||t('player',1), p2:ui.names[1]||t('player',2)},
+  Lotta.open(Object.assign({lang:ui.lang, mode:'two', showOpp, formatid:fightFormat(g), formatName:fmt,
+    names:{p1:nm0, p2:nm1},
     teams:{p1:fightTeam(g,0,ui.setChoice), p2:fightTeam(g,1,ui.setChoice)},
-    closeLabel:t('fight.back'), onClose:()=>render() });
+    closeLabel:t('fight.back'), onClose:()=>render() },ser));
 }
 async function guestFight(m){
   const fid=String(m.formatid||''); if(!['gen9nationaldexag','gen9nationaldex','gen9nationaldexuu','gen9doublescustomgame'].includes(fid)) return;
   try{ await loadFight(); }catch(e){ alert(t('fight.loadErr')); return; }
   const nm=v=>String(v||'').slice(0,18), team=String(m.myTeam||'').slice(0,6000);
   const opp=(Array.isArray(m.oppSpecies)?m.oppSpecies:[]).slice(0,6).map(String).filter(s=>MON_BY_NAME.has(s));
+  const sr=m.series&&typeof m.series==='object'?{n:wInt(m.series.n,1,3,1),w:[wInt(m.series.w&&m.series.w[0],0,1,0),wInt(m.series.w&&m.series.w[1],0,1,0)]}:null;
+  if(typeof Lotta!=='undefined'&&Lotta.isOpen()) Lotta.close(true); // lotta successiva della serie
   Lotta.open({lang:ui.lang, mode:'online', role:'guest', showOpp:false, net:{send:onlineSend}, formatid:fid, formatName:String(m.formatName||'').slice(0,40),
     names:{p1:nm(m.names&&m.names.p1)||t('player',2), p2:nm(m.names&&m.names.p2)||t('player',1)}, teams:{p1:team}, oppSpecies:opp,
+    ...(sr?{series:t('bo.label',sr.n,nm(m.names&&m.names.p2),sr.w[0],sr.w[1],nm(m.names&&m.names.p1)), onEnd:w=>{ ui.series={bo:3,wins:[sr.w[0],sr.w[1]],n:sr.n}; return seriesWin(w===nm(m.names&&m.names.p2)?0:1,nm(m.names&&m.names.p2),nm(m.names&&m.names.p1)); }}:{}),
     closeLabel:t('fight.back'), onClose:()=>render() });
   const q=(ui.online&&ui.online.bq)||[]; if(ui.online) ui.online.bq=[]; for(const x of q) Lotta.net(x);
 }
@@ -1429,7 +1442,7 @@ function applyWireState(m){
 // Azioni di gioco eseguite dall'host (anche quelle arrivate dal guest). Restituisce un codice d'errore o null.
 function hostApply(a,d,player){
   const g=ui.game;
-  if(a==='fight'){ if(player!==1||!g||!g.over) return null; ui.online.guestChoice=cleanChoice(d&&d.choice); startFight(); return null; }
+  if(a==='fight'){ if(player!==1||!g||!g.over) return null; ui.online.guestChoice=cleanChoice(d&&d.choice); ui.bo=d&&d.bo===3?3:1; ui.series=null; startFight(); return null; }
   if(a==='toflip'){ if(player!==0||!ui.names[1]&&!(ui.online.conn&&ui.online.conn.open)) return null; ui.screen='flip'; ui.flip=null; }
   else if(a==='flip'){ if(player!==0||ui.screen!=='flip'||ui.flip) return null; ui.flip=Math.random()<0.5?'testa':'croce'; }
   else if(a==='begin'){ if(player!==0||!ui.flip) return null;
@@ -1604,7 +1617,8 @@ function act(a,d){
   else if(a==='exit'&&ui.askExit==='home'){ui.askExit=false;if(ui.online)leaveOnline();ui.setupOnline=false;ui.game=null;ui.flip=null;ui.screen='title';ui.msg='';ui.draft='';}
   else if(a==='exit'&&ui.online){ui.askExit=false;leaveOnline();ui.setupOnline=false;ui.screen='title';ui.msg='';}
   else if(a==='exit'){ui.askExit=false;ui.screen='setup';ui.game=null;ui.flip=null;ui.msg='';ui.draft='';}
-  else if(a==='fight'){ startFight(); return; }
+  else if(a==='fight'){ ui.series=null; startFight(); return; }
+  else if(a==='bo'){ ui.bo=d.v==='3'?3:1; }
   else if(a==='copy'&&ui.online&&+d.i!==ui.online.me){ return; } // online la squadra dell'avversario non si copia
   else if(a==='copy'){const i=+d.i,tx=exportText(g.teams[i],g.format,ui.setChoice,g.tier),out=document.getElementById('cp'+i);
     const fb=()=>{const r=document.createRange();r.selectNodeContents(document.getElementById('ex'+i));const s=getSelection();s.removeAllRanges();s.addRange(r);out.textContent=t('selected');};

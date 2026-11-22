@@ -218,6 +218,7 @@ const CSS=`#lotta{position:fixed;inset:0;z-index:60;overflow:auto;background:#F6
 /* barre dei PS sopra i Pokémon */
 #lotta .hud{flex-direction:row;align-items:flex-start;gap:4px;max-width:none;width:clamp(150px,31%,230px)}
 #lotta .hud.p2{left:auto;right:6%;top:5%}#lotta .hud.p1{right:auto;left:5%;bottom:auto;top:30%}
+#lotta .lt-series{font:800 12px 'Inter',sans-serif;background:#FFD23F;color:#1F2A44;border:2px solid #1F2A44;border-radius:99px;padding:2px 10px;white-space:nowrap}
 #lotta .sb{flex:1;min-width:0;cursor:help;opacity:1;animation:none;transform:none}
 #lotta .sbn{display:flex;align-items:baseline;gap:4px;color:#fff;font:800 clamp(11px,1.9vw,15px) 'Inter',sans-serif;text-shadow:0 0 2px #000,0 1px 2px #000,1px 0 2px #000,-1px 0 2px #000;white-space:nowrap;overflow:hidden}
 #lotta .sbn b{overflow:hidden;text-overflow:ellipsis}#lotta .sbn small{font-size:.75em;opacity:.95}#lotta .sbn .shy{font-style:normal;font-size:.8em}
@@ -959,7 +960,7 @@ async function handle(line){
     case '-singleturn': { const n=(p[3]||'').replace('move: ',''); if(n==='Protect'||n==='Detect'){ say(`${label(p[2])} si protegge!`); return 800; } return 0; }
     case '-mega': say(`${label(p[2])} megaevolve!`); return 1000;
     case 'turn': { B.turn=+p[2]||0; const tb=$('turn'); tb.hidden=false; tb.textContent='Turno '+p[2]; say(`Turno ${esc(p[2])}`,'turn'); return 350; }
-    case 'win': B.over=true; timerClear(); musicStop(); say(`Vince ${esc(p[2])}!`,'win'); return 0;
+    case 'win': B.over=true; timerClear(); musicStop(); say(`Vince ${esc(p[2])}!`,'win'); seriesEnd(String(p[2]||'')); return 0;
     case 'tie': B.over=true; say('Pareggio!'); return 0;
   }
   return 0;
@@ -994,9 +995,12 @@ function cpuSingle(r){
   const mv=r.active[0].moves.map((m,i)=>({m,i})).filter(x=>!x.m.disabled&&(x.m.pp===undefined||x.m.pp>0));
   return mv.length?'move '+(mv[Math.random()*mv.length|0].i+1):'move 1';
 }
+// Serie (al meglio di 3): il gioco riceve il vincitore e risponde con il messaggio e il pulsante per la lotta successiva
+function seriesEnd(winner){ if(!O.onEnd||B.seriesDone) return; B.seriesDone=true; const r=O.onEnd(winner); if(!r) return;
+  if(r.msg) say(r.msg,'win'); const sl=root&&root.querySelector('.lt-series'); if(sl&&r.label) sl.textContent=r.label; O.newLabel=r.next||null; if(!r.next&&O.series) O.onNew=null; }
 function prompt(){
   if(!root||B.busy||B.queue.length) return;
-  if(B.over){ $('ctrl').innerHTML=`<div class="end">${$('msg').innerHTML}</div><div class="lt-row" style="justify-content:center">${O.onNew?'<button class="btn" data-lt="new">Nuova lotta</button>':''}<button class="btn ghost" data-lt="close">${esc(O.closeLabel||'Chiudi la lotta')}</button></div>`; return; }
+  if(B.over){ $('ctrl').innerHTML=`<div class="end">${$('msg').innerHTML}</div><div class="lt-row" style="justify-content:center">${O.onNew?`<button class="btn" data-lt="new">${esc(O.newLabel||'Nuova lotta')}</button>`:''}<button class="btn ghost" data-lt="close">${esc(O.closeLabel||'Chiudi la lotta')}</button></div>`; return; }
   if(O.mode==='cpu'&&need('p2')){ send('p2',cpuChoice(B.req.p2)); return; }
   const sid=need('p1')?'p1':(O.mode==='two'&&need('p2')?'p2':null);
   if(!sid){ $('ctrl').innerHTML=`<p class="lt-wait">${O.role?'In attesa di '+PN('p2')+'…':'In attesa…'}</p>`; return; }
@@ -1400,7 +1404,7 @@ function open(opts){
   O.dbl=/doubles|vgc/.test(O.formatid);
   if(!document.getElementById('lotta-css')){ const s=document.createElement('style'); s.id='lotta-css'; s.textContent=CSS; document.head.appendChild(s); }
   root=document.createElement('div'); root.id='lotta'; root.setAttribute('role','dialog'); root.setAttribute('aria-label','Lotta');
-  root.innerHTML=`<div class="lt-wrap"><div class="lt-top"><h2 class="lt-title">${O.lang==='en'?'Battle':'Lotta'}</h2><span class="lt-muted">${esc(O.formatName||'')}<span id="lt-scene"></span></span><button class="tool lt-chatopen" data-lt="chatmin" aria-label="Apri la chat">💬 Chat<b class="unread" id="lt-unread" hidden></b></button><button class="tool lt-reopen" data-lt="logmin" aria-label="Apri la cronaca della lotta" title="Apri la cronaca della lotta">📜 Cronaca</button><span class="lt-tools" id="lt-tools"></span><button class="btn ghost ff" data-lt="ff">🏳 Arrenditi</button><button class="btn ghost" data-lt="exit">Esci dalla lotta</button></div>
+  root.innerHTML=`<div class="lt-wrap"><div class="lt-top"><h2 class="lt-title">${O.lang==='en'?'Battle':'Lotta'}</h2><span class="lt-muted">${esc(O.formatName||'')}<span id="lt-scene"></span></span>${O.series?`<span class="lt-series">${esc(O.series)}</span>`:''}<button class="tool lt-chatopen" data-lt="chatmin" aria-label="Apri la chat">💬 Chat<b class="unread" id="lt-unread" hidden></b></button><button class="tool lt-reopen" data-lt="logmin" aria-label="Apri la cronaca della lotta" title="Apri la cronaca della lotta">📜 Cronaca</button><span class="lt-tools" id="lt-tools"></span><button class="btn ghost ff" data-lt="ff">🏳 Arrenditi</button><button class="btn ghost" data-lt="exit">Esci dalla lotta</button></div>
    <div class="lt-main"><div class="lt-left">
    <div class="lt-info"><span class="turnb" id="lt-turn" hidden></span><span class="wlabel" id="lt-wlabel" hidden></span></div>
    <div class="arena" id="lt-arena">
