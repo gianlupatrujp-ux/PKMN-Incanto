@@ -538,7 +538,7 @@ const I18N={
   'hist':'Aste concluse','col.winner':'Vincitore','col.price':'Prezzo','col.opener':'Apriva',
   'shinyBan':'✨ Pokémon shiny! ✨','formOf':f=>'Forma di '+f,'colorChip':c=>'Colore '+c,'dexNo':'N.','primaryType':'Tipo primario','dexNumber':'Numero di Pokédex','color':'Colore',
   'endTitle':'Squadre complete','spent':(s,l)=>`${s} spese · ${l} avanzate`,'setsLabel':'Set di ogni Pokémon','noSet':'nessun set: solo il nome',
-  'textLabel':'Testo per Pokémon Showdown','fmtLine':'Formato da scegliere su Showdown:','copy':'Copia testo','openSD':'Apri Pokémon Showdown ↗','openSDhint':'Si apre il sito ufficiale di Showdown in una nuova scheda: vai su Teambuilder → New Team → Import from text e incolla il testo copiato.',
+  'textLabel':'Testo per Pokémon Showdown','fmtLine':'Formato da scegliere su Showdown:','copy':'Copia testo','openSD':'Apri Pokémon Showdown ↗','fight.label':'Lotta','fight.btn':'Gioca qui','fight.loading':'Caricamento della lotta…','fight.back':'Torna alle squadre','fight.text':'Fate lottare le due squadre qui, su questo dispositivo: a ogni turno ognuno sceglie la sua mossa a turno (passandosi il dispositivo). I calcoli sono quelli di Pokémon Showdown. Oppure copiate il testo qui sotto e giocate su Showdown.','fight.beta':'Novità in prova: per ora la lotta è solo in italiano.','fight.loadErr':'Non riesco a caricare la lotta. Riprova.','fight.notYet':'Per ora la lotta dentro il gioco c’è solo nel singolo con i formati National Dex, giocando su un solo dispositivo. Usate il testo qui sotto per lottare su Pokémon Showdown.','openSDhint':'Si apre il sito ufficiale di Showdown in una nuova scheda: vai su Teambuilder → New Team → Import from text e incolla il testo copiato.',
   'copied':f=>'Copiato. Formato: '+f,'selected':'Selezionato: copia con Ctrl+C',
   'endIntro':(dbl,f,custom,note)=>`Set pronti per il ${dbl?'doppio':'singolo'}, presi dalle Random Battle di Pokémon Showdown. Dove ci sono più set puoi sceglierli dal menu. Su Showdown: Teambuilder, nuova squadra, "Import from text", incolla. Formato: <strong>${f}</strong>${custom?' (sfida diretta: non controlla le squadre, quindi accetta tutto)':', dove queste squadre sono valide'}${note}.`,
   'noSetsFile':'File set-data.js non trovato: il testo contiene solo i nomi. Si crea con: node scarica-set.js','again':'Nuova partita',
@@ -626,7 +626,7 @@ const I18N={
   'hist':'Finished auctions','col.winner':'Winner','col.price':'Price','col.opener':'Opener',
   'shinyBan':'✨ Shiny Pokémon! ✨','formOf':f=>f+' form','colorChip':c=>'Color: '+c,'dexNo':'No.','primaryType':'Primary type','dexNumber':'Pokédex number','color':'Color',
   'endTitle':'Teams complete','spent':(s,l)=>`${s} spent · ${l} left`,'setsLabel':'Set for each Pokémon','noSet':'no set: name only',
-  'textLabel':'Text for Pokémon Showdown','fmtLine':'Format to choose on Showdown:','copy':'Copy text','openSD':'Open Pokémon Showdown ↗','openSDhint':'The official Showdown site opens in a new tab: go to Teambuilder → New Team → Import from text and paste the copied text.',
+  'textLabel':'Text for Pokémon Showdown','fmtLine':'Format to choose on Showdown:','copy':'Copy text','openSD':'Open Pokémon Showdown ↗','fight.label':'Battle','fight.btn':'Play here','fight.loading':'Loading the battle…','fight.back':'Back to the teams','fight.text':'Let the two teams battle here, on this device: each turn both players pick their move in turn (passing the device). Calculations are Pokémon Showdown’s. Or copy the text below and play on Showdown.','fight.beta':'New and in testing: for now the battle texts are in Italian only.','fight.loadErr':'Could not load the battle. Please try again.','fight.notYet':'For now the in-game battle is only available in singles with the National Dex formats, playing on one device. Use the text below to battle on Pokémon Showdown.','openSDhint':'The official Showdown site opens in a new tab: go to Teambuilder → New Team → Import from text and paste the copied text.',
   'copied':f=>'Copied. Format: '+f,'selected':'Selected: copy with Ctrl+C',
   'endIntro':(dbl,f,custom,note)=>`Sets ready for ${dbl?'doubles':'singles'}, taken from Pokémon Showdown's Random Battles. Where there are several sets, pick one from the menu. On Showdown: Teambuilder, new team, "Import from text", paste. Format: <strong>${f}</strong>${custom?' (direct challenge: it does not check teams, so anything goes)':', where these teams are legal'}${note}.`,
   'noSetsFile':'File set-data.js not found: the text only contains names. Create it with: node scarica-set.js','again':'New game',
@@ -919,7 +919,8 @@ function legalBody(){
    <li>Pokémon list and data: ${L('https://pokeapi.co','PokéAPI')}.</li>
    <li>Sprites: from ${L('https://play.pokemonshowdown.com','Pokémon Showdown')}; images © Nintendo / Creatures Inc. / GAME FREAK inc. Some sprites were created by community artists (Smogon Sprite Project): credit to them.</li>
    <li>Fonts: Inter, Space Grotesk and Cinzel Decorative (SIL Open Font License 1.1), Luckiest Guy (Apache License 2.0). License files are in the <code>fonts</code> folder.</li>
-   <li>Online mode: ${L('https://peerjs.com','PeerJS')} (© Michelle Bu and Eric Zhang, MIT License; license in <code>lib</code>).</li></ul>
+   <li>Online mode: ${L('https://peerjs.com','PeerJS')} (© Michelle Bu and Eric Zhang, MIT License; license in <code>lib</code>).</li>
+   <li>In-game battles: ${L('https://github.com/pkmn/ps','@pkmn/sim')}, the Pokémon Showdown simulator (© Guangcong Luo and contributors, MIT License; license in <code>lib</code>). The battle screen, animations and texts are original.</li></ul>
    <h3>Privacy</h3>
    <p>The game uses <strong>no cookies</strong>, has no accounts and does not collect or send personal data. Games stay in your browser; only the chosen language is saved (in the browser's local storage).</p>
    <p>The site is hosted by GitHub Pages (GitHub, Inc.), which may log visitors' IP addresses for security: see ${L('https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement','GitHub\'s privacy statement')}. When it opens, the game reads Showdown's public list of formats from GitHub (raw.githubusercontent.com) to show the current VGC regulation. No other external service is contacted when playing on one device. The &quot;Open Pokémon Showdown&quot; button is a plain link: it opens the Showdown site, which has its own privacy rules; the game sends it nothing (you paste the team yourself). The site is not indexed by search engines.</p>
@@ -936,7 +937,8 @@ function legalBody(){
    <li>Elenco e dati dei Pokémon: ${L('https://pokeapi.co','PokéAPI')}.</li>
    <li>Sprite: da ${L('https://play.pokemonshowdown.com','Pokémon Showdown')}; immagini © Nintendo / Creatures Inc. / GAME FREAK inc. Alcuni sprite sono opera di artisti della community (Smogon Sprite Project), a cui va il merito.</li>
    <li>Font: Inter, Space Grotesk e Cinzel Decorative (SIL Open Font License 1.1), Luckiest Guy (Apache License 2.0). I file di licenza sono nella cartella <code>fonts</code>.</li>
-   <li>Modalità online: ${L('https://peerjs.com','PeerJS')} (© Michelle Bu ed Eric Zhang, licenza MIT; licenza nella cartella <code>lib</code>).</li></ul>
+   <li>Modalità online: ${L('https://peerjs.com','PeerJS')} (© Michelle Bu ed Eric Zhang, licenza MIT; licenza nella cartella <code>lib</code>).</li>
+   <li>Lotta dentro il gioco: ${L('https://github.com/pkmn/ps','@pkmn/sim')}, il simulatore di Pokémon Showdown (© Guangcong Luo e collaboratori, licenza MIT; licenza nella cartella <code>lib</code>). Schermata di lotta, animazioni e testi sono originali.</li></ul>
    <h3>Privacy</h3>
    <p>Il gioco <strong>non usa cookie</strong>, non ha account e non raccoglie né invia dati personali. Le partite restano nel tuo browser; viene salvata solo la lingua scelta (nella memoria locale del browser).</p>
    <p>Il sito è ospitato da GitHub Pages (GitHub, Inc.), che per motivi di sicurezza può registrare l'indirizzo IP dei visitatori: vedi ${L('https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement','l\'informativa privacy di GitHub')}. All'apertura il gioco legge da GitHub (raw.githubusercontent.com) l'elenco pubblico dei formati di Showdown, per indicare il regolamento VGC aggiornato. Giocando su un solo dispositivo nessun altro servizio esterno viene contattato. Il pulsante &quot;Apri Pokémon Showdown&quot; è un semplice collegamento: apre il sito di Showdown, che ha le sue regole sulla privacy; il gioco non gli invia nulla (la squadra la incolli tu). Il sito non è indicizzato dai motori di ricerca.</p>
@@ -1081,6 +1083,28 @@ function setPicker(m,g,eff){
   return `<div class="setrow"><label for="set-${esc(m.name)}"><strong>${disp(m)}</strong></label><select id="set-${esc(m.name)}" data-setfor="${esc(m.name)}">${
     ss.map((s,k)=>`<option value="${k}"${k===cur?' selected':''}>Set ${k+1}: ${esc(roleName(s.ruolo))} · ${esc(k===cur&&eff?eff.strumento:itemOf(s,g))}</option>`).join('')}</select></div>`;
 }
+// "Gioca qui": la lotta dentro il gioco (lotta.js + simulatore di Showdown in lib/pkmn-sim.js, caricati solo quando servono).
+// Per ora: singolo, formati National Dex, su questo dispositivo.
+function fightOk(g){ return !ui.online&&g.format==='singolo'&&g.tier!=='champions'; }
+function fightCard(g){
+  const ok=fightOk(g);
+  return `<section class="card"><span class="label">${t('fight.label')}</span>
+   ${ok?`<p class="muted">${t('fight.text')}</p><div class="center"><button class="btn big" data-act="fight" id="fightBtn">⚔ ${t('fight.btn')}</button></div><p class="muted" style="font-size:12px;text-align:center">${t('fight.beta')}</p>`
+       :`<p class="muted">${t('fight.notYet')}</p>`}</section>`;
+}
+function loadScript(src){ return new Promise((res,rej)=>{ if(document.querySelector('script[data-src="'+src+'"]')) return res();
+  const s=document.createElement('script'); s.src=src; s.dataset.src=src; s.onload=res; s.onerror=()=>rej(new Error(src)); document.head.appendChild(s); }); }
+async function startFight(){
+  const g=ui.game, b=document.getElementById('fightBtn'); if(b){ b.disabled=true; b.textContent=t('fight.loading'); }
+  try{ if(typeof PkmnSim==='undefined') await loadScript('lib/pkmn-sim.js'); if(typeof Lotta==='undefined') await loadScript('lotta.js'); }
+  catch(e){ if(b){ b.disabled=false; b.textContent='⚔ '+t('fight.btn'); } alert(t('fight.loadErr')); return; }
+  const fmt=showdownFormat(g.format,g.tier);
+  const showOpp=g.mode==='classica'||!g.hide||g.hide==='subito'||(ui.revealLocal[0]&&ui.revealLocal[1]);
+  Lotta.open({mode:'two', showOpp, formatid:fmt.toLowerCase().replace(/[^a-z0-9]/g,''), formatName:fmt,
+    names:{p1:ui.names[0]||t('player',1), p2:ui.names[1]||t('player',2)},
+    teams:{p1:exportText(g.teams[0],g.format,ui.setChoice,g.tier), p2:exportText(g.teams[1],g.format,ui.setChoice,g.tier)},
+    closeLabel:t('fight.back'), onClose:()=>render() });
+}
 function vEnd(){
   const g=ui.game;
   const blocks=[0,1].map(i=>{const spent=g.startCoins-g.coins[i];
@@ -1107,6 +1131,7 @@ function vEnd(){
     :t('noSetsFile');
   return `<header class="brand"><h1>${t('endTitle')}</h1><p class="muted">${intro}</p></header>
    <div class="note remote">📡 ${t('remote.end')}</div>
+   ${fightCard(g)}
    <div class="teams">${blocks}</div>${isGuest()?`<p class="muted" style="text-align:center">${t('online.newGameGuest',name(0))}</p>`:`<div class="center"><button class="btn big" data-act="again">${ui.online?t('online.newGame'):t('again')}</button></div>`}`;
 }
 function vUndo(){
@@ -1440,6 +1465,7 @@ function act(a,d){
   else if(a==='closemodal'){ui.modal=null;}
   else if(a==='exit'&&ui.online){ui.askExit=false;leaveOnline();ui.setupOnline=false;ui.screen='title';ui.msg='';}
   else if(a==='exit'){ui.askExit=false;ui.screen='setup';ui.game=null;ui.flip=null;ui.msg='';ui.draft='';}
+  else if(a==='fight'){ startFight(); return; }
   else if(a==='copy'){const i=+d.i,tx=exportText(g.teams[i],g.format,ui.setChoice,g.tier),out=document.getElementById('cp'+i);
     const fb=()=>{const r=document.createRange();r.selectNodeContents(document.getElementById('ex'+i));const s=getSelection();s.removeAllRanges();s.addRange(r);out.textContent=t('selected');};
     try{navigator.clipboard.writeText(tx).then(()=>{out.textContent=t('copied',showdownFormat(g.format,g.tier));},fb);}catch(e){fb();}

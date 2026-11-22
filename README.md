@@ -17,6 +17,7 @@ Pokémon and the names, images and sprites of the Pokémon are trademarks and co
 - Elenco dei Pokémon / Pokémon list: [PokéAPI](https://pokeapi.co).
 - Sprite: da / from [Pokémon Showdown](https://play.pokemonshowdown.com); immagini / images © Nintendo / Creatures Inc. / GAME FREAK inc.; alcuni sprite sono di artisti della community / some sprites by community artists (Smogon Sprite Project).
 - Font: Inter, Space Grotesk, Cinzel Decorative (SIL Open Font License 1.1), Luckiest Guy (Apache License 2.0); licenze in / licenses in `fonts/LICENZE`.
+- Lotta / Battles: [@pkmn/sim](https://github.com/pkmn/ps), simulatore di / simulator of Pokémon Showdown (© Guangcong Luo and contributors, MIT License); licenza in / license in `lib/PKMN-SIM-LICENSE.txt`. Grafica e testi della lotta originali / original battle graphics and texts.
 - Modalità online / Online mode: [PeerJS](https://peerjs.com) (© Michelle Bu and Eric Zhang, MIT License); licenza in / license in `lib/PEERJS-LICENSE.txt`.
 
 ## Privacy
