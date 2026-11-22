@@ -259,7 +259,7 @@ h2,h3{color:var(--ink)}
 .btn.play{background:#E3350D}
 .btn.play2{background:#2A75BB;color:#fff}
 .hint{font-size:13px;color:var(--muted);background:#FFF6D1;border:2px dashed #E8B923;border-radius:8px;padding:6px 10px;margin:0}
-.roomcode{font:700 clamp(34px,10vw,52px)/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.18em;color:var(--ink);background:#FFF6D1;border:3px solid var(--line);border-radius:12px;padding:10px 18px;box-shadow:0 4px 0 var(--line)}
+.roomcode{user-select:all;-webkit-user-select:all;font:700 clamp(34px,10vw,52px)/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.18em;color:var(--ink);background:#FFF6D1;border:3px solid var(--line);border-radius:12px;padding:10px 18px;box-shadow:0 4px 0 var(--line)}
 .waitdots::after{content:'';display:inline-block;width:1.2em;text-align:left;animation:dots 1.4s steps(4,end) infinite}
 @keyframes dots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}}
 @media (prefers-reduced-motion:reduce){.waitdots::after{animation:none;content:'…'}}
@@ -575,7 +575,7 @@ const I18N={
   'online.queueFull':'Troppe partite casuali in corso: riprova tra poco.',
   'online.strangerNote':"Con un avversario casuale giochi con uno sconosciuto, che vedrà anche il tuo indirizzo IP (vedi Note legali).",'online.create':'Crea una partita','online.createSub':'Scegli tu le impostazioni e ricevi un codice da mandare al tuo amico.',
   'online.join':'Entra in una partita','online.code':'Codice della stanza','online.joinBtn':'Entra','online.needCode':'Scrivi il codice della stanza.',
-  'online.mkroom':'Crea la stanza','online.room':'Stanza online','online.copyLink':'Copia il link','online.linkCopied':'Link copiato',
+  'online.mkroom':'Crea la stanza','online.room':'Stanza online','online.copyLink':'Copia il link','online.linkCopied':'Link copiato','online.copyCode':'Copia il codice','online.codeCopied':'Codice copiato!','online.copyFail':'Non riesco a copiare: scrivi il codice a mano.','online.codeHow':'Manda il codice al tuo amico: lo scrive in "Hai un codice? Entra".','online.linkToo':'Preferisci il link?',
   'online.opening':'Creazione della stanza…','online.waiting':"In attesa dell'amico: mandagli il codice o il link",
   'online.joined':n=>`${n} è entrato!`,'online.connecting':c=>`Collegamento alla stanza ${c}`,'online.connected':n=>`Connesso! In attesa che ${n} avvii la partita`,
   'online.notfound':c=>`Stanza ${c} non trovata: controlla il codice o chiedi un nuovo link.`,'online.full':'La stanza è già piena.',
@@ -663,7 +663,7 @@ const I18N={
   'online.queueFull':'Too many random matches in progress: try again shortly.',
   'online.strangerNote':'With a random opponent you play with a stranger, who will also see your IP address (see Legal notice).','online.create':'Create a game','online.createSub':'You pick the settings and get a code to send to your friend.',
   'online.join':'Join a game','online.code':'Room code','online.joinBtn':'Join','online.needCode':'Type the room code.',
-  'online.mkroom':'Create the room','online.room':'Online room','online.copyLink':'Copy link','online.linkCopied':'Link copied',
+  'online.mkroom':'Create the room','online.room':'Online room','online.copyLink':'Copy link','online.linkCopied':'Link copied','online.copyCode':'Copy the code','online.codeCopied':'Code copied!','online.copyFail':'Cannot copy: type the code by hand.','online.codeHow':'Send the code to your friend: they type it in "Got a code? Join".','online.linkToo':'Prefer the link?',
   'online.opening':'Creating the room…','online.waiting':'Waiting for your friend: send them the code or the link',
   'online.joined':n=>`${n} joined!`,'online.connecting':c=>`Connecting to room ${c}`,'online.connected':n=>`Connected! Waiting for ${n} to start the game`,
   'online.notfound':c=>`Room ${c} not found: check the code or ask for a new link.`,'online.full':'The room is already full.',
@@ -1188,6 +1188,10 @@ function vUndo(){
    <div class="row"><button class="btn ghost" data-act="noundo" id="unNo">${t('undo.back')}</button><button class="btn danger" data-act="undo">${ui.online?t('online.undoAsk',oppName()):t('undo.confirm')}</button></div></div></div>`;
 }
 const MASTER_BALL='<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14.5" fill="#fff" stroke="#1F2A44" stroke-width="2.4"/><path d="M1.5 16a14.5 14.5 0 0 1 29 0z" fill="#7B3FC4" stroke="#1F2A44" stroke-width="2.4"/><circle cx="9" cy="9.5" r="2.6" fill="#E85FA8"/><circle cx="23" cy="9.5" r="2.6" fill="#E85FA8"/><path d="M12.2 13.2V7.6l3.8 3.6 3.8-3.6v5.6" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><line x1="1.5" y1="16" x2="30.5" y2="16" stroke="#1F2A44" stroke-width="2.4"/><circle cx="16" cy="16" r="4" fill="#fff" stroke="#1F2A44" stroke-width="2.4"/></svg>';
+function copyText(s){
+  const old=()=>{ try{ const ta=document.createElement('textarea'); ta.value=s; ta.setAttribute('readonly',''); ta.style.cssText='position:fixed;top:0;left:0;opacity:0'; document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0,s.length); const r=document.execCommand('copy'); ta.remove(); return r; }catch(e){ return false; } };
+  try{ if(navigator.clipboard&&window.isSecureContext) return navigator.clipboard.writeText(s).then(()=>true,()=>old()); }catch(e){}
+  return Promise.resolve(old()); }
 function vExit(){
   return `<div class="modal-bg" data-act="noexit"><div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="exT" aria-describedby="exD">
    <h2 id="exT">${t('exit.title')}</h2>
@@ -1488,8 +1492,9 @@ function vLobby(){
   } else if(isHost()){
     const link=roomLink(o.code);
     body=`<span class="label">${t('online.code')}</span><div class="roomcode">${esc(o.code)}</div>
-     <div class="row" style="justify-content:center"><button class="btn ghost sm" data-act="copylink">${t('online.copyLink')}</button><span class="muted" id="lnk" aria-live="polite"></span></div>
-     <p class="muted" style="font-size:13px;word-break:break-all">${esc(link)}</p>
+     <div class="row" style="justify-content:center"><button class="btn sm" data-act="copycode">📋 ${t('online.copyCode')}</button><span class="muted" id="lnk" aria-live="polite"></span></div>
+     <p class="muted" style="font-size:13px;text-align:center">${t('online.codeHow')}</p>
+     <details class="muted" style="font-size:12px"><summary>${t('online.linkToo')}</summary><p style="word-break:break-all">${esc(link)}</p><button class="btn ghost sm" data-act="copylink">${t('online.copyLink')}</button></details>
      ${o.status==='opening'?`<p>${t('online.opening')}</p>`:''}
      ${o.status==='waiting'?`<p class="waitdots">${t('online.waiting')}</p>`:''}
      ${o.status==='error'?`<div class="err" role="alert">${t('online.error')}</div>`:''}
@@ -1587,8 +1592,8 @@ function act(a,d){
     if(!Number.isInteger(c)||c<TEAM_SIZE||c>999){ui.msg=t('err.coins',TEAM_SIZE);}
     else if(filterPool(POOL,{tier:ui.tier,legends:ui.legends}).length<TEAM_SIZE*2){ui.msg=t('err.pool',TEAM_SIZE);}
     else{ui.msg='';ui.myName=ui.names[0];createRoom();return;}}
-  else if(a==='copylink'){const out=document.getElementById('lnk'),l=roomLink(ui.online.code);
-    try{navigator.clipboard.writeText(l).then(()=>{if(out)out.textContent=t('online.linkCopied');},()=>{});}catch(e){}
+  else if(a==='copylink'||a==='copycode'){const out=document.getElementById('lnk'),l=a==='copycode'?ui.online.code:roomLink(ui.online.code), ok=t(a==='copycode'?'online.codeCopied':'online.linkCopied');
+    copyText(l).then(r=>{ if(out) out.textContent=r?ok:t('online.copyFail'); });
     return;}
   else if(a==='noexit'){ui.askExit=false;}
   else if(a==='play'){ui.setupOnline=false;ui.screen='setup';ui.msg='';}
