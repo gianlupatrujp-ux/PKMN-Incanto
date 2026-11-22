@@ -996,7 +996,7 @@ async function handle(line){
     case '-terastallize': { const id=parseId(p[2]); mon(id.side,id.nick).tera=p[3]; drawSide(id.side); shot(id.pos,id.pos,TYPE_COLORS[p[3]]||'#fff',true); say(`${label(p[2])} si teracristallizza: tipo ${TIPI[p[3]]||esc(p[3])}!`); return 1100; }
     case '-ability': { const id=parseId(p[2]); if(id){ mon(id.side,id.nick).abilitySeen=p[3]; abilBar(id.pos,p[3]); } }
       say(`[Abilità di ${label(p[2])}: ${esc(p[3])}]`); return 800;
-    case '-item': { const id=parseId(p[2]); const m=mon(id.side,id.nick); m.item=p[3]; m.itemSeen=true; drawSide(id.side); say(`${label(p[2])} ottiene ${esc(p[3])}.`); return 800; }
+    case '-item': { const id=parseId(p[2]); const m=mon(id.side,id.nick); m.item=p[3]; m.itemSeen=true; drawSide(id.side); const fr=p.find(x=>x&&x.startsWith('[from] ability: ')); if(fr){ say(`${label(p[2])} tiene ${esc(p[3])} (rivelato da ${esc(fr.slice(16))}).`); return 800; } say(`${label(p[2])} ottiene ${esc(p[3])}.`); return 800; }
     case '-enditem': { const id=parseId(p[2]); const m=mon(id.side,id.nick); m.item=null; m.itemSeen=true; drawSide(id.side); say(p.some(x=>x&&x.startsWith('[eat]'))?`${label(p[2])} mangia ${esc(p[3])}!`:`${label(p[2])} perde ${esc(p[3])}.`); return 800; }
     case '-start': { const id=parseId(p[2]); const n=p[3].replace(/^(move|ability|item): /,''); const mm=mon(id.side,id.nick);
       if(n==='typechange'){ mm.tchange=String(p[4]||'').split('/').filter(Boolean); drawSide(id.side); say(`${label(p[2])} diventa di tipo ${mm.tchange.map(x=>TIPI[x]||esc(x)).join('/')}!`); return 900; }
@@ -1066,7 +1066,7 @@ function aiMon(side,sp,extra){ const s=Dex.species.get(sp); const lvl=100, b=s.b
   const o={sp:s.name,types:s.types.slice(),lvl,hpStat:aiStat(b.hp,lvl,true),atk:aiStat(b.atk,lvl),def:aiStat(b.def,lvl),spa:aiStat(b.spa,lvl),spd:aiStat(b.spd,lvl),spe:aiStat(b.spe,lvl),boosts:{},st:'',ability:Object.values(s.abilities)[0]};
   return Object.assign(o,extra||{}); }
 function cpuSmart(r,level){
-  if(r.teamPreview) return 'team 1';
+  if(r.teamPreview) return pickN(r)?cpuSingle(r):'team 1';
   const me=r.side.pokemon, act=me.find(x=>x.active)||me[0], foeM=actMon('p1');
   const bench=me.map((m,i)=>({m,i})).filter(x=>!x.m.active&&!x.m.condition.endsWith(' fnt'));
   const myInfo=x=>{ const sp=x.details.split(',')[0]; const m=aiMon('p2',sp); const S=x.stats||{}; Object.assign(m,{atk:S.atk||m.atk,def:S.def||m.def,spa:S.spa||m.spa,spd:S.spd||m.spd,spe:S.spe||m.spe});
@@ -1122,7 +1122,7 @@ function cpuSmart(r,level){
 
 function cpuChoice(r){ if(isDbl()) return cpuDbl(r); if(O.ai>0){ try{ return cpuSmart(r,O.ai); }catch(e){ console.warn('IA',e); } } return cpuSingle(r); }
 function cpuSingle(r){
-  if(r.teamPreview) return 'team 1';
+  if(r.teamPreview) return pickN(r)?'team '+shuffleArr([1,2,3,4,5,6].slice(0,r.side.pokemon.length)).slice(0,pickN(r)).join(''):'team 1';
   const sw=r.side.pokemon.map((m,i)=>({m,i})).filter(x=>!x.m.active&&!x.m.condition.endsWith(' fnt'));
   if(r.forceSwitch) return sw.length?'switch '+(sw[Math.random()*sw.length|0].i+1):'pass';
   const mv=r.active[0].moves.map((m,i)=>({m,i})).filter(x=>!x.m.disabled&&(x.m.pp===undefined||x.m.pp>0));
@@ -1141,7 +1141,9 @@ function prompt(){
     $('ctrl').innerHTML=`<div class="pass"><span class="who ${sid}">${PN(sid)}</span><p>${O.lang==='en'?`It's <b>${PN(sid)}</b>'s turn to choose. Pass the device and press the button${O.showOpp?'':' (the other player should look away: you will see your team\'s moves and items)'}.`:`Tocca a <b>${PN(sid)}</b> scegliere. Passa il dispositivo e premi il pulsante${O.showOpp?'':' (l\'altro non guardi: vedrai mosse e strumenti della tua squadra)'}.`}</p><button class="btn ${sid==='p2'?'play2':''}" data-lt="iam" data-s="${sid}">Sono ${PN(sid)}</button><span class="tmr" id="lt-tm"></span></div>`; timerArm(sid); return; }
   ui(sid);
 }
-function ui(sid){ if(isDbl()) return uiDbl(sid); return uiSingle(sid); }
+const pickN=r=>r&&r.teamPreview&&r.maxChosenTeamSize&&r.maxChosenTeamSize<r.side.pokemon.length?r.maxChosenTeamSize:0;
+function shuffleArr(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.random()*(i+1)|0; [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function ui(sid){ if(isDbl()||pickN(B.req[sid])) return uiDbl(sid); return uiSingle(sid); }
 function uiSingle(sid){
   const r=B.req[sid], c=$('ctrl'); if(O.mode==='two') { B.passTo=sid; draw(); }
   const team=r.side.pokemon;
@@ -1165,7 +1167,7 @@ function uiSingle(sid){
   h+=`<div class="lt-foot"><span class="tmr" id="lt-tm"></span></div>`;
   c.innerHTML=h; timerArm(sid);
 }
-function pick(sid,choice){ if(isDbl()) return pickDbl(sid,choice); pickSingle(sid,choice); }
+function pick(sid,choice){ if(isDbl()||pickN(B.req[sid])) return pickDbl(sid,choice); pickSingle(sid,choice); }
 document.addEventListener('change',e=>{ const id=e.target&&e.target.id; if(id==='lt-mega'&&e.target.checked){ const t=document.getElementById('lt-tera'); if(t) t.checked=false; } if(id==='lt-tera'&&e.target.checked){ const m=document.getElementById('lt-mega'); if(m) m.checked=false; } });
 function pickSingle(sid,choice){ const t=$('tera'), mg=$('mega'); if(t&&t.checked&&choice.startsWith('move')) choice+=' terastallize'; else if(mg&&mg.checked&&choice.startsWith('move')) choice+=' mega'; if(O.mode==='two') B.passTo=null; send(sid,choice); }
 
@@ -1181,7 +1183,7 @@ function validTargets(sid,idx,t){ const foe=other(sid), alive=p=>{ const m=actMo
   if(t==='adjacentAllyOrSelf') out.push({n:String(-(idx+1)),p:self});
   return out; }
 function cpuDbl(r){
-  const team=r.side.pokemon; if(r.teamPreview) return 'team 12';
+  const team=r.side.pokemon; if(r.teamPreview) return pickN(r)?'team '+shuffleArr(team.map((x,i)=>i+1)).slice(0,pickN(r)).join(''):'team 12';
   const used=[], parts=[], n=r.forceSwitch?r.forceSwitch.length:(r.active?r.active.length:1);
   for(let i=0;i<n;i++){
     if(r.forceSwitch){ if(!r.forceSwitch[i]){ parts.push('pass'); continue; }
@@ -1212,7 +1214,8 @@ function uiDbl(sid){
   const who=`<span class="who ${sid}">${PN(sid)}</span>`;
   let h=B.err?'<p class="lt-err">Scelta non valida, riprova.</p>':'';
   if(r.teamPreview){
-    h+=`<div class="cq">${who} <span>${P.parts.length?(en?'And the second one?':'E il secondo?'):(en?'Who will you send out first? (pick 2)':'Chi mandi in campo per primi? (scegline 2)')}</span> ${back}</div><div class="lt-team">${team.map((m,i)=>tm(Object.assign({},m,{active:false}),i,'team')).join('')}</div>`;
+    const N=pickN(r), lead=isDbl()?2:1;
+    h+=`<div class="cq">${who} <span>${N?(en?`Choose ${N} Pokémon for this battle, in order (the first ${lead===1?'one goes':'two go'} in): ${P.parts.length}/${N}`:`Scegli ${N} Pokémon per questa lotta, in ordine (${lead===1?'il primo va':'i primi due vanno'} in campo): ${P.parts.length}/${N}`):P.parts.length?(en?'And the second one?':'E il secondo?'):(en?'Who will you send out first? (pick 2)':'Chi mandi in campo per primi? (scegline 2)')}</span> ${back}</div>${N&&P.parts.length?`<div class="lt-muted" style="margin:0 0 6px">${P.parts.map(x=>esc(team[+x-1].details.split(',')[0])).join(' → ')}</div>`:''}<div class="lt-team">${team.map((m,i)=>tm(Object.assign({},m,{active:false}),i,'team')).join('')}</div>`;
   } else if(r.forceSwitch){
     h+=`<div class="cq">${who} <span>${en?'Who will you send out?':'Chi mandi in campo?'}</span> ${back}</div><div class="lt-team">${team.map((m,i)=>tm(m,i,'switch')).join('')}</div>`;
   } else if(P.tgt){
@@ -1235,7 +1238,7 @@ function uiDbl(sid){
 }
 function pickDbl(sid,choice){
   const r=B.req[sid], P=B.pick; if(!P) return;
-  if(choice.startsWith('team ')){ P.parts.push(choice.split(' ')[1]); const need=Math.min(2,r.side.pokemon.length);
+  if(choice.startsWith('team ')){ P.parts.push(choice.split(' ')[1]); const need=pickN(r)||Math.min(2,r.side.pokemon.length);
     if(P.parts.length>=need){ const ch='team '+P.parts.join(''); B.pick=null; if(O.mode==='two') B.passTo=null; send(sid,ch); } else uiDbl(sid); return; }
   const w=choice.split(' ');
   if(w[0]==='move'&&w.length===2){ const idx=P.parts.length, mi=+w[1]-1, mv=r.active[idx].moves[mi];
@@ -1464,7 +1467,7 @@ const EN_RX=[
   [/^(Protosynthesis|Quark Drive): (Att\.|Dif\.|Att\.Sp\.|Dif\.Sp\.|Vel\.)$/,(m,a,s)=>a+': '+({'Att.':'Atk','Dif.':'Def','Att.Sp.':'SpA','Dif.Sp.':'SpD','Vel.':'Spe'})[s]],
   [/^(.+?) diventa di tipo (.+)!$/,(m,a,t)=>`${lab(a)} transformed into the ${t.split('/').map(x=>TYPE_EN[x]||x).join('/')} type!`],
   [/^(.+?) è confuso!$/,(m,a)=>`${lab(a)} became confused!`],[/^(.+?) è stato colpito da Leech Seed!$/,(m,a)=>`${lab(a)} was seeded!`],[/^(.+?) cade nella provocazione!$/,(m,a)=>`${lab(a)} fell for the taunt!`],[/^(.+?) è costretto da Encore!$/,(m,a)=>`${lab(a)} must do an encore!`],[/^(.+?) diventa sonnolento!$/,(m,a)=>`${lab(a)} grew drowsy!`],[/^(.+?) si concentra al massimo!$/,(m,a)=>`${lab(a)} is getting pumped!`],[/^(.+?) si è infatuato!$/,(m,a)=>`${lab(a)} fell in love!`],[/^(.+?) è maledetto!$/,(m,a)=>`${lab(a)} was cursed!`],[/^La mossa (.*) di (.+?) è bloccata!$/,(m,x,a)=>`${lab(a)}'s ${x} was disabled!`],
-  [/^(.+?) non può curarsi!$/,(m,a)=>`${lab(a)} was prevented from healing!`],[/^(.+?) levita grazie al magnetismo!$/,(m,a)=>`${lab(a)} levitated with electromagnetism!`],[/^(.+?) si circonda di un velo d'acqua!$/,(m,a)=>`${lab(a)} surrounded itself with a veil of water!`],[/^(.+?) mette radici!$/,(m,a)=>`${lab(a)} planted its roots!`],[/^La potenza delle mosse Fuoco di (.+?) aumenta!$/,(m,a)=>`The power of ${lab(a)}'s Fire-type moves rose!`],[/^(.+?) non riesce a carburare!$/,(m,a)=>`${lab(a)} can't get it going!`],[/^Protosynthesis potenzia (.+?)!$/,(m,a)=>`Protosynthesis boosted ${lab(a)}!`],[/^Quark Drive potenzia (.+?)!$/,(m,a)=>`Quark Drive boosted ${lab(a)}!`],[/^(.+?) si carica di elettricità!$/,(m,a)=>`${lab(a)} began charging power!`],[/^(.+?) è tormentato!$/,(m,a)=>`${lab(a)} was subjected to torment!`],[/^(.+?) cade a terra!$/,(m,a)=>`${lab(a)} fell straight down!`],[/^(.+?) è colpito da Salt Cure!$/,(m,a)=>`${lab(a)} is being salt cured!`],[/^(.+?) diventa più debole al fuoco!$/,(m,a)=>`${lab(a)} became weaker to fire!`],[/^(.+?) non può più fuggire!$/,(m,a)=>`${lab(a)} can no longer escape!`],[/^(.+?) è intrappolato da (.+)!$/,(m,a,x)=>`${lab(a)} was trapped by ${x}!`],[/^(.+?) è intrappolato!$/,(m,a)=>`${lab(a)} is trapped!`],[/^(.+?) prevede un attacco!$/,(m,a)=>`${lab(a)} foresaw an attack!`],[/^(.+?) sceglie Doom Desire come destino!$/,(m,a)=>`${lab(a)} chose Doom Desire as its destiny!`],[/^L'abilità di (.+?) viene annullata!$/,(m,a)=>`${lab(a)}'s Ability was suppressed!`],[/^(.+?) si concentra intensamente!$/,(m,a)=>`${lab(a)} concentrated intensely!`],[/^(.+?) si rimpicciolisce!$/,(m,a)=>`${lab(a)} shrank!`],
+  [/^(.+?) non può curarsi!$/,(m,a)=>`${lab(a)} was prevented from healing!`],[/^(.+?) levita grazie al magnetismo!$/,(m,a)=>`${lab(a)} levitated with electromagnetism!`],[/^(.+?) si circonda di un velo d'acqua!$/,(m,a)=>`${lab(a)} surrounded itself with a veil of water!`],[/^(.+?) mette radici!$/,(m,a)=>`${lab(a)} planted its roots!`],[/^La potenza delle mosse Fuoco di (.+?) aumenta!$/,(m,a)=>`The power of ${lab(a)}'s Fire-type moves rose!`],[/^(.+?) non riesce a carburare!$/,(m,a)=>`${lab(a)} can't get it going!`],[/^Protosynthesis potenzia (.+?)!$/,(m,a)=>`Protosynthesis boosted ${lab(a)}!`],[/^Quark Drive potenzia (.+?)!$/,(m,a)=>`Quark Drive boosted ${lab(a)}!`],[/^(.+?) si carica di elettricità!$/,(m,a)=>`${lab(a)} began charging power!`],[/^(.+?) è tormentato!$/,(m,a)=>`${lab(a)} was subjected to torment!`],[/^(.+?) cade a terra!$/,(m,a)=>`${lab(a)} fell straight down!`],[/^(.+?) è colpito da Salt Cure!$/,(m,a)=>`${lab(a)} is being salt cured!`],[/^(.+?) diventa più debole al fuoco!$/,(m,a)=>`${lab(a)} became weaker to fire!`],[/^(.+?) non può più fuggire!$/,(m,a)=>`${lab(a)} can no longer escape!`],[/^(.+?) tiene (.+) (rivelato da (.+)).$/,(m,a,i,ab)=>`${lab(a)} is holding ${i} (revealed by ${ab}).`],[/^(.+?) è intrappolato da (.+)!$/,(m,a,x)=>`${lab(a)} was trapped by ${x}!`],[/^(.+?) è intrappolato!$/,(m,a)=>`${lab(a)} is trapped!`],[/^(.+?) prevede un attacco!$/,(m,a)=>`${lab(a)} foresaw an attack!`],[/^(.+?) sceglie Doom Desire come destino!$/,(m,a)=>`${lab(a)} chose Doom Desire as its destiny!`],[/^L'abilità di (.+?) viene annullata!$/,(m,a)=>`${lab(a)}'s Ability was suppressed!`],[/^(.+?) si concentra intensamente!$/,(m,a)=>`${lab(a)} concentrated intensely!`],[/^(.+?) si rimpicciolisce!$/,(m,a)=>`${lab(a)} shrank!`],
   [/^(.+?) usa$/,(m,a)=>`${lab(a)} used`],[/^(.+) manda in campo$/,(m,a)=>`${a} sent out`],
   [/^(.+?) recupera PS( \((.+)\))?\.$/,(m,a,b,c)=>`${lab(a)} restored HP${c?' ('+c+')':''}.`],[/^(.+?) subisce danni per (.+)\.$/,(m,a,b)=>`${lab(a)} was hurt by ${CAUSE_EN[b]||b}.`],
   [/^(.+?) è esausto!$/,(m,a)=>`${lab(a)} fainted!`],[/^Non ha effetto su (.+?)…$/,(m,a)=>`It doesn't affect ${lab(a)}…`],[/^(.+?) manca il bersaglio!$/,(m,a)=>`${lab(a)}'s attack missed!`],
