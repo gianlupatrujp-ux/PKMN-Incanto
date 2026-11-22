@@ -344,6 +344,7 @@ html,body{margin:0}
 .scene.is-shiny .tw1{animation-delay:.3s}.scene.is-shiny .tw2{animation-delay:.6s}.scene.is-shiny .tw3{animation-delay:.9s}.scene.is-shiny .tw4{animation-delay:.45s}.scene.is-shiny .tw5{animation-delay:.75s}
 @keyframes stw{0%,100%{opacity:0;transform:scale(.3) rotate(0)}50%{opacity:1;transform:scale(1.3) rotate(45deg)}}
 @media (prefers-reduced-motion:reduce){.scene.is-shiny .tw{animation:none;opacity:.8}}
+.rooms{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}.roomrow{margin:0}.rr-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;overflow-wrap:anywhere}
 </style>
 
 <div class="wrap" id="app"></div>
@@ -566,7 +567,7 @@ const I18N={
   'online.sub':"Ognuno gioca dal proprio dispositivo: uno crea la partita e manda il codice (o il link) all'altro.",
   'online.name':'Il tuo nome','online.nameHint':"Consiglio: usa il tuo nickname di Pokémon Showdown, così l'avversario sa subito chi sfidare.",
   'online.random':'Trova avversario casuale','online.randomSub':"Ti fa incontrare chi sta cercando una partita con le tue stesse impostazioni. Se adesso non c'è nessuno, aspetti tu finché ne arriva uno.",
-  'online.friendRoom':'Crea una stanza per un amico (codice e link)','online.haveCode':"Hai un codice? Entra nella stanza di un amico",'online.orCreate':'Crea o cerca una partita',
+  'online.friendRoom':'Crea una stanza per un amico (codice e link)','lobby.open':'📋 Apri la bacheca delle stanze','lobby.title':'Bacheca delle stanze','lobby.teaser':'Guarda chi sta aspettando un avversario e con quali regole: se ti vanno bene, sfidalo subito invece di aspettare.','lobby.sub':'Qui ci sono le partite in attesa di un avversario, con le loro regole. Premi Sfida per entrare: si gioca con le regole di quella stanza.','lobby.connecting':'Collegamento alla bacheca…','lobby.empty':'Nessuna stanza in attesa in questo momento. Torna indietro e crea la tua: comparirà qui per gli altri.','lobby.error':'Non riesco a collegarmi alla bacheca. Riprovo tra poco…','lobby.queue':'Cerca avversario','lobby.room':'Stanza','lobby.challenge':'⚔ Sfida','lobby.gone':'Questa stanza non è più disponibile.','lobby.listMine':'Mostra la mia stanza nella bacheca pubblica','lobby.note':'Nella bacheca chiunque vede il tuo nome e le regole della tua stanza, e chi ti sfida vede il tuo indirizzo IP (collegamento diretto). Non c\'è un server: la bacheca la tiene uno dei giocatori collegati e, se se ne va, si ricompone da sola in pochi secondi.','online.haveCode':"Hai un codice? Entra nella stanza di un amico",'online.orCreate':'Crea o cerca una partita',
   'online.mkqueue':'Cerca avversario','online.randomRoom':'Partita casuale','online.searching':'Cerco un avversario',
   'online.queueWait':"Nessuno con le tue impostazioni è in coda adesso: aspetti tu. Appena arriva qualcuno con le stesse impostazioni, entra nella tua stanza",
   'online.queueFull':'Troppe partite casuali in corso: riprova tra poco.',
@@ -654,7 +655,7 @@ const I18N={
   'online.sub':'Each player uses their own device: one creates the game and sends the code (or the link) to the other.',
   'online.name':'Your name','online.nameHint':'Tip: use your Pokémon Showdown username, so your opponent knows right away who to challenge.',
   'online.random':'Find a random opponent','online.randomSub':'Matches you with someone looking for a game with exactly your settings. If nobody is there right now, you wait until someone arrives.',
-  'online.friendRoom':'Create a room for a friend (code and link)','online.haveCode':"Got a code? Join a friend's room",'online.orCreate':'Create or find a game',
+  'online.friendRoom':'Create a room for a friend (code and link)','lobby.open':'📋 Open the rooms board','lobby.title':'Rooms board','lobby.teaser':'See who is waiting for an opponent and with which rules: if they suit you, challenge them right away instead of waiting.','lobby.sub':'These games are waiting for an opponent, with their rules. Press Challenge to join: you play with that room\'s rules.','lobby.connecting':'Connecting to the board…','lobby.empty':'No rooms are waiting right now. Go back and create yours: it will show up here for others.','lobby.error':'Can\'t connect to the board. Retrying shortly…','lobby.queue':'Looking for opponent','lobby.room':'Room','lobby.challenge':'⚔ Challenge','lobby.gone':'This room is no longer available.','lobby.listMine':'Show my room on the public board','lobby.note':'On the board anyone can see your name and your room\'s rules, and whoever challenges you sees your IP address (direct connection). There is no server: one of the connected players keeps the board and, if they leave, it rebuilds itself within seconds.','online.haveCode':"Got a code? Join a friend's room",'online.orCreate':'Create or find a game',
   'online.mkqueue':'Find opponent','online.randomRoom':'Random match','online.searching':'Looking for an opponent',
   'online.queueWait':'Nobody with your settings is in the queue right now: you wait. As soon as someone with the same settings arrives, they join your room',
   'online.queueFull':'Too many random matches in progress: try again shortly.',
@@ -925,7 +926,7 @@ function legalBody(){
    <li>Battle music and Pokémon cries: from ${L('https://play.pokemonshowdown.com','Pokémon Showdown')}; they are works of Nintendo / Creatures Inc. / GAME FREAK inc. / The Pokémon Company, used here non-commercially and removed on request of the rights holders. The hit (normal, super effective, not very effective), stat and faint sounds come from the ${L('https://github.com/pagefaultgames/pokerogue-assets','PokéRogue')} project and are also works of Nintendo / Creatures Inc. / GAME FREAK inc., used the same way. The healing sound is generated by the game.</li></ul>
    <h3>Privacy</h3>
    <p>The game uses <strong>no cookies</strong>, has no accounts and does not collect or send personal data. Games stay in your browser; only the chosen language is saved (in the browser's local storage).</p>
-   <p>The site is hosted by GitHub Pages (GitHub, Inc.), which may log visitors' IP addresses for security: see ${L('https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement','GitHub\'s privacy statement')}. When it opens, the game reads Showdown's public list of formats from GitHub (raw.githubusercontent.com) to show the current VGC regulation. No other external service is contacted when playing on one device. In online battles, the team, the chosen moves and the chat messages go directly between the two devices and are not stored anywhere. The &quot;Open Pokémon Showdown&quot; button is a plain link: it opens the Showdown site, which has its own privacy rules; the game sends it nothing (you paste the team yourself). The site is not indexed by search engines.</p>
+   <p>The site is hosted by GitHub Pages (GitHub, Inc.), which may log visitors' IP addresses for security: see ${L('https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement','GitHub\'s privacy statement')}. When it opens, the game reads Showdown's public list of formats from GitHub (raw.githubusercontent.com) to show the current VGC regulation. No other external service is contacted when playing on one device. The &quot;rooms board&quot; shows waiting players' names and rules to anyone who opens it, through the same public PeerJS service used for online games. In online battles, the team, the chosen moves and the chat messages go directly between the two devices and are not stored anywhere. The &quot;Open Pokémon Showdown&quot; button is a plain link: it opens the Showdown site, which has its own privacy rules; the game sends it nothing (you paste the team yourself). The site is not indexed by search engines.</p>
    <p><strong>Online mode</strong> (only if you choose it): the two browsers connect directly to each other, so each one sees the other's IP address. To find each other they use the free public PeerJS server (0.peerjs.com) and, if needed, connection servers (Google STUN, PeerJS TURN), which see the IP addresses involved. Only the game data are exchanged (names, bids, Pokémon); nothing is saved. With <strong>Find a random opponent</strong> you may play with a stranger, who will see your IP address like a friend would.</p>`;
   return `
    <h3>Gioco amatoriale non ufficiale, senza scopo di lucro</h3>
@@ -945,7 +946,7 @@ function legalBody(){
    <li>Musiche di battaglia e versi dei Pokémon: da ${L('https://play.pokemonshowdown.com','Pokémon Showdown')}; sono opere di Nintendo / Creatures Inc. / GAME FREAK inc. / The Pokémon Company, usate senza scopo di lucro e rimosse su richiesta dei titolari. I suoni dei colpi (normale, super efficace, poco efficace), delle statistiche e del KO vengono dal progetto ${L('https://github.com/pagefaultgames/pokerogue-assets','PokéRogue')} e sono anch'essi opere di Nintendo / Creatures Inc. / GAME FREAK inc., usate allo stesso modo. Il suono della cura è generato dal gioco.</li></ul>
    <h3>Privacy</h3>
    <p>Il gioco <strong>non usa cookie</strong>, non ha account e non raccoglie né invia dati personali. Le partite restano nel tuo browser; viene salvata solo la lingua scelta (nella memoria locale del browser).</p>
-   <p>Il sito è ospitato da GitHub Pages (GitHub, Inc.), che per motivi di sicurezza può registrare l'indirizzo IP dei visitatori: vedi ${L('https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement','l\'informativa privacy di GitHub')}. All'apertura il gioco legge da GitHub (raw.githubusercontent.com) l'elenco pubblico dei formati di Showdown, per indicare il regolamento VGC aggiornato. Giocando su un solo dispositivo nessun altro servizio esterno viene contattato. Nella lotta online la squadra, le mosse scelte e i messaggi della chat passano direttamente tra i due dispositivi e non vengono salvati da nessuna parte. Il pulsante &quot;Apri Pokémon Showdown&quot; è un semplice collegamento: apre il sito di Showdown, che ha le sue regole sulla privacy; il gioco non gli invia nulla (la squadra la incolli tu). Il sito non è indicizzato dai motori di ricerca.</p>
+   <p>Il sito è ospitato da GitHub Pages (GitHub, Inc.), che per motivi di sicurezza può registrare l'indirizzo IP dei visitatori: vedi ${L('https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement','l\'informativa privacy di GitHub')}. All'apertura il gioco legge da GitHub (raw.githubusercontent.com) l'elenco pubblico dei formati di Showdown, per indicare il regolamento VGC aggiornato. Giocando su un solo dispositivo nessun altro servizio esterno viene contattato. La &quot;bacheca delle stanze&quot; mostra a chiunque la apra il nome e le regole di chi aspetta, tramite lo stesso servizio pubblico PeerJS usato per le partite online. Nella lotta online la squadra, le mosse scelte e i messaggi della chat passano direttamente tra i due dispositivi e non vengono salvati da nessuna parte. Il pulsante &quot;Apri Pokémon Showdown&quot; è un semplice collegamento: apre il sito di Showdown, che ha le sue regole sulla privacy; il gioco non gli invia nulla (la squadra la incolli tu). Il sito non è indicizzato dai motori di ricerca.</p>
    <p><strong>Modalità online</strong> (solo se la scegli): i due browser si collegano direttamente tra loro, quindi ognuno vede l'indirizzo IP dell'altro. Per trovarsi usano il server pubblico gratuito di PeerJS (0.peerjs.com) e, se serve, server di collegamento (STUN di Google, TURN di PeerJS), che vedono gli indirizzi IP coinvolti. Vengono scambiati solo i dati della partita (nomi, offerte, Pokémon); niente viene salvato. Con <strong>Trova avversario casuale</strong> puoi giocare con uno sconosciuto, che vedrà il tuo indirizzo IP come lo vedrebbe un amico.</p>`;
 }
 function vModal(kind){
@@ -977,7 +978,10 @@ ${ui.setupOnline?`  <section class="card"><span class="label">${t('online.name')
   <section class="card"><span class="label">${t('menu.online')}</span>
    <div class="center"><button class="btn big play2" data-act="mkqueue">${t('online.mkqueue')}</button></div>
    <p class="muted" style="font-size:13px;text-align:center">${t('online.randomSub')}<br>${t('online.strangerNote')}</p>
-   <div class="center"><button class="btn big ghost" data-act="mkroom">${t('online.friendRoom')}</button></div></section>
+   <div class="center"><button class="btn big ghost" data-act="mkroom">${t('online.friendRoom')}</button></div>
+   <label class="muted" style="display:flex;gap:8px;justify-content:center;align-items:center;font-size:13px;cursor:pointer"><input type="checkbox" data-act="listroom" ${ui.listRoom!==false?'checked':''}> ${t('lobby.listMine')}</label></section>
+  <section class="card"><span class="label">${t('lobby.title')}</span><p class="muted" style="font-size:13px">${t('lobby.teaser')}</p>
+   <div class="center"><button class="btn big play2" data-act="rooms">${t('lobby.open')}</button></div></section>
   <section class="card"><span class="label">${t('online.haveCode')}</span>
    <div class="row"><div class="field"><label for="joincode" class="muted">${t('online.code')}</label><input type="text" id="joincode" maxlength="8" autocapitalize="characters" autocomplete="off" style="text-transform:uppercase;letter-spacing:.2em;font-weight:700" value="${esc(ui.joinCode||'')}"></div>
    <button class="btn" data-act="onlinejoin" style="align-self:flex-end">${t('online.joinBtn')}</button></div></section>`:`  <section class="card"><span class="label">${t('s5')}</span><div class="row">
@@ -1231,6 +1235,79 @@ function findOpponent(slot){ slot=slot||1; if(slot>QUEUE_SLOTS){ ui.online={role
   joinRoom(queueKey()+'-'+slot,{random:true,slot}); }
 // Una coda diversa per ogni combinazione di impostazioni: si incontra solo chi ha scelto le stesse regole
 function queueKey(){ return ['coda',ui.format==='doppio'?'d':'s',ui.tier,ui.legends?'l':'n',ui.mode,ui.mode==='classica'?'subito':ui.hide,Number(ui.coins)].join('-'); }
+// ---------- Bacheca delle stanze (senza server) ----------
+// Uno dei giocatori collegati tiene la "bacheca": occupa un indirizzo fisso sul centralino PeerJS e raccoglie le stanze
+// in attesa. Gli altri si collegano a lui, mandano la propria stanza (ogni 8 s) e ricevono l'elenco. Se chi tiene la
+// bacheca se ne va, il primo che se ne accorge prende il suo posto e gli altri rimandano le stanze: l'elenco si ricompone.
+// Tutto ciò che arriva viene ricontrollato (cleanEntry), sia da chi tiene la bacheca sia da chi la legge.
+const LOBBY_ID=ONLINE_PREFIX+'bacheca-1', LOBBY_MAX=40;
+const LB={peer:null,isDir:false,dirConn:null,conns:new Map(),list:[],status:'off',key:'',myEntry:null,watching:false,timer:null,starting:false};
+function cleanEntry(e){ if(!e||typeof e!=='object') return null; const k=e.k==='q'?'q':'r', id=String(e.id||'');
+  if(k==='q'?!/^coda-[a-z0-9-]{5,70}-\d{1,2}$/.test(id):!/^[A-Z0-9]{4,8}$/.test(id)) return null;
+  const s=e.s||{}; if(!FORMAT_KEYS.includes(s.format)||!POOL_KEYS.includes(s.tier)||!MODE_KEYS.includes(s.mode)||!HIDE_KEYS.includes(s.hide)) return null;
+  const coins=Number(s.coins); if(!Number.isInteger(coins)||coins<TEAM_SIZE||coins>999) return null;
+  return {id,k,n:String(e.n||'').slice(0,16),s:{format:s.format,tier:s.tier,legends:!!s.legends,mode:s.mode,coins,hide:s.mode==='classica'?'subito':s.hide}}; }
+function myLobbyEntry(){ const o=ui.online; if(!o||o.role!=='host'||o.status!=='waiting'||ui.game||(o.conn&&o.conn.open)) return null;
+  if(!o.random&&ui.listRoom===false) return null;
+  return cleanEntry({id:o.random?queueKey()+'-'+(o.slot||1):o.code,k:o.random?'q':'r',n:ui.names[0]||'',
+    s:{format:ui.format,tier:ui.tier,legends:ui.legends,mode:ui.mode,coins:Number(ui.coins),hide:ui.hide}}); }
+function lobbyRender(){ if(ui.screen==='rooms') render(); }
+function lobbySendAll(){ if(LB.isDir){ lobbyDirUpdate(); return; }
+  const c=LB.dirConn; if(c&&c.open) try{ c.send({t:'hi',e:LB.myEntry,w:LB.watching}); }catch(x){} }
+function lobbyDirUpdate(){ const now=Date.now(), out=[], seen=new Set();
+  for(const [c,r] of LB.conns){ if(now-r.at>25000){ LB.conns.delete(c); try{c.close();}catch(x){} } }
+  const add=e=>{ if(e&&!seen.has(e.id)&&out.length<LOBBY_MAX){ seen.add(e.id); out.push(e); } };
+  add(LB.myEntry); for(const r of LB.conns.values()) add(r.e);
+  LB.list=out; const msg={t:'list',rooms:out};
+  for(const [c,r] of LB.conns) if(r.w&&c.open) try{ c.send(msg); }catch(x){}
+  lobbyRender(); }
+function lobbyStop(){ clearInterval(LB.timer); LB.timer=null; const p=LB.peer; LB.peer=null; LB.isDir=false; LB.dirConn=null; LB.conns=new Map();
+  LB.list=[]; LB.status='off'; LB.key=''; if(p) try{ p.destroy(); }catch(x){} }
+function lobbyRetry(ms){ const p=LB.peer; LB.peer=null; LB.isDir=false; LB.dirConn=null; if(p) try{ p.destroy(); }catch(x){}
+  setTimeout(()=>{ if(!LB.peer&&lobbyNeeded()) lobbyAsClient(); },ms); }
+function lobbyNeeded(){ return ui.screen==='rooms'||!!myLobbyEntry(); }
+async function lobbyStart(){ if(LB.peer||LB.starting) return; LB.starting=true; LB.status='connecting';
+  try{ await loadPeerLib(); }catch(e){ LB.starting=false; LB.status='error'; lobbyRender(); return; }
+  LB.starting=false; if(!lobbyNeeded()||LB.peer) return;
+  clearInterval(LB.timer); LB.timer=setInterval(()=>{ if(!LB.peer) return; if(LB.isDir) lobbyDirUpdate(); else lobbySendAll(); },8000);
+  lobbyAsClient(); }
+function lobbyAsClient(){ const p=new Peer({debug:0}); LB.peer=p; LB.isDir=false;
+  p.on('open',()=>{ if(LB.peer!==p) return; const c=p.connect(LOBBY_ID,{reliable:true,serialization:'json'}); LB.dirConn=c;
+    c.on('open',()=>{ if(LB.peer!==p) return; LB.status='ok'; lobbySendAll(); lobbyRender(); });
+    c.on('data',m=>{ if(LB.peer!==p||!m||m.t!=='list'||!Array.isArray(m.rooms)) return;
+      LB.list=m.rooms.slice(0,LOBBY_MAX).map(cleanEntry).filter(Boolean); lobbyRender(); });
+    c.on('close',()=>{ if(LB.peer===p) lobbyRetry(300+Math.random()*1500); }); });
+  // nessuno tiene la bacheca: la prendo io
+  p.on('error',e=>{ if(LB.peer!==p) return; if(e.type==='peer-unavailable'){ LB.peer=null; try{p.destroy();}catch(x){} lobbyAsDir(); }
+    else { LB.status='error'; lobbyRender(); lobbyRetry(5000); } }); }
+function lobbyAsDir(){ const p=new Peer(LOBBY_ID,{debug:0}); LB.peer=p; LB.isDir=true; LB.conns=new Map();
+  p.on('open',()=>{ if(LB.peer!==p) return; LB.status='ok'; lobbyDirUpdate(); });
+  p.on('connection',c=>{ if(LB.peer!==p) return; if(LB.conns.size>=80){ setTimeout(()=>c.close(),500); return; }
+    LB.conns.set(c,{e:null,w:false,at:Date.now()});
+    c.on('data',m=>{ if(LB.peer!==p||!m||m.t!=='hi') return; const r=LB.conns.get(c); if(!r) return;
+      r.at=Date.now(); r.w=!!m.w; r.e=cleanEntry(m.e); lobbyDirUpdate(); });
+    c.on('close',()=>{ if(LB.peer!==p) return; LB.conns.delete(c); lobbyDirUpdate(); }); });
+  // qualcun altro l'ha presa un attimo prima: mi collego a lui
+  p.on('error',e=>{ if(LB.peer!==p) return; if(e.type==='unavailable-id') lobbyRetry(300+Math.random()*1200);
+    else if(['network','server-error','socket-error','browser-incompatible'].includes(e.type)){ LB.status='error'; lobbyRender(); lobbyRetry(5000); } }); }
+// chiamata dopo ogni disegno: accende/spegne la bacheca e manda la propria stanza solo quando cambia
+function lobbySync(){ const e=myLobbyEntry(), w=ui.screen==='rooms';
+  if(!e&&!w){ if(LB.peer||LB.timer) lobbyStop(); return; }
+  if(!LB.peer) lobbyStart();
+  const key=JSON.stringify([e,w]); if(key!==LB.key){ LB.key=key; LB.myEntry=e; LB.watching=w; if(LB.peer) lobbySendAll(); } }
+function vRooms(){
+  const list=LB.list.filter(e=>!(LB.myEntry&&e.id===LB.myEntry.id));
+  const card=e=>`<div class="note roomrow"><div class="rr-top"><b>${esc(e.n||t('player',1))}</b><span class="chip">${e.k==='q'?t('lobby.queue'):t('lobby.room')}</span></div>
+    ${settingsChips(e.s)}<p class="muted" style="font-size:12px;margin:4px 0">${esc(showdownFormat(e.s.format,e.s.tier))}</p>
+    <div class="center"><button class="btn sm" data-act="challenge" data-v="${esc(e.id)}">${t('lobby.challenge')}</button></div></div>`;
+  return `<button class="btn ghost sm backlink" data-act="online">${t('back')}</button>
+  <header class="brand"><h1><span class="h-poke">Pokémon</span> <span class="h-inc">Incanto</span></h1><p class="muted">${t('lobby.title')}</p></header>
+  <section class="card"><span class="label">${t('lobby.title')}</span><p class="muted" style="font-size:14px">${t('lobby.sub')}</p>
+   ${ui.msg?`<div class="err" role="alert">${esc(ui.msg)}</div>`:''}
+   ${LB.status==='error'?`<div class="err" role="alert">${t('lobby.error')}</div>`:LB.status!=='ok'?`<p class="waitdots">${t('lobby.connecting')}</p>`:
+     list.length?`<div class="rooms" aria-live="polite">${list.map(card).join('')}</div>`:`<p class="muted" aria-live="polite">${t('lobby.empty')}</p>`}
+   <p class="hint" style="font-size:12px">ℹ️ ${t('lobby.note')}</p></section>`;
+}
 async function createRoom(opts){
   opts=opts||{};
   const o=ui.online={role:'host',me:0,code:opts.code||newRoomCode(),status:'opening',undoReq:null,random:!!opts.random,slot:opts.slot};
@@ -1253,7 +1330,7 @@ async function joinRoom(code,opts){
   code=(opts.random||opts.raw)?code:String(code||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
   if(!code){ ui.msg=t('online.needCode'); render(); return; }
   if(ui.online&&ui.online.peer) try{ui.online.peer.destroy();}catch(e){}
-  const o=ui.online={role:'guest',me:1,code,status:opts.random?'searching':'connecting',undoReq:null,random:!!opts.random,slot:opts.slot};
+  const o=ui.online={role:'guest',me:1,code,status:opts.random?'searching':'connecting',undoReq:null,random:!!opts.random,slot:opts.slot,board:!!opts.fromBoard};
   ui.screen='lobby'; ui.msg=''; render();
   try{ await loadPeerLib(); }catch(e){ o.status='error'; render(); return; }
   if(ui.online!==o) return;
@@ -1377,8 +1454,8 @@ function vOnline(){
    ${ui.msg?`<div class="err" role="alert">${esc(ui.msg)}</div>`:''}</section>
   <div class="center"><button class="btn ghost" data-act="online">${t('online.orCreate')}</button></div>`;
 }
-function settingsChips(){
-  return `<div class="chips"><span class="chip">${t('fmt.'+ui.format)[0]}</span><span class="chip">${t('poolName.'+ui.tier)}${ui.legends?'':t('noLegends')}</span><span class="chip">${t('modeChip',t('mode.'+ui.mode)[0])}</span>${ui.mode!=='classica'&&ui.hide!=='subito'?`<span class="chip">${t('hideChip.'+ui.hide)}</span>`:''}<span class="chip">${esc(ui.coins)} ${t('coinsWord',Number(ui.coins))}</span></div>`;
+function settingsChips(s){ s=s||ui;
+  return `<div class="chips"><span class="chip">${t('fmt.'+s.format)[0]}</span><span class="chip">${t('poolName.'+s.tier)}${s.legends?'':t('noLegends')}</span><span class="chip">${t('modeChip',t('mode.'+s.mode)[0])}</span>${s.mode!=='classica'&&s.hide!=='subito'?`<span class="chip">${t('hideChip.'+s.hide)}</span>`:''}<span class="chip">${esc(s.coins)} ${t('coinsWord',Number(s.coins))}</span></div>`;
 }
 function onlineBanner(){
   const o=ui.online; if(!o) return '';
@@ -1411,7 +1488,7 @@ function vLobby(){
      ${o.status==='error'?`<div class="err" role="alert">${t('online.error')}</div>`:''}
      ${conn&&o.status==='connected'?`<div class="note ok">${t('online.joined',name(1))}</div><div class="center"><button class="btn big" data-act="toflip">${t('toflip')}</button></div>`:''}`;
   } else {
-    body=`<span class="label">${t('online.code')}</span><div class="roomcode">${esc(o.code)}</div>
+    body=`${o.board?'':`<span class="label">${t('online.code')}</span><div class="roomcode">${esc(o.code)}</div>`}
      ${o.status==='connecting'?`<p class="waitdots">${t('online.connecting',esc(o.code))}</p>`:''}
      ${o.status==='connected'?`<p class="waitdots">${t('online.connected',name(0))}</p>`:''}
      ${o.status==='notfound'?`<div class="err" role="alert">${t('online.notfound',esc(o.code))}</div>`:''}
@@ -1436,13 +1513,14 @@ function render(){
   document.documentElement.lang=ui.lang;
   const undoReq=!!(ui.online&&ui.online.undoReq&&ui.online.undoReq.from!==ui.online.me&&ui.game&&ui.screen!=='lobby');
   const modal=ui.askExit||ui.modal||ui.askUndo||undoReq;
-  $app.innerHTML=({title:vTitle,setup:vSetup,flip:vFlip,game:vGame,end:vEnd,online:vOnline,lobby:vLobby})[ui.screen]()
+  $app.innerHTML=({title:vTitle,setup:vSetup,flip:vFlip,game:vGame,end:vEnd,online:vOnline,lobby:vLobby,rooms:vRooms})[ui.screen]()
     +(ui.screen!=='title'&&!modal?`<button class="rulesbtn" data-act="rules" aria-label="${t('rulesAria')}"><b aria-hidden="true">?</b>${t('rulesBtn')}</button>`:'')
     +(ui.askExit?vExit():'')+(ui.askUndo?vUndo():'')+(undoReq&&!ui.askUndo?vUndoReq():'')+(ui.modal?vModal(ui.modal):'');
   if(ui.askExit) document.getElementById('exNo').focus();
   else if(ui.askUndo) document.getElementById('unNo').focus();
   else if(undoReq) document.getElementById('urNo').focus();
   else if(ui.modal) document.getElementById('rlClose').focus();
+  try{ lobbySync(); }catch(e){}
 }
 
 function act(a,d){
@@ -1487,6 +1565,11 @@ function act(a,d){
   else if(a==='rejoin'){ if(ui.online&&ui.online.random) joinRoom(ui.online.code,{random:false,raw:true}); else joinRoom(ui.online?ui.online.code:ui.joinCode); return;}
   else if(a==='findrandom'){ui.setupOnline='random';ui.names=[ui.myName||'',''];ui.screen='setup';ui.msg='';}
   else if(a==='findagain'){ findOpponent(1); return; }
+  else if(a==='rooms'){ ui.myName=ui.names[0]||ui.myName||''; ui.screen='rooms'; ui.msg=''; }
+  else if(a==='listroom'){ ui.listRoom=!(ui.listRoom!==false); }
+  else if(a==='challenge'){ const e=LB.list.find(x=>x.id===d.v); if(!e){ ui.msg=t('lobby.gone'); }
+    else { Object.assign(ui,{format:e.s.format,tier:e.s.tier,legends:e.s.legends,mode:e.s.mode,coins:String(e.s.coins),hide:e.s.hide});
+      ui.msg=''; joinRoom(e.id,e.k==='q'?{raw:true,fromBoard:true}:{fromBoard:true}); return; } }
   else if(a==='mkqueue'){const c=Number(ui.coins);
     if(!Number.isInteger(c)||c<TEAM_SIZE||c>999){ui.msg=t('err.coins',TEAM_SIZE);}
     else if(filterPool(POOL,{tier:ui.tier,legends:ui.legends}).length<TEAM_SIZE*2){ui.msg=t('err.pool',TEAM_SIZE);}
