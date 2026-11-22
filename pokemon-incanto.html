@@ -538,7 +538,7 @@ const I18N={
   'hist':'Aste concluse','col.winner':'Vincitore','col.price':'Prezzo','col.opener':'Apriva',
   'shinyBan':'✨ Pokémon shiny! ✨','formOf':f=>'Forma di '+f,'colorChip':c=>'Colore '+c,'dexNo':'N.','primaryType':'Tipo primario','dexNumber':'Numero di Pokédex','color':'Colore',
   'endTitle':'Squadre complete','spent':(s,l)=>`${s} spese · ${l} avanzate`,'setsLabel':'Set di ogni Pokémon','noSet':'nessun set: solo il nome',
-  'textLabel':'Testo per Pokémon Showdown','fmtLine':'Formato da scegliere su Showdown:','copy':'Copia testo','openSD':'Apri Pokémon Showdown ↗','fight.label':'Lotta','fight.textOnline':n=>`Lottate qui contro ${n}, ognuno dal suo dispositivo, con la chat per scrivervi. Chi ha creato la stanza fa girare la lotta: dell'avversario vedrai solo quello che si scopre lottando, come su Showdown.`,'fight.waitHost':n=>`In attesa che ${n} apra la lotta…`,'fight.btn':'Gioca qui','fight.loading':'Caricamento della lotta…','fight.back':'Torna alle squadre','fight.text':'Fate lottare le due squadre qui, su questo dispositivo: a ogni turno ognuno sceglie la sua mossa a turno (passandosi il dispositivo). I calcoli sono quelli di Pokémon Showdown. Oppure copiate il testo qui sotto e giocate su Showdown.','fight.beta':'Novità in prova: per ora la lotta è solo in italiano.','fight.loadErr':'Non riesco a caricare la lotta. Riprova.','fight.notYet':'Per ora la lotta dentro il gioco c’è solo nel singolo con i formati National Dex (non con Pokémon Champions né nel doppio). Usate il testo qui sotto per lottare su Pokémon Showdown.','openSDhint':'Si apre il sito ufficiale di Showdown in una nuova scheda: vai su Teambuilder → New Team → Import from text e incolla il testo copiato.',
+  'textLabel':'Testo per Pokémon Showdown','fmtLine':'Formato da scegliere su Showdown:','copy':'Copia testo','openSD':'Apri Pokémon Showdown ↗','fight.label':'Lotta','fight.champ':'Pokémon Champions qui si gioca con le regole libere di Showdown (il motore non conosce ancora Champions): i "Stat Points" diventano EV e le Megaevoluzioni nuove potrebbero non funzionare.','fight.textOnline':n=>`Lottate qui contro ${n}, ognuno dal suo dispositivo, con la chat per scrivervi. Chi ha creato la stanza fa girare la lotta: dell'avversario vedrai solo quello che si scopre lottando, come su Showdown.`,'fight.waitHost':n=>`In attesa che ${n} apra la lotta…`,'fight.btn':'Gioca qui','fight.loading':'Caricamento della lotta…','fight.back':'Torna alle squadre','fight.text':'Fate lottare le due squadre qui, su questo dispositivo: a ogni turno ognuno sceglie la sua mossa a turno (passandosi il dispositivo). I calcoli sono quelli di Pokémon Showdown. Oppure copiate il testo qui sotto e giocate su Showdown.','fight.beta':'Novità in prova: per ora la lotta è solo in italiano.','fight.loadErr':'Non riesco a caricare la lotta. Riprova.','fight.notYet':'Per ora la lotta dentro il gioco c’è solo nel singolo con i formati National Dex (non con Pokémon Champions né nel doppio). Usate il testo qui sotto per lottare su Pokémon Showdown.','openSDhint':'Si apre il sito ufficiale di Showdown in una nuova scheda: vai su Teambuilder → New Team → Import from text e incolla il testo copiato.',
   'copied':f=>'Copiato. Formato: '+f,'selected':'Selezionato: copia con Ctrl+C',
   'endIntro':(dbl,f,custom,note)=>`Set pronti per il ${dbl?'doppio':'singolo'}, presi dalle Random Battle di Pokémon Showdown. Dove ci sono più set puoi sceglierli dal menu. Su Showdown: Teambuilder, nuova squadra, "Import from text", incolla. Formato: <strong>${f}</strong>${custom?' (sfida diretta: non controlla le squadre, quindi accetta tutto)':', dove queste squadre sono valide'}${note}.`,
   'noSetsFile':'File set-data.js non trovato: il testo contiene solo i nomi. Si crea con: node scarica-set.js','again':'Nuova partita',
@@ -626,7 +626,7 @@ const I18N={
   'hist':'Finished auctions','col.winner':'Winner','col.price':'Price','col.opener':'Opener',
   'shinyBan':'✨ Shiny Pokémon! ✨','formOf':f=>f+' form','colorChip':c=>'Color: '+c,'dexNo':'No.','primaryType':'Primary type','dexNumber':'Pokédex number','color':'Color',
   'endTitle':'Teams complete','spent':(s,l)=>`${s} spent · ${l} left`,'setsLabel':'Set for each Pokémon','noSet':'no set: name only',
-  'textLabel':'Text for Pokémon Showdown','fmtLine':'Format to choose on Showdown:','copy':'Copy text','openSD':'Open Pokémon Showdown ↗','fight.label':'Battle','fight.textOnline':n=>`Battle ${n} here, each on your own device, with chat. The room creator runs the battle: you only see what is revealed while battling, as on Showdown.`,'fight.waitHost':n=>`Waiting for ${n} to open the battle…`,'fight.btn':'Play here','fight.loading':'Loading the battle…','fight.back':'Back to the teams','fight.text':'Let the two teams battle here, on this device: each turn both players pick their move in turn (passing the device). Calculations are Pokémon Showdown’s. Or copy the text below and play on Showdown.','fight.beta':'New and in testing: for now the battle texts are in Italian only.','fight.loadErr':'Could not load the battle. Please try again.','fight.notYet':'For now the in-game battle is only available in singles with the National Dex formats (not Pokémon Champions nor doubles). Use the text below to battle on Pokémon Showdown.','openSDhint':'The official Showdown site opens in a new tab: go to Teambuilder → New Team → Import from text and paste the copied text.',
+  'textLabel':'Text for Pokémon Showdown','fmtLine':'Format to choose on Showdown:','copy':'Copy text','openSD':'Open Pokémon Showdown ↗','fight.label':'Battle','fight.champ':'Pokémon Champions is played here with Showdown\'s free rules (the engine doesn\'t know Champions yet): "Stat Points" become EVs and the new Mega Evolutions may not work.','fight.textOnline':n=>`Battle ${n} here, each on your own device, with chat. The room creator runs the battle: you only see what is revealed while battling, as on Showdown.`,'fight.waitHost':n=>`Waiting for ${n} to open the battle…`,'fight.btn':'Play here','fight.loading':'Loading the battle…','fight.back':'Back to the teams','fight.text':'Let the two teams battle here, on this device: each turn both players pick their move in turn (passing the device). Calculations are Pokémon Showdown’s. Or copy the text below and play on Showdown.','fight.beta':'New and in testing: for now the battle texts are in Italian only.','fight.loadErr':'Could not load the battle. Please try again.','fight.notYet':'For now the in-game battle is only available in singles with the National Dex formats (not Pokémon Champions nor doubles). Use the text below to battle on Pokémon Showdown.','openSDhint':'The official Showdown site opens in a new tab: go to Teambuilder → New Team → Import from text and paste the copied text.',
   'copied':f=>'Copied. Format: '+f,'selected':'Selected: copy with Ctrl+C',
   'endIntro':(dbl,f,custom,note)=>`Sets ready for ${dbl?'doubles':'singles'}, taken from Pokémon Showdown's Random Battles. Where there are several sets, pick one from the menu. On Showdown: Teambuilder, new team, "Import from text", paste. Format: <strong>${f}</strong>${custom?' (direct challenge: it does not check teams, so anything goes)':', where these teams are legal'}${note}.`,
   'noSetsFile':'File set-data.js not found: the text only contains names. Create it with: node scarica-set.js','again':'New game',
@@ -1089,11 +1089,18 @@ function setPicker(m,g,eff){
 }
 // "Gioca qui": la lotta dentro il gioco (lotta.js + simulatore di Showdown in lib/pkmn-sim.js, caricati solo quando servono).
 // Per ora: singolo, formati National Dex, su questo dispositivo.
-function fightOk(g){ return g.format==='singolo'&&g.tier!=='champions'; }
+function fightOk(g){ return true; }
+// Formato per il motore della lotta: Champions non esiste nel motore, quindi si gioca come partita libera
+// (National Dex AG in singolo, Doubles Custom Game in doppio) con i "Stat Points" convertiti in EV (1 punto ≈ 8 EV, max 252).
+function fightFormat(g){ if(g.tier==='champions') return g.format==='doppio'?'gen9doublescustomgame':'gen9nationaldexag';
+  return showdownFormat(g.format,g.tier).toLowerCase().replace(/[^a-z0-9]/g,''); }
+function fightTeam(g,i,choice){ let tx=exportText(g.teams[i],g.format,choice,g.tier);
+  if(g.tier==='champions') tx=tx.replace(/^EVs: (.+)$/gm,(m,l)=>'EVs: '+l.split(' / ').map(p=>{ const [n,s]=p.split(' '); return Math.min(252,(+n||0)*8)+' '+s; }).join(' / '));
+  return tx; }
 function fightCard(g){
   const ok=fightOk(g);
   return `<section class="card"><span class="label">${t('fight.label')}</span>
-   ${ok?`<p class="muted">${ui.online?t('fight.textOnline',ui.names[1-ui.online.me]||t('player',2-ui.online.me)):t('fight.text')}</p><div class="center"><button class="btn big" data-act="fight" id="fightBtn">⚔ ${t('fight.btn')}</button></div><p class="muted" style="font-size:12px;text-align:center">${t('fight.beta')}</p>`
+   ${ok?`<p class="muted">${ui.online?t('fight.textOnline',ui.names[1-ui.online.me]||t('player',2-ui.online.me)):t('fight.text')}</p><div class="center"><button class="btn big" data-act="fight" id="fightBtn">⚔ ${t('fight.btn')}</button></div><p class="muted" style="font-size:12px;text-align:center">${g.tier==='champions'?t('fight.champ'):''}</p>`
        :`<p class="muted">${t('fight.notYet')}</p>`}</section>`;
 }
 function loadScript(src){ return new Promise((res,rej)=>{ if(document.querySelector('script[data-src="'+src+'"]')) return res();
@@ -1114,20 +1121,20 @@ async function startFight(){
   const fmt=showdownFormat(g.format,g.tier);
   const showOpp=g.mode==='classica'||!g.hide||g.hide==='subito'||(ui.revealLocal[0]&&ui.revealLocal[1]);
   if(ui.online){ // host: fa girare la lotta e manda all'amico solo la sua squadra e le specie dell'host
-    const fid=fmt.toLowerCase().replace(/[^a-z0-9]/g,''), ch=Object.assign({},ui.setChoice,ui.online.guestChoice||{});
-    const tHost=exportText(g.teams[0],g.format,ui.setChoice,g.tier), tGuest=exportText(g.teams[1],g.format,ch,g.tier);
+    const fid=fightFormat(g), ch=Object.assign({},ui.setChoice,ui.online.guestChoice||{});
+    const tHost=fightTeam(g,0,ui.setChoice), tGuest=fightTeam(g,1,ch);
     const nH=ui.names[0]||t('player',1), nG=ui.names[1]||t('player',2);
     Lotta.open({lang:ui.lang, mode:'online', role:'host', showOpp:false, net:{send:onlineSend}, formatid:fid, formatName:fmt, names:{p1:nH,p2:nG},
       teams:{p1:tHost,p2:tGuest}, closeLabel:t('fight.back'), onClose:()=>render() });
     onlineSend({t:'bstart', formatid:fid, formatName:fmt, names:{p1:nG,p2:nH}, myTeam:tGuest, oppSpecies:g.teams[0].map(m=>m.name)});
     return; }
-  Lotta.open({lang:ui.lang, mode:'two', showOpp, formatid:fmt.toLowerCase().replace(/[^a-z0-9]/g,''), formatName:fmt,
+  Lotta.open({lang:ui.lang, mode:'two', showOpp, formatid:fightFormat(g), formatName:fmt,
     names:{p1:ui.names[0]||t('player',1), p2:ui.names[1]||t('player',2)},
-    teams:{p1:exportText(g.teams[0],g.format,ui.setChoice,g.tier), p2:exportText(g.teams[1],g.format,ui.setChoice,g.tier)},
+    teams:{p1:fightTeam(g,0,ui.setChoice), p2:fightTeam(g,1,ui.setChoice)},
     closeLabel:t('fight.back'), onClose:()=>render() });
 }
 async function guestFight(m){
-  const fid=String(m.formatid||''); if(!['gen9nationaldexag','gen9nationaldex','gen9nationaldexuu'].includes(fid)) return;
+  const fid=String(m.formatid||''); if(!['gen9nationaldexag','gen9nationaldex','gen9nationaldexuu','gen9doublescustomgame'].includes(fid)) return;
   try{ await loadFight(); }catch(e){ alert(t('fight.loadErr')); return; }
   const nm=v=>String(v||'').slice(0,18), team=String(m.myTeam||'').slice(0,6000);
   const opp=(Array.isArray(m.oppSpecies)?m.oppSpecies:[]).slice(0,6).map(String).filter(s=>MON_BY_NAME.has(s));
@@ -1392,7 +1399,7 @@ function vLobby(){
      ${isGuest()&&o.status==='connected'?`<p class="waitdots">${t('online.connected',name(0))}</p>`:''}
      ${o.status==='queuefull'?`<div class="err" role="alert">${t('online.queueFull')}</div>`:''}
      ${o.status==='error'?`<div class="err" role="alert">${t('online.error')}</div>`:''}
-     ${isHost()&&conn&&ui.names[1]?`<div class="note ok">${t('online.joined',name(1))}</div><div class="center"><button class="btn big" data-act="toflip">${t('toflip')}</button></div>`:''}
+     ${isHost()&&conn&&o.status==='connected'?`<div class="note ok">${t('online.joined',name(1))}</div><div class="center"><button class="btn big" data-act="toflip">${t('toflip')}</button></div>`:''}
      ${['queuefull','error'].includes(o.status)?`<div class="row" style="justify-content:center"><button class="btn sm" data-act="findagain">${t('online.rejoin')}</button></div>`:''}`;
   } else if(isHost()){
     const link=roomLink(o.code);
@@ -1402,7 +1409,7 @@ function vLobby(){
      ${o.status==='opening'?`<p>${t('online.opening')}</p>`:''}
      ${o.status==='waiting'?`<p class="waitdots">${t('online.waiting')}</p>`:''}
      ${o.status==='error'?`<div class="err" role="alert">${t('online.error')}</div>`:''}
-     ${conn&&ui.names[1]?`<div class="note ok">${t('online.joined',name(1))}</div><div class="center"><button class="btn big" data-act="toflip">${t('toflip')}</button></div>`:''}`;
+     ${conn&&o.status==='connected'?`<div class="note ok">${t('online.joined',name(1))}</div><div class="center"><button class="btn big" data-act="toflip">${t('toflip')}</button></div>`:''}`;
   } else {
     body=`<span class="label">${t('online.code')}</span><div class="roomcode">${esc(o.code)}</div>
      ${o.status==='connecting'?`<p class="waitdots">${t('online.connecting',esc(o.code))}</p>`:''}

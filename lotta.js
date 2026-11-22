@@ -218,7 +218,7 @@ const CSS=`#lotta{position:fixed;inset:0;z-index:60;overflow:auto;background:#F6
 /* barre dei PS sopra i Pokémon */
 #lotta .hud{flex-direction:row;align-items:flex-start;gap:4px;max-width:none;width:clamp(150px,31%,230px)}
 #lotta .hud.p2{left:auto;right:6%;top:5%}#lotta .hud.p1{right:auto;left:5%;bottom:auto;top:30%}
-#lotta .sb{flex:1;min-width:0;cursor:help}
+#lotta .sb{flex:1;min-width:0;cursor:help;opacity:1;animation:none;transform:none}
 #lotta .sbn{display:flex;align-items:baseline;gap:4px;color:#fff;font:800 clamp(11px,1.9vw,15px) 'Inter',sans-serif;text-shadow:0 0 2px #000,0 1px 2px #000,1px 0 2px #000,-1px 0 2px #000;white-space:nowrap;overflow:hidden}
 #lotta .sbn b{overflow:hidden;text-overflow:ellipsis}#lotta .sbn small{font-size:.75em;opacity:.95}#lotta .sbn .shy{font-style:normal;font-size:.8em}
 #lotta .sbbar{display:flex;align-items:center;gap:3px;margin-top:1px}
@@ -456,7 +456,25 @@ const CSS=`#lotta{position:fixed;inset:0;z-index:60;overflow:auto;background:#F6
 #lotta .haz.p1{z-index:2!important}
 #lotta .lt-side{display:flex;flex-direction:column;gap:10px;min-width:0;position:sticky;top:0}#lotta .lt-side .lt-right{position:static}#lotta .lt-chatp{display:flex;flex-direction:column;background:#fff;border:3px solid var(--line);border-radius:12px;box-shadow:0 4px 0 var(--line);overflow:hidden;max-height:300px}#lotta .lt-chatp[hidden]{display:none}#lotta .lt-chatbox{flex:1;overflow:auto;padding:8px 10px;font-size:13.5px;min-height:90px;max-height:200px}#lotta .cm{margin:2px 0;overflow-wrap:anywhere}#lotta .cm.mine b{color:var(--p1)}#lotta .cm:not(.mine) b{color:var(--p2)}#lotta .lt-chatin{display:flex;gap:6px;padding:6px;border-top:2px solid #E3E8F2}#lotta .lt-chatin input{flex:1;min-width:0;font:15px 'Inter',sans-serif;border:2px solid var(--line);border-radius:8px;padding:7px 9px}#lotta .lt-chatin .btn{padding:6px 12px;font-size:14px;box-shadow:0 2px 0 var(--line)}#lotta .lt-chatopen{display:none}#lotta.online.chatmin .lt-chatopen{display:inline-block}#lotta.chatmin .lt-chatp{display:none}#lotta .unread{display:inline-block;margin-left:4px;background:#E3350D;color:#fff;border-radius:99px;font-size:10px;padding:0 5px}#lotta.logmin .lt-main{grid-template-columns:minmax(0,680px) minmax(260px,1fr)}#lotta.logmin:not(.online) .lt-main,#lotta.logmin.chatmin .lt-main{grid-template-columns:minmax(0,1fr)}#lotta.logmin.online:not(.chatmin) .lt-left{max-width:none;margin:0}#lotta.logmin:not(.online) .lt-side,#lotta.logmin.chatmin .lt-side{display:none}
 @media (max-width:820px){#lotta .lt-side{position:static;order:3}#lotta .lt-chatbox{max-height:160px}#lotta .lt-top .lt-chatopen{order:3}}
-#lotta .lt-chatin input{font-size:16px}`;
+#lotta .lt-chatin input{font-size:16px}
+#lotta .mon.p1b,#lotta .mon.p2b,#lotta .hud.p1b,#lotta .hud.p2b{display:none}
+#lotta.dbl .mon.p1b,#lotta.dbl .mon.p2b{display:flex}#lotta.dbl .hud.p1b:not([hidden]),#lotta.dbl .hud.p2b:not([hidden]){display:flex}
+#lotta.dbl .hud{width:clamp(130px,34%,220px)}
+#lotta.dbl .hud.p2{left:2%;right:auto;top:2%;bottom:auto}#lotta.dbl .hud.p2b{left:2%;right:auto;top:max(27%,calc(2% + 80px));bottom:auto}
+#lotta.dbl .hud.p1{right:2%;left:auto;bottom:2%;top:auto}#lotta.dbl .hud.p1b{right:2%;left:auto;bottom:max(27%,calc(2% + 66px));top:auto}
+#lotta.dbl .mon.p2{right:30%;left:auto;top:15%;width:24%;height:36%}#lotta.dbl .mon.p2b{right:4%;left:auto;top:19%;width:24%;height:36%}
+#lotta.dbl .mon.p1{left:0;bottom:3%;width:30%;height:46%}#lotta.dbl .mon.p1b{left:27%;bottom:7%;width:27%;height:42%}
+#lotta.dbl .mon.p1 img,#lotta.dbl .mon.p1b img{transform:none}
+#lotta.dbl .pad.p2{right:2%;width:56%}#lotta.dbl .pad.p1{left:-2%;width:60%}
+#lotta .slotn{font:800 11px 'Inter',sans-serif;color:#fff;background:#2B3A63;border-radius:99px;padding:1px 8px}
+#lotta .back{font-size:12px;padding:4px 10px;margin-left:auto;box-shadow:0 2px 0 var(--line)}
+#lotta .effrow{grid-column:1/-1;grid-row:1;display:flex;justify-content:flex-end;gap:3px;min-height:13px;margin-bottom:-4px;font:900 11px 'Inter',sans-serif}#lotta .effrow .effl{grid-column:auto;margin:0}#lotta .effsep{color:#9AA6BC}
+#lotta .lt-team.tg{grid-template-columns:repeat(4,1fr)}#lotta .tgl{font:800 10px 'Inter',sans-serif;border-radius:5px;padding:0 5px;color:#fff}#lotta .tgl.foe{background:#C62416}#lotta .tgl.ally{background:#2E8B3E}
+@media (max-width:820px){
+  #lotta.dbl .hud{width:42%}#lotta.dbl .hud.p2b{top:max(25%,calc(2% + 72px))}#lotta.dbl .hud.p1b{bottom:max(25%,calc(2% + 62px))}
+  #lotta.dbl .mon.p2{right:28%;width:28%;top:13%;height:33%}#lotta.dbl .mon.p2b{right:1%;width:28%;top:17%;height:33%}
+  #lotta.dbl .mon.p1{left:0;width:28%;height:40%}#lotta.dbl .mon.p1b{left:26%;width:28%;height:36%;bottom:4%}#lotta.dbl .lt-team.tg{grid-template-columns:repeat(2,1fr)}
+}`;
 const {BattleStreams, Teams, Dex} = PkmnSim;
 const TYPE_COLORS={Normal:'#A8A77A',Fire:'#EE8130',Water:'#6390F0',Electric:'#D9B300',Grass:'#5FAE34',Ice:'#4FB8C9',Fighting:'#C22E28',
   Poison:'#A33EA1',Ground:'#C9A23E',Flying:'#8A6FE0',Psychic:'#F95587',Bug:'#8FA015',Rock:'#A8922A',Ghost:'#735797',Dragon:'#6F35FC',
@@ -502,8 +520,14 @@ function exactHP(s){ return !(O&&O.role&&s==='p2'); }   // PS mostrati in numeri
 
 // ---------- stato ----------
 function fresh(){ return {streams:null, nreq:0, req:{p1:null,p2:null}, answered:{p1:null,p2:null}, queue:[], busy:false, over:false, log:[],
-  sets:{p1:[],p2:[]}, side:{p1:{act:null,team:{}},p2:{act:null,team:{}}}, cond:{p1:{},p2:{}}, weather:null, field:{}, err:'', passTo:null, fx:{}, turn:0, start:{}, timerOn:false, tSid:null, tEnd:0, timeouts:{}, eff:null}; }
-function parseId(s){ const m=/^(p[12])[a-z]?: (.*)$/.exec(s||''); return m?{side:m[1],nick:m[2]}:null; }
+  sets:{p1:[],p2:[]}, side:{p1:{act:null,actb:null,team:{}},p2:{act:null,actb:null,team:{}}}, cond:{p1:{},p2:{}}, weather:null, field:{}, err:'', passTo:null, fx:{}, turn:0, start:{}, timerOn:false, tSid:null, tEnd:0, timeouts:{}, eff:null}; }
+function parseId(s){ const m=/^(p[12])([a-z]?): (.*)$/.exec(s||''); return m?{side:m[1],nick:m[3],pos:m[1]+(m[2]==='b'?'b':'')}:null; }
+const isDbl=()=>!!(O&&O.dbl);
+const sideOfPos=p=>String(p).slice(0,2);
+const slotK=p=>String(p).length>2?'actb':'act';
+function actMon(pos){ const s=B.side[sideOfPos(pos)]; if(!s) return null; const n=s[slotK(pos)]; return n?s.team[n]:null; }
+// centro di un Pokémon in campo, in percentuale del campo
+function cen(pos){ const ar=$('arena').getBoundingClientRect(), el=$('mon'+pos); if(!el||!ar.width) return [50,50]; const r=(el.querySelector('img')||el).getBoundingClientRect(); return [(r.left-ar.left+r.width/2)/ar.width*100,(r.top-ar.top+r.height/2)/ar.height*100]; }
 function parseHP(c){ if(!c) return null; const [hp,st]=c.split(' '); if(hp==='0') return {hp:0,max:0,st:'fnt'}; const [a,b]=hp.split('/').map(Number); return {hp:a,max:b||100,st:st||''}; }
 function setOf(sid,species){ const sp=Dex.species.get(species); return B.sets[sid].find(s=>{ const x=Dex.species.get(s.species); return x.name===sp.name||x.baseSpecies===sp.baseSpecies; }); }
 function mon(sid,nick){ const s=B.side[sid]; if(!s.team[nick]){ const set=B.sets[sid].find(x=>x.name===nick||Dex.species.get(x.species).baseSpecies===nick||x.species===nick)||{};
@@ -512,24 +536,26 @@ const label=id=>{ const p=parseId(id); if(!p) return id; const m=mon(p.side,p.ni
 
 // ---------- disegno ----------
 function boostChips(m){ const S={atk:'Att',def:'Dif',spa:'AtSp',spd:'DfSp',spe:'Vel',accuracy:'Prec',evasion:'Elus'}; return Object.entries(m.boosts).filter(([,v])=>v).map(([k,v])=>`<span class="bchip ${v>0?'up':'down'}">${S[k]||k}${v>0?'+':'−'}${Math.abs(v)}</span>`).join(''); }
-function hpView(sid){ const m=B.side[sid].act&&B.side[sid].team[B.side[sid].act]; if(!m) return;
+function hpView(sid){ const m=actMon(sid); if(!m) return;
   const f=$('fill'+sid), n=$('num'+sid), pc=$('pct'+sid); if(!f) return; const pct=m.max?Math.max(0,m.shown/m.max*100):0;
   f.style.width=pct+'%'; f.className='fill '+(pct<=20?'low':pct<=50?'mid':'');
-  pc.textContent=Math.ceil(pct)+'%'; n.textContent=exactHP(sid)?`${Math.max(0,Math.round(m.shown))}/${m.max}`:''; }
-function drawSide(sid){
-  const s=B.side[sid], m=s.act?s.team[s.act]:null, hud=$('hud'+sid), el=$('mon'+sid);
-  if(!m){ hud.hidden=true; return; }
+  pc.textContent=Math.ceil(pct)+'%'; n.textContent=exactHP(sideOfPos(sid))?`${Math.max(0,Math.round(m.shown))}/${m.max}`:''; }
+function drawSide(x){ if(String(x).length>2){ drawPos(x); return; } drawPos(x); drawPos(x+'b'); }
+function drawPos(sid){ const side=sideOfPos(sid);
+  const s=B.side[side], m=actMon(sid), hud=$('hud'+sid), el=$('mon'+sid); if(!hud||!el) return;
+  if(!m){ hud.hidden=true; if(sid!==side){ el.innerHTML=''; el.dataset.sp=''; } return; }
   hud.hidden=false;
-  const seeItem=setVisible(sid)||m.itemSeen;
+  const seeItem=setVisible(side)||m.itemSeen;
   hud.innerHTML=`<div class="sb" data-tip="act:${sid}"><div class="sbn"><b>${esc(m.species)}</b>${m.shiny?'<i class="shy">✨</i>':''}<small>L100</small></div>
     <div class="sbbar"><div class="tr"><div class="fill" id="lt-fill${sid}"></div></div><span class="pct" id="lt-pct${sid}"></span></div>
     <div class="sbst">${m.st&&m.st!=='fnt'?`<span class="st ${m.st}">${m.st.toUpperCase()}</span>`:''}${m.tera?`<span class="st" style="background:${TYPE_COLORS[m.tera]||'#666'}">TERA ${(TIPI[m.tera]||m.tera).toUpperCase()}</span>`:''}${boostChips(m)}<span class="hpn" id="lt-num${sid}"></span></div>
     <div class="balls" id="lt-ballsx${sid}"></div></div>`;
   hpView(sid);
   const key=m.species+(m.shiny?'*':'');
-  if(el.dataset.sp!==key){ el.dataset.sp=key; el.innerHTML=spriteImg(m.species,sid==='p1',m.shiny);
+  if(el.dataset.sp!==key){ el.dataset.sp=key; el.innerHTML=spriteImg(m.species,side==='p1',m.shiny);
     const im=el.querySelector('img[data-front]'); if(im) im.onerror=()=>{ if(im.dataset.front){ im.src=im.dataset.front; im.dataset.front=''; im.classList.add('flip'); } }; }
   el.classList.toggle('sub',!!m.sub);
+  if(sid!==side){ const bx=$('ballsx'+sid); if(bx) bx.remove(); return; }
   $('ballsx'+sid).innerHTML=B.sets[sid].map((set,i)=>{ const t=Object.values(s.team).find(x=>setOf(sid,x.species)===set);
     const ko=!!t&&t.st==='fnt'; const cls=ko?'ko':(t&&t.st&&t.st!=='fnt'?'stx':'');
     return `<button class="${cls}" ${setVisible(sid)?`data-tip="set:${sid}:${i}"`:''} aria-label="Pokémon ${i+1}"></button>`; }).join('');
@@ -679,16 +705,16 @@ function say(html,kind){ $('msg').innerHTML=html; const box=$('log'); if(!box) r
   box.scrollTop=box.scrollHeight; }
 function cls(sid,c,ms){ const el=$('mon'+sid); el.classList.remove(c); void el.offsetWidth; el.classList.add(c); if(ms) setTimeout(()=>el.classList.remove(c),ms); }
 function pop(sid,text,kind){ const d=document.createElement('div'); d.className='pop '+kind; d.textContent=text;
-  d.style.left=CENTER[sid][0]+'%'; d.style.top=(CENTER[sid][1]-18)+'%'; $('arena').appendChild(d); setTimeout(()=>d.remove(),1400); }
+  const cc=cen(sid); d.style.left=cc[0]+'%'; d.style.top=(cc[1]-18)+'%'; $('arena').appendChild(d); setTimeout(()=>d.remove(),1400); }
 async function shot(from,to,color,status){ const a=$('arena');
-  if(status||from===to){ const r=document.createElement('div'); r.className='ring'; r.style.setProperty('--c',color); r.style.left=CENTER[to][0]+'%'; r.style.top=CENTER[to][1]+'%'; a.appendChild(r); setTimeout(()=>r.remove(),700); return; }
-  const o=document.createElement('div'); o.className='orb'; o.style.setProperty('--c',color); o.style.left=CENTER[from][0]+'%'; o.style.top=CENTER[from][1]+'%'; a.appendChild(o);
-  await sleep(20); o.style.left=CENTER[to][0]+'%'; o.style.top=CENTER[to][1]+'%'; await sleep(400); o.style.opacity=0; setTimeout(()=>o.remove(),250); }
+  if(status||from===to){ const r=document.createElement('div'); r.className='ring'; r.style.setProperty('--c',color); const ct=cen(to); r.style.left=ct[0]+'%'; r.style.top=ct[1]+'%'; a.appendChild(r); setTimeout(()=>r.remove(),700); return; }
+  const o=document.createElement('div'); o.className='orb'; o.style.setProperty('--c',color); const cf=cen(from), ct2=cen(to); o.style.left=cf[0]+'%'; o.style.top=cf[1]+'%'; a.appendChild(o);
+  await sleep(20); o.style.left=ct2[0]+'%'; o.style.top=ct2[1]+'%'; await sleep(400); o.style.opacity=0; setTimeout(()=>o.remove(),250); }
 // La barra scende (o sale) un PS alla volta: la durata dipende da quanti PS cambiano
 function animHP(sid,m,to){ return new Promise(res=>{ const from=m.shown, d=Math.abs(to-from);
   if(!d||!m.max){ m.shown=to; hpView(sid); return res(); }
   const dur=Math.min(2200,Math.max(350,d/m.max*2400)), t0=performance.now();
-  const step=now=>{ if(!root) return res(); const k=Math.min(1,(now-t0)/dur); m.shown=from+(to-from)*k; if(B.side[sid].team[B.side[sid].act]===m) hpView(sid); if(k<1) requestAnimationFrame(step); else res(); };
+  const step=now=>{ if(!root) return res(); const k=Math.min(1,(now-t0)/dur); m.shown=from+(to-from)*k; for(const q of [sid,sid+'b']) if(actMon(q)===m) hpView(q); if(k<1) requestAnimationFrame(step); else res(); };
   requestAnimationFrame(step); }); }
 
 // ---------- animazioni delle mosse di Pokémon Showdown ----------
@@ -724,8 +750,8 @@ function psRun(kind,name,attSid,defSid,missed,dry){
   const $=window.jQuery, ar=document.getElementById('lt-arena'), A=ar.getBoundingClientRect(), k=A.width/640;
   // strati: effetti (sopra i Pokémon), copie dei Pokémon, sfondo
   const fx=$('<div class="psfx"></div>').appendTo(ar), sprL=$('<div class="pssp"></div>').appendTo(ar), bgE=$('<div class="psbg"></div>').appendTo(ar);
-  const C={}; for(const s of ['p1','p2']){ const img=document.querySelector('#lt-mon'+s+' img'); const r=(img||document.getElementById('lt-mon'+s)).getBoundingClientRect(); C[s]={img,r,x:r.left-A.left+r.width/2,y:r.top-A.top+r.height/2}; }
-  const Z0=C.p1, Z2=C.p2;
+  const C={}; for(const s of (isDbl()?['p1','p1b','p2','p2b']:['p1','p2'])){ if(!document.getElementById('lt-mon'+s)) continue; const img=document.querySelector('#lt-mon'+s+' img'); const r=(img||document.getElementById('lt-mon'+s)).getBoundingClientRect(); C[s]={img,r,x:r.left-A.left+r.width/2,y:r.top-A.top+r.height/2}; }
+  const avg=(a,b)=>a&&b?{x:(a.x+b.x)/2,y:(a.y+b.y)/2}:(a||b); const Z0=isDbl()?avg(C.p1,C.p1b):C.p1, Z2=isDbl()?avg(C.p2,C.p2b):C.p2;
   const scaleZ=z=>Math.max(.1,1.5-.5*(z/200));
   const scene={ timeOffset:0, battle:{mySide:{x:0,y:0,z:0}}, $bg:$(document.createElement('div')), $fx:fx, $bgEffect:bgE, animating:true, acceleration:1, els:[],
     wait(t){ this.timeOffset+=t; }, waitFor(el){ this.els.push(el); },
@@ -762,11 +788,11 @@ function psRun(kind,name,attSid,defSid,missed,dry){
       $e.delay(delay).animate({opacity},250).delay(Math.max(0,duration-250)).animate({opacity:0},250); this.waitFor($e); } };
   // copie dei Pokémon che si possono muovere durante l'animazione
   const restore=[];
-  const sprite=s=>{ const c=C[s], z=s==='p1'?0:200, sc=scaleZ(z)*k, front=s==='p2';
-    const sp={w:c.r.width/sc,h:c.r.height/sc,url:c.img?c.img.src:'',shiny:!!(B.side[s].act&&B.side[s].team[B.side[s].act]&&B.side[s].team[B.side[s].act].shiny)};
-    let $el=$(); if(c.img){ $el=$('<img alt="" style="position:absolute;display:block">').attr('src',c.img.src).appendTo(sprL); if(c.img.classList.contains('flip')||(s==='p1'&&getComputedStyle(c.img).transform.startsWith('matrix(-'))) $el.css('transform','scaleX(-1)');
+  const sprite=s=>{ const c=C[s], sd=sideOfPos(s), z=sd==='p1'?0:200, sc=scaleZ(z)*k, front=sd==='p2', base=z?Z2:Z0;
+    const sp={w:c.r.width/sc,h:c.r.height/sc,url:c.img?c.img.src:'',shiny:!!(actMon(s)&&actMon(s).shiny)};
+    let $el=$(); if(c.img){ $el=$('<img alt="" style="position:absolute;display:block">').attr('src',c.img.src).appendTo(sprL); if(c.img.classList.contains('flip')||(sd==='p1'&&getComputedStyle(c.img).transform.startsWith('matrix(-'))) $el.css('transform','scaleX(-1)');
       const rest={left:c.r.left-A.left,top:c.r.top-A.top,width:c.r.width,height:c.r.height,opacity:1}; $el.css(rest); $el.data('rest',rest); c.img.style.visibility='hidden'; restore.push(c.img); }
-    const o={x:0,y:0,z,sp,isFrontSprite:front,isMissedPokemon:false,$el,
+    const o={x:(c.x-base.x)/sc,y:-(c.y-base.y)/sc,z,sp,isFrontSprite:front,isMissedPokemon:false,$el,
       anim(end,transition){ end=Object.assign({x:this.x,y:this.y,z:this.z,scale:1,opacity:1,time:500},end); $el.animate(scene.posT(end,sp,transition,this),end.time); scene.waitFor($el); return this; },
       delay(t){ $el.delay(t); return this; },
       behindx(o2){ return this.x+(front?1:-1)*o2; }, behindy(o2){ return this.y+(front?-1:1)*o2; }, leftof(o2){ return this.x+(front?1:-1)*o2; }, behind(o2){ return this.z+(front?1:-1)*o2; } };
@@ -872,12 +898,12 @@ async function handle(line){
     case 'switch': case 'drag': case 'replace': {
       const id=parseId(p[2]); const species=p[3].split(',')[0]; const m=mon(id.side,id.nick); m.species=species; m.shiny=p[3].includes('shiny');
       const h=parseHP(p[4]); if(h){ m.hp=h.hp; m.max=h.max||m.max; m.shown=h.hp; m.st=h.st; } m.boosts={}; m.sub=false;
-      const s=B.side[id.side]; const el=$('mon'+id.side);
-      if(s.act&&s.act!==id.nick){ el.classList.add('out'); await sleep(350); }
-      s.act=id.nick; cry(species); el.classList.remove('faint'); el.dataset.sp=''; draw(); el.classList.add('out'); void el.offsetWidth; el.classList.remove('out');
+      const s=B.side[id.side], sk=slotK(id.pos); const el=$('mon'+id.pos);
+      if(s[sk]&&s[sk]!==id.nick){ el.classList.add('out'); await sleep(350); }
+      s[sk]=id.nick; cry(species); el.classList.remove('faint'); el.dataset.sp=''; draw(); el.classList.add('out'); void el.offsetWidth; el.classList.remove('out');
       say(`${PN(id.side)} manda in campo <b>${esc(species)}</b>!`); return 900; }
-    case 'detailschange': case '-formechange': { const id=parseId(p[2]); const m=mon(id.side,id.nick); m.species=p[3].split(',')[0]; $('mon'+id.side).dataset.sp=''; draw(); say(`${label(p[2])} cambia forma!`); return 900; }
-    case 'move': { const a=sideOf(p[2]), tg=sideOf(p[4])||a; const mv=Dex.moves.get(p[3]); B.eff=null; 
+    case 'detailschange': case '-formechange': { const id=parseId(p[2]); const m=mon(id.side,id.nick); m.species=p[3].split(',')[0]; $('mon'+id.pos).dataset.sp=''; draw(); say(`${label(p[2])} cambia forma!`); return 900; }
+    case 'move': { const posOf=x=>(parseId(x)||{}).pos; const a=posOf(p[2]), tg=posOf(p[4])||a; const mv=Dex.moves.get(p[3]); B.eff=null; 
       { const id=parseId(p[2]); if(id&&!p.some(x=>x&&x.startsWith('[from]'))){ const um=mon(id.side,id.nick); um.movesSeen=um.movesSeen||[]; if(!um.movesSeen.includes(p[3])) um.movesSeen.push(p[3]); } }
       say(`${label(p[2])} usa <b>${esc(p[3])}</b>!`);
       if(p.includes('[still]')) return 700;
@@ -888,28 +914,28 @@ async function handle(line){
       const id=parseId(p[2]); const m=mon(id.side,id.nick); const h=parseHP(p[3]); if(!h) return 0;
       const to=h.hp; if(h.max) m.max=h.max; const was=m.shown; if(h.st!=='fnt') m.st=h.st;
       const f=fromOf(p); const fi=f&&Dex.items.get(f); if(fi&&fi.exists){ m.item=fi.name; m.itemSeen=true; } const fr=p.find(x=>x&&x.startsWith('[from] ability: ')); if(fr) m.abilitySeen=fr.slice(16);
-      if(k==='-damage'&&to<was){ cls(id.side,'hit',500); if(f!=='Life Orb') sfx(f?'weak':(B.eff||'hit')); B.eff=null; }
+      if(k==='-damage'&&to<was){ cls(id.pos,'hit',500); if(f!=='Life Orb') sfx(f?'weak':(B.eff||'hit')); B.eff=null; }
       if(k==='-heal'&&to>was) sfx('heal');
-      if(k==='-heal'&&to>was) pop(id.side,'+'+Math.round(exactHP(id.side)?to-was:(to-was)/m.max*100)+(exactHP(id.side)?' PS':'%'),'heal');
+      if(k==='-heal'&&to>was) pop(id.pos,'+'+Math.round(exactHP(id.side)?to-was:(to-was)/m.max*100)+(exactHP(id.side)?' PS':'%'),'heal');
       const anim=animHP(id.side,m,to); m.hp=to;
       if(k==='-heal') say(`${label(p[2])} recupera PS${f?' ('+esc(f)+')':''}.`);
       else if(f) say(`${label(p[2])} subisce danni per ${esc(CAUSE[f]||f)}.`);
       await anim; return k==='-damage'&&!f?150:500; }
-    case 'faint': { sfx('faint'); const id=parseId(p[2]); const m=mon(id.side,id.nick); m.hp=0; m.st='fnt'; $('mon'+id.side).classList.add('faint'); say(`${label(p[2])} è esausto!`); await sleep(900); drawSide(id.side); return 300; }
+    case 'faint': { sfx('faint'); const id=parseId(p[2]); const m=mon(id.side,id.nick); m.hp=0; m.st='fnt'; $('mon'+id.pos).classList.add('faint'); say(`${label(p[2])} è esausto!`); await sleep(900); drawSide(id.side); return 300; }
     case '-supereffective': B.eff='super'; say('È superefficace!'); return 750;
     case '-resisted': B.eff='weak'; say('Non è molto efficace…'); return 750;
     case '-immune': say(`Non ha effetto su ${label(p[2])}…`); return 800;
     case '-crit': say('Brutto colpo!'); return 700;
     case '-miss': say(`${label(p[2])} manca il bersaglio!`); return 800;
     case '-fail': say('Ma non ha effetto!'); return 700;
-    case '-status': { const id=parseId(p[2]); mon(id.side,id.nick).st=p[3]; drawSide(id.side); if(window.PSAnimData&&window.PSAnimData.BattleStatusAnims[p[3]]) psRun('status',p[3],id.side,null); say(`${label(p[2])} ${STATUS[p[3]]||esc(p[3])}!`); return 900; }
+    case '-status': { const id=parseId(p[2]); mon(id.side,id.nick).st=p[3]; drawSide(id.side); if(window.PSAnimData&&window.PSAnimData.BattleStatusAnims[p[3]]) psRun('status',p[3],id.pos,null); say(`${label(p[2])} ${STATUS[p[3]]||esc(p[3])}!`); return 900; }
     case '-curestatus': { const id=parseId(p[2]); if(id){ mon(id.side,id.nick).st=''; drawSide(id.side); say(`${label(p[2])} è guarito.`); return 700; } return 0; }
     case 'cant': { const r={par:'è paralizzato! Non riesce a muoversi!',slp:'dorme profondamente.',frz:'è congelato!',flinch:'tentenna e non attacca!',recharge:'deve riprendersi.'}[p[3]]||'non può muoversi.'; say(`${label(p[2])} ${r}`); return 900; }
     case '-boost': case '-unboost': { const id=parseId(p[2]); const m=mon(id.side,id.nick); const n=+p[4]*(k==='-boost'?1:-1); if(n) sfx(n>0?'up':'down');
       m.boosts[p[3]]=Math.max(-6,Math.min(6,(m.boosts[p[3]]||0)+n)); drawSide(id.side);
-      if(n) pop(id.side,`${STAT[p[3]]||p[3]} ${n>0?'↑'.repeat(Math.min(3,n)):'↓'.repeat(Math.min(3,-n))}`,n>0?'up':'down');
+      if(n) pop(id.pos,`${STAT[p[3]]||p[3]} ${n>0?'↑'.repeat(Math.min(3,n)):'↓'.repeat(Math.min(3,-n))}`,n>0?'up':'down');
       const q=Math.abs(n)>=3?' tantissimo':Math.abs(n)===2?' molto':''; say(n?`${STAT[p[3]]||esc(p[3])} di ${label(p[2])} ${n>0?'aumenta':'diminuisce'}${q}!`:`${STAT[p[3]]||esc(p[3])} di ${label(p[2])} non può cambiare oltre!`); return 900; }
-    case '-setboost': { const id=parseId(p[2]); mon(id.side,id.nick).boosts[p[3]]=+p[4]; drawSide(id.side); pop(id.side,`${STAT[p[3]]||p[3]} al massimo!`,'up'); return 800; }
+    case '-setboost': { const id=parseId(p[2]); mon(id.side,id.nick).boosts[p[3]]=+p[4]; drawSide(id.side); pop(id.pos,`${STAT[p[3]]||p[3]} al massimo!`,'up'); return 800; }
     case '-clearallboost': for(const s of ['p1','p2']) for(const m of Object.values(B.side[s].team)) m.boosts={}; draw(); say('Tutte le modifiche alle statistiche spariscono!'); return 700;
     case '-clearboost': case '-clearnegativeboost': { const id=parseId(p[2]); if(id){ const m=mon(id.side,id.nick); if(k==='-clearboost') m.boosts={}; else for(const s in m.boosts) if(m.boosts[s]<0) m.boosts[s]=0; drawSide(id.side); } return 0; }
     case '-weather': { if(p[2]==='none'){ const was=B.weather; B.weather=null; drawField(); if(was){ say('Il tempo torna normale.'); return 700; } return 0; }
@@ -919,7 +945,7 @@ async function handle(line){
     case '-sidestart': case '-sideend': { const sid=p[2].slice(0,2); const n=p[3].replace('move: ',''); const id=toID(n); const c=B.cond[sid];
       if(k==='-sidestart'){ B.start[sid+id]=[B.turn]; c[id]=(id==='spikes'||id==='toxicspikes')?Math.min(id==='spikes'?3:2,(c[id]||0)+1):1; drawField(); say(SIDECOND[id]?`${SIDECOND[id][1]} ${PN(sid)}!`:`${esc(n)}: ${PN(sid)}.`); return 1000; }
       delete c[id]; drawField(); say(`${SIDECOND[id]?SIDECOND[id][0]:esc(n)} sparisce dalla parte di ${PN(sid)}.`); return 700; }
-    case '-terastallize': { const id=parseId(p[2]); mon(id.side,id.nick).tera=p[3]; drawSide(id.side); shot(id.side,id.side,TYPE_COLORS[p[3]]||'#fff',true); say(`${label(p[2])} si teracristallizza: tipo ${TIPI[p[3]]||esc(p[3])}!`); return 1100; }
+    case '-terastallize': { const id=parseId(p[2]); mon(id.side,id.nick).tera=p[3]; drawSide(id.side); shot(id.pos,id.pos,TYPE_COLORS[p[3]]||'#fff',true); say(`${label(p[2])} si teracristallizza: tipo ${TIPI[p[3]]||esc(p[3])}!`); return 1100; }
     case '-ability': { const id=parseId(p[2]); if(id) mon(id.side,id.nick).abilitySeen=p[3]; }
       say(`[Abilità di ${label(p[2])}: ${esc(p[3])}]`); return 800;
     case '-item': { const id=parseId(p[2]); const m=mon(id.side,id.nick); m.item=p[3]; m.itemSeen=true; drawSide(id.side); say(`${label(p[2])} ottiene ${esc(p[3])}.`); return 800; }
@@ -948,9 +974,9 @@ async function pump(){
 const EFF_SYM={x4:'▲ ×4',x2:'▲ ×2',x05:'▼ ×½',x025:'▼ ×¼',x0:'🚫'};
 const effSpan=e=>e?`<span class="effl ${e[0]}" title="${e[1]}">${EFF_SYM[e[0]]}</span>`:'';
 
-function effOf(moveId,sid){
+function effOf(moveId,sid,fp){
   const mv=Dex.moves.get(moveId); if(mv.category==='Status') return null;
-  const o=B.side[other(sid)], m=o.act&&o.team[o.act]; if(!m) return null;
+  const m=actMon(fp||other(sid)); if(!m) return null;
   const types=m.tera&&m.tera!=='Stellar'?[m.tera]:Dex.species.get(m.species).types;
   if(!Dex.getImmunity(mv.type,types)) return ['x0','Nessun effetto'];
   const e=Dex.getEffectiveness(mv.type,types);
@@ -960,7 +986,8 @@ function effOf(moveId,sid){
 // ---------- scelte ----------
 function need(sid){ const r=B.req[sid]; return r&&!r.wait&&B.answered[sid]!==r.rqid; }
 function send(sid,choice){ if(B.tSid===sid) timerClear(); B.answered[sid]=B.req[sid].rqid; B.err=''; if(O.role==='guest') O.net.send({t:'bc',c:choice}); else B.streams[sid].write(choice); $('ctrl').innerHTML='<p class="lt-wait">Il turno è in corso…</p>'; hideTip(); setTimeout(prompt,30); }
-function cpuChoice(r){
+function cpuChoice(r){ if(isDbl()) return cpuDbl(r); return cpuSingle(r); }
+function cpuSingle(r){
   if(r.teamPreview) return 'team 1';
   const sw=r.side.pokemon.map((m,i)=>({m,i})).filter(x=>!x.m.active&&!x.m.condition.endsWith(' fnt'));
   if(r.forceSwitch) return sw.length?'switch '+(sw[Math.random()*sw.length|0].i+1):'pass';
@@ -977,7 +1004,8 @@ function prompt(){
     $('ctrl').innerHTML=`<div class="pass"><span class="who ${sid}">${PN(sid)}</span><p>${O.lang==='en'?`It's <b>${PN(sid)}</b>'s turn to choose. Pass the device and press the button${O.showOpp?'':' (the other player should look away: you will see your team\'s moves and items)'}.`:`Tocca a <b>${PN(sid)}</b> scegliere. Passa il dispositivo e premi il pulsante${O.showOpp?'':' (l\'altro non guardi: vedrai mosse e strumenti della tua squadra)'}.`}</p><button class="btn ${sid==='p2'?'play2':''}" data-lt="iam" data-s="${sid}">Sono ${PN(sid)}</button><span class="tmr" id="lt-tm"></span></div>`; timerArm(sid); return; }
   ui(sid);
 }
-function ui(sid){
+function ui(sid){ if(isDbl()) return uiDbl(sid); return uiSingle(sid); }
+function uiSingle(sid){
   const r=B.req[sid], c=$('ctrl'); if(O.mode==='two') { B.passTo=sid; draw(); }
   const team=r.side.pokemon;
   const tm=(m,i,act)=>{ const h=parseHP(m.condition); const sp=m.details.split(',')[0]; const p=spritePath(sp); const ko=h.st==='fnt'; const pct=ko?0:Math.round(h.hp/h.max*100);
@@ -999,7 +1027,83 @@ function ui(sid){
   h+=`<div class="lt-foot"><span class="tmr" id="lt-tm"></span></div>`;
   c.innerHTML=h; timerArm(sid);
 }
-function pick(sid,choice){ const t=$('tera'); if(t&&t.checked&&choice.startsWith('move')) choice+=' terastallize'; if(O.mode==='two') B.passTo=null; send(sid,choice); }
+function pick(sid,choice){ if(isDbl()) return pickDbl(sid,choice); pickSingle(sid,choice); }
+function pickSingle(sid,choice){ const t=$('tera'); if(t&&t.checked&&choice.startsWith('move')) choice+=' terastallize'; if(O.mode==='two') B.passTo=null; send(sid,choice); }
+
+
+// ---------- doppio: due Pokémon per lato ----------
+// A ogni turno si sceglie prima per il primo posto, poi per il secondo; le mosse a bersaglio singolo chiedono "contro chi".
+// Bersagli come su Showdown: 1 e 2 = avversari (primo e secondo posto), -1 e -2 = i propri (primo e secondo posto).
+const T_ONE=['normal','any','adjacentFoe','adjacentAlly','adjacentAllyOrSelf'];
+function validTargets(sid,idx,t){ const foe=other(sid), alive=p=>{ const m=actMon(p); return m&&m.st!=='fnt'; }, out=[];
+  const self=idx===0?sid:sid+'b', ally=idx===0?sid+'b':sid;
+  if(['normal','any','adjacentFoe'].includes(t)) for(const [p,n] of [[foe,'1'],[foe+'b','2']]) if(alive(p)) out.push({n,p,foe:true});
+  if(['normal','any','adjacentAlly','adjacentAllyOrSelf'].includes(t)&&alive(ally)) out.push({n:String(-(idx===0?2:1)),p:ally});
+  if(t==='adjacentAllyOrSelf') out.push({n:String(-(idx+1)),p:self});
+  return out; }
+function cpuDbl(r){
+  const team=r.side.pokemon; if(r.teamPreview) return 'team 12';
+  const used=[], parts=[], n=r.forceSwitch?r.forceSwitch.length:(r.active?r.active.length:1);
+  for(let i=0;i<n;i++){
+    if(r.forceSwitch){ if(!r.forceSwitch[i]){ parts.push('pass'); continue; }
+      const sw=team.map((m,j)=>({m,j})).filter(x=>!x.m.active&&!x.m.condition.endsWith(' fnt')&&!used.includes(x.j)); if(!sw.length){ parts.push('pass'); continue; }
+      const k=sw[Math.random()*sw.length|0].j; used.push(k); parts.push('switch '+(k+1)); continue; }
+    const a=r.active[i]; if(!a||!team[i]||team[i].condition.endsWith(' fnt')){ parts.push('pass'); continue; }
+    const mv=a.moves.map((m,j)=>({m,j})).filter(x=>!x.m.disabled&&(x.m.pp===undefined||x.m.pp>0)); if(!mv.length){ parts.push('move 1'); continue; }
+    const x=mv[Math.random()*mv.length|0]; let ch='move '+(x.j+1);
+    if(['normal','any','adjacentFoe'].includes(x.m.target)) ch+=' '+(1+(Math.random()*2|0));
+    else if(x.m.target==='adjacentAlly') ch+=' '+(-(i===0?2:1)); else if(x.m.target==='adjacentAllyOrSelf') ch+=' '+(-(i+1));
+    parts.push(ch); }
+  return parts.join(', '); }
+function uiDbl(sid){
+  const r=B.req[sid], c=$('ctrl'); if(O.mode==='two'){ B.passTo=sid; draw(); }
+  if(!B.pick||B.pick.rq!==r.rqid||B.pick.sid!==sid) B.pick={rq:r.rqid,sid,parts:[],tgt:null};
+  const P=B.pick, team=r.side.pokemon, en=O.lang==='en';
+  const n=r.teamPreview?Math.min(2,team.length):(r.forceSwitch?r.forceSwitch.length:(r.active?r.active.length:1));
+  if(!r.teamPreview) while(P.parts.length<n){ const i=P.parts.length;
+    if(r.forceSwitch&&!r.forceSwitch[i]){ P.parts.push('pass'); continue; }
+    if(!r.forceSwitch&&(!r.active[i]||!team[i]||team[i].condition.endsWith(' fnt'))){ P.parts.push('pass'); continue; }
+    break; }
+  if(!r.teamPreview&&P.parts.length>=n){ const ch=P.parts.join(', '); B.pick=null; if(O.mode==='two') B.passTo=null; send(sid,ch); return; }
+  const idx=P.parts.length, chosen=P.parts.filter(x=>x.startsWith('switch')).map(x=>+x.split(' ')[1]);
+  const tm=(m,i,act)=>{ const h=parseHP(m.condition); const sp=m.details.split(',')[0]; const p=spritePath(sp); const ko=h.st==='fnt'; const pct=ko?0:Math.round(h.hp/h.max*100);
+    const off=ko||(act==='switch'&&(m.active||chosen.includes(i+1)))||(act==='team'&&P.parts.includes(String(i+1)));
+    return `<button class="tm${m.active&&act!=='team'?' act':''}${ko?' ko':''}" data-tip="req:${sid}:${i}" ${act&&!off?`data-lt="pick" data-c="${act} ${i+1}"`:'disabled'}>${p?`<img src="${esc(p)}" alt="">`:''}<small>${esc(sp)}</small><span class="mini"><i class="${pct<=20?'low':pct<=50?'mid':''}" style="width:${pct}%"></i></span></button>`; };
+  const back=P.parts.some(x=>x!=='pass')||P.tgt?`<button class="btn ghost back" data-lt="pback">← ${en?'Back':'Indietro'}</button>`:'';
+  const who=`<span class="who ${sid}">${PN(sid)}</span>`;
+  let h=B.err?'<p class="lt-err">Scelta non valida, riprova.</p>':'';
+  if(r.teamPreview){
+    h+=`<div class="cq">${who} <span>${P.parts.length?(en?'And the second one?':'E il secondo?'):(en?'Who will you send out first? (pick 2)':'Chi mandi in campo per primi? (scegline 2)')}</span> ${back}</div><div class="lt-team">${team.map((m,i)=>tm(Object.assign({},m,{active:false}),i,'team')).join('')}</div>`;
+  } else if(r.forceSwitch){
+    h+=`<div class="cq">${who} <span>${en?'Who will you send out?':'Chi mandi in campo?'}</span> ${back}</div><div class="lt-team">${team.map((m,i)=>tm(m,i,'switch')).join('')}</div>`;
+  } else if(P.tgt){
+    const a=r.active[idx], mv=a.moves[P.tgt.mi], list=validTargets(sid,idx,mv.target);
+    h+=`<div class="cq">${who} <span><b>${esc(mv.move)}</b>: ${en?'which target?':'contro chi?'}</span> ${back}</div><div class="lt-team tg">${list.map(x=>{ const m=actMon(x.p), sp=spritePath(m.species), e=x.foe?effOf(mv.id,sid,x.p):null;
+      return `<button class="tm" data-lt="pick" data-c="move ${P.tgt.mi+1} ${x.n}">${sp?`<img src="${esc(sp)}" alt="">`:''}<small>${esc(m.species)}</small><span class="tgl ${x.foe?'foe':'ally'}">${x.foe?(en?'foe':'avversario'):(x.p===(idx===0?sid:sid+'b')?(en?'self':'se stesso'):(en?'ally':'alleato'))}</span>${e?effSpan(e):''}</button>`; }).join('')}</div>`;
+  } else {
+    const a=r.active[idx], me=team[idx], hp=me?parseHP(me.condition):null, teraUsed=P.parts.some(x=>x.includes('terastallize'));
+    const foes=[other(sid),other(sid)+'b'].filter(p=>{ const m=actMon(p); return m&&m.st!=='fnt'; });
+    h+=`<div class="cq">${who} <span>${en?'What will':'Cosa farà'} <b>${esc(me?me.details.split(',')[0]:'')}</b>${en?' do':''}?</span> ${hp?`<span class="hpchip">PS ${hp.hp}/${hp.max}</span>`:''} <span class="slotn">${idx+1}/2</span> ${back}</div>
+     <div class="sec">Attacca</div><div class="moves">${a.moves.map((m,i)=>{ const d=Dex.moves.get(m.id); const col=TYPE_COLORS[d.type]||'#666';
+      const effs=d.category==='Status'?[]:foes.map(p=>effOf(m.id,sid,p)); const ef=effs.some(Boolean)?effs.map(e=>e?effSpan(e):'<span class="effl">·</span>').join('<span class="effsep">|</span>'):'<span class="effl none"></span>';
+      return `<button class="mv" style="--tc:${col}" data-tip="move:${esc(m.id)}:${sid}" ${m.disabled||m.pp===0?'disabled':`data-lt="pick" data-c="move ${i+1}"`}><span class="effrow">${ef}</span><b>${esc(m.move)}</b><span class="mt"><i class="tdot"></i>${TIPI[d.type]||d.type}</span><span class="pp">${m.pp??'–'}/${m.maxpp??'–'}</span></button>`; }).join('')}</div>`;
+    if(a.canTerastallize&&!teraUsed) h+=`<label class="tera"><input type="checkbox" id="lt-tera"> Teracristallizza <span class="st" style="background:${TYPE_COLORS[a.canTerastallize]||'#666'}">${(TIPI[a.canTerastallize]||esc(a.canTerastallize)).toUpperCase()}</span></label>`;
+    h+=`<div class="sec">Cambia</div>${a.trapped?'<p class="lt-muted">Non puoi cambiare Pokémon.</p>':''}<div class="lt-team">${team.map((m,i)=>tm(m,i,a.trapped?null:'switch')).join('')}</div>`;
+  }
+  h+=`<div class="lt-foot"><span class="tmr" id="lt-tm"></span></div>`;
+  c.innerHTML=h; timerArm(sid);
+}
+function pickDbl(sid,choice){
+  const r=B.req[sid], P=B.pick; if(!P) return;
+  if(choice.startsWith('team ')){ P.parts.push(choice.split(' ')[1]); const need=Math.min(2,r.side.pokemon.length);
+    if(P.parts.length>=need){ const ch='team '+P.parts.join(''); B.pick=null; if(O.mode==='two') B.passTo=null; send(sid,ch); } else uiDbl(sid); return; }
+  const w=choice.split(' ');
+  if(w[0]==='move'&&w.length===2){ const idx=P.parts.length, mi=+w[1]-1, mv=r.active[idx].moves[mi];
+    if(T_ONE.includes(mv.target)){ const list=validTargets(sid,idx,mv.target); if(list.length>1){ const te=$('tera'); P.teraNext=!!(te&&te.checked); P.tgt={mi}; uiDbl(sid); return; } if(list.length===1) choice+=' '+list[0].n; } }
+  if(w[0]==='move'){ const te=$('tera'); if((te&&te.checked)||P.teraNext) choice+=' terastallize'; P.teraNext=false; }
+  if(P.tgt){ const te=$('tera'); P.tgt=null; }
+  P.parts.push(choice); uiDbl(sid);
+}
 
 // ---------- schede informative ----------
 const typeChip=t=>`<span class="tc" style="background:${TYPE_COLORS[t]||'#666'}">${TIPI[t]||esc(t)}</span>`;
@@ -1050,7 +1154,7 @@ function battleInfo(sid,live){
   const wrap=x=>x?'<div class="binfo">'+x+'</div>':'';
   const bo=live&&Object.entries(live.boosts||{}).filter(([,v])=>v);
   if(bo&&bo.length) h+=`<div><b>Statistiche modificate:</b> ${bo.map(([k,v])=>`<span class="bchip ${v>0?'up':'down'}">${STAT[k]||k} ${v>0?'+':'−'}${Math.abs(v)}</span>`).join(' ')}</div>`;
-  const isAct=live&&B.side[sid].act&&B.side[sid].team[B.side[sid].act]===live;
+  const isAct=live&&(actMon(sid)===live||actMon(sid+'b')===live);
   if(isAct){ const f=[]; if(B.weather) f.push((WEATHER[B.weather]||B.weather)+(/Desolate|Primordial|Delta/.test(B.weather)?'':leftTxt('w',(B.start.w&&B.start.w[1])?[5,8]:[5,8]))); for(const k in B.field) f.push(B.field[k]+leftTxt('f'+k,DUR[k]));
     const c=Object.entries(B.cond[sid]).filter(([,v])=>v).map(([k,v])=>(SIDECOND[k]?SIDECOND[k][0]:k)+(v>1?' ×'+v:'')+leftTxt(sid+k,DUR[k]));
     if(f.length) h+=`<div><b>Sul campo:</b> ${f.map(esc).join(', ')}</div>`;
@@ -1094,7 +1198,7 @@ function moveTip(id,sid){
    ${fx.length?`<ul class="fx">${fx.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}
    <div class="desc">${esc(mv.desc||mv.shortDesc||'')}</div>${e?'<div class="lt-muted">L\'efficacia non tiene conto delle abilità (es. Levitate).</div>':''}`;
 }
-function itemTip(sid){ const s=B.side[sid], m=s.act&&s.team[s.act]; if(!m) return '';
+function itemTip(pos){ const sid=sideOfPos(pos), m=actMon(pos); if(!m) return '';
   if(!setVisible(sid)&&!m.itemSeen) return `<h4>Strumento sconosciuto</h4><div class="lt-muted">Lo scoprirai quando entra in azione.</div>`;
   if(!m.item) return `<h4>Nessuno strumento</h4><div class="lt-muted">${esc(m.species)} non ha (più) uno strumento.</div>`;
   const it=Dex.items.get(m.item); return `<h4>${icon(m.item)} ${esc(it.name||m.item)}</h4><div class="desc">${esc(it.desc||it.shortDesc||'')}</div>`; }
@@ -1102,8 +1206,8 @@ function tipHTML(key){
   const [kind,a,b]=key.split(':');
   if(kind==='move') return moveTip(a,b);
   if(kind==='item') return itemTip(a);
-  if(kind==='act'){ const s=B.side[a], m=s.act&&s.team[s.act]; if(!m) return ''; const set=setOf(a,m.species)||{moves:[]};
-    const rq=B.req[a]&&B.req[a].side&&B.req[a].side.pokemon.find(x=>x.active); return monTip(a,set,m,setVisible(a)&&rq?rq.stats:null); }
+  if(kind==='act'){ const sd=sideOfPos(a), m=actMon(a); if(!m) return ''; const set=setOf(sd,m.species)||{moves:[]};
+    const rq=B.req[sd]&&B.req[sd].side&&B.req[sd].side.pokemon.find(x=>String(x.ident||'').split(': ')[1]===m.nick); return monTip(sd,set,m,setVisible(sd)&&rq?rq.stats:null); }
   if(kind==='set'){ const set=B.sets[a][+b]; if(!set||!setVisible(a)) return ''; const live=Object.values(B.side[a].team).find(x=>setOf(a,x.species)===set); return monTip(a,set,live,null); }
   if(kind==='req'){ const rp=B.req[a]&&B.req[a].side.pokemon[+b]; if(!rp) return ''; const sp=rp.details.split(',')[0]; const set=setOf(a,sp)||{moves:[]};
     const live=Object.values(B.side[a].team).find(x=>setOf(a,x.species)===set); const h=parseHP(rp.condition); const it=rp.item?Dex.items.get(rp.item).name:null;
@@ -1132,6 +1236,7 @@ function onClick(e){ const b=e.target.closest('[data-lt]'); if(!b||!root.contain
   else if(a==='timer'){ B.timerOn=!B.timerOn; if(!B.timerOn) timerClear(); else { const s=O.mode==='cpu'||O.role?(need('p1')?'p1':null):(need('p1')?'p1':need('p2')?'p2':null); if(s) timerArm(s); } say(B.timerOn?'Timer attivato: 60 secondi per ogni scelta.':'Timer disattivato.'); drawTools(); timerShow(); }
   else if(a==='chatmin'){ root.classList.toggle('chatmin'); LSset('lt-chatmin',root.classList.contains('chatmin')); if(!root.classList.contains('chatmin')){ B.unread=0; drawUnread(); const box=$('chat'); box.scrollTop=box.scrollHeight; } }
   else if(a==='chatsend') chatSend();
+  else if(a==='pback'){ const P=B.pick; if(P){ if(P.tgt) P.tgt=null; else { P.parts.pop(); while(P.parts.length&&P.parts[P.parts.length-1]==='pass') P.parts.pop(); } const s=O.mode==='cpu'||O.role?'p1':B.passTo; if(s) ui(s); } }
   else if(a==='logmin'){ root.classList.toggle('logmin'); LSset('lt-logmin',root.classList.contains('logmin')); const box=$('log'); if(box) box.scrollTop=box.scrollHeight; }
   else if(a==='ff'){ if(!B||B.over) return; const sid=O.mode==='cpu'||O.role?'p1':(B.passTo||(need('p1')?'p1':need('p2')?'p2':'p1'));
     if(b.dataset.sure){ delete b.dataset.sure; b.textContent='🏳 Arrenditi'; timerClear(); say(`${PN(sid)} si arrende!`); loseBy(sid); }
@@ -1145,7 +1250,7 @@ const EVTS=[['pointerover',onOver],['pointerdown',onDown],['pointerup',onUp],['p
 // L'host fa girare il motore; all'amico arrivano solo i messaggi del motore per il suo lato (quello che vedrebbe su Showdown)
 // e lui manda solo le sue scelte, che l'host controlla. L'amico vede la lotta dal suo punto di vista: i lati p1/p2 vengono scambiati.
 const swapPS=s=>String(s).replace(/\bp([12])(?=[a-d]?[:|\s,"]|[a-d]?$)/g,(m,n)=>'p'+(3-n));
-const CHOICE_OK=/^(move [1-4]( terastallize| mega)?|switch [1-6]|team [1-6]{1,6}|pass|default)$/;
+const CHOICE_OK=/^(?:(?:move [1-4](?: -?[12])?(?: terastallize| mega)?|switch [1-6]|pass|default)(?:, (?:move [1-4](?: -?[12])?(?: terastallize| mega)?|switch [1-6]|pass|default))?|team [1-6]{1,6})$/;
 function loseBy(sid){ if(O.role==='guest'){ O.net.send({t:'bff'}); } else B.streams.omniscient.write('>forcelose '+sid); }
 function drawUnread(){ const u=$('unread'); if(!u) return; u.hidden=!B.unread; u.textContent=B.unread>9?'9+':String(B.unread||''); }
 function chatAdd(who,text,mine){ const box=$('chat'); if(!box) return; const d=document.createElement('div'); d.className='cm'+(mine?' mine':'');
@@ -1193,7 +1298,7 @@ const SIDE_EN={'Rocce aguzze fluttuano intorno alla squadra di':n=>`Pointed ston
   'Salvaguardia protegge la squadra di':n=>`${n}'s team cloaked itself in a mystical veil!`,'La nebbia avvolge la squadra di':n=>`${n}'s team became shrouded in mist!`};
 const EN_EXACT={'Lotta':'Battle','Esci dalla lotta':'Leave battle','Sicuro? Premi di nuovo':'Sure? Press again','🏳 Arrenditi':'🏳 Forfeit','📜 Cronaca':'📜 Log','💬 Chat':'💬 Chat','⏱ Timer':'⏱ Timer','⏱ Timer attivo':'⏱ Timer on',
   'Cronaca della lotta':'Battle log','Scrivi al tuo avversario. Sii gentile!':'Write to your opponent. Be nice!','Invia':'Send','Scrivi un messaggio…':'Write a message…','Attacca':'Attack','Cambia':'Switch',
-  'Teracristallizza':'Terastallize','Chi mandi in campo per primo?':'Who will you send out first?','Chi mandi in campo?':'Who will you send out?','Non puoi cambiare Pokémon.':'You can\'t switch.','Il turno è in corso…':'The turn is in progress…',
+  'Teracristallizza':'Terastallize','Chi mandi in campo per primo?':'Who will you send out first?','Chi mandi in campo?':'Who will you send out?','Non puoi cambiare Pokémon.':'You can\'t switch.','Il turno è in corso…':'The turn is in progress…','Scelta non valida, riprova.':'Invalid choice, try again.',
   'In attesa…':'Waiting…','Nuova lotta':'New battle','Chiudi la lotta':'Close the battle','Chiudi':'Close','La lotta sta per cominciare!':'The battle is about to begin!','È superefficace!':'It\'s super effective!','Non è molto efficace…':'It\'s not very effective…',
   'Brutto colpo!':'A critical hit!','Ma non ha effetto!':'But it failed!','Tutte le modifiche alle statistiche spariscono!':'All stat changes were eliminated!','Il tempo torna normale.':'The weather became clear.','Il sostituto incassa il colpo!':'The substitute took damage for it!',
   'Pareggio!':'Tie!','Timer attivato: 60 secondi per ogni scelta.':'Timer on: 60 seconds for each choice.','Timer disattivato.':'Timer off.','Troppi messaggi: aspetta qualche secondo.':'Too many messages: wait a few seconds.','Sistema':'System',
@@ -1292,6 +1397,7 @@ function close(silent){
 function open(opts){
   if(root) close(true);
   O=Object.assign({mode:'two',showOpp:true,names:{p1:'Giocatore 1',p2:'Giocatore 2'},formatid:'gen9nationaldexag'},opts);
+  O.dbl=/doubles|vgc/.test(O.formatid);
   if(!document.getElementById('lotta-css')){ const s=document.createElement('style'); s.id='lotta-css'; s.textContent=CSS; document.head.appendChild(s); }
   root=document.createElement('div'); root.id='lotta'; root.setAttribute('role','dialog'); root.setAttribute('aria-label','Lotta');
   root.innerHTML=`<div class="lt-wrap"><div class="lt-top"><h2 class="lt-title">${O.lang==='en'?'Battle':'Lotta'}</h2><span class="lt-muted">${esc(O.formatName||'')}<span id="lt-scene"></span></span><button class="tool lt-chatopen" data-lt="chatmin" aria-label="Apri la chat">💬 Chat<b class="unread" id="lt-unread" hidden></b></button><button class="tool lt-reopen" data-lt="logmin" aria-label="Apri la cronaca della lotta" title="Apri la cronaca della lotta">📜 Cronaca</button><span class="lt-tools" id="lt-tools"></span><button class="btn ghost ff" data-lt="ff">🏳 Arrenditi</button><button class="btn ghost" data-lt="exit">Esci dalla lotta</button></div>
@@ -1303,9 +1409,9 @@ function open(opts){
     <div class="pad p2"></div><div class="pad p1"></div>
     <div class="haz p2" id="lt-hazp2"></div><div class="haz p1" id="lt-hazp1"></div>
     <div id="lt-scrp2"></div><div id="lt-scrp1"></div>
-    <div class="mon p2 out" id="lt-monp2" data-tip="act:p2"></div><div class="mon p1 out" id="lt-monp1" data-tip="act:p1"></div>
+    <div class="mon p2 out" id="lt-monp2" data-tip="act:p2"></div><div class="mon p2b out" id="lt-monp2b" data-tip="act:p2b"></div><div class="mon p1b out" id="lt-monp1b" data-tip="act:p1b"></div><div class="mon p1 out" id="lt-monp1" data-tip="act:p1"></div>
     <div class="wfx" id="lt-wfx" hidden></div>
-    <div class="hud p2" id="lt-hudp2" hidden></div><div class="hud p1" id="lt-hudp1" hidden></div>
+    <div class="hud p2" id="lt-hudp2" hidden></div><div class="hud p2b" id="lt-hudp2b" hidden></div><div class="hud p1" id="lt-hudp1" hidden></div><div class="hud p1b" id="lt-hudp1b" hidden></div>
     <div class="balls p2" id="lt-ballsp2"></div><div class="balls p1" id="lt-ballsp1"></div>
    </div>
    <div class="lt-msg" id="lt-msg" aria-live="polite"></div>
@@ -1315,6 +1421,7 @@ function open(opts){
     <div class="lt-chatin"><input type="text" id="lt-chatin" maxlength="200" placeholder="Scrivi un messaggio…" autocomplete="off" aria-label="Messaggio"><button class="btn" data-lt="chatsend">Invia</button></div></aside></div></div>
    <p class="lt-muted lt-hint">Punta col mouse (o tieni premuto, da telefono) Pokémon, Poké Ball, strumenti e mosse per vedere le informazioni. Calcoli del simulatore di Pokémon Showdown (MIT).</p></div>
    <div class="lt-tip" id="lt-tip" hidden></div>`;
+  if(O.dbl) root.classList.add('dbl');
   document.body.appendChild(root); document.documentElement.style.overflow='hidden'; startTranslate();
   for(const [ev,fn] of EVTS) document.addEventListener(ev,fn); document.addEventListener('click',onClickCapture,true); addEventListener('scroll',hideTip,{passive:true,capture:true});
   root.addEventListener('click',onClick); addEventListener('resize',()=>{ if(root&&B) drawField(); }); if(LS('lt-logmin',false)) root.classList.add('logmin');
