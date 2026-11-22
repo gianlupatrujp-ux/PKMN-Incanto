@@ -893,8 +893,17 @@ function timerTick(){ if(!root||!B||!B.timerOn||!B.tSid||B.over) return; timerSh
 
 // ---------- messaggi del motore ----------
 const fromOf=p=>{ const f=p.find(x=>x&&x.startsWith('[from]')); return f?f.slice(7).replace(/^(item|ability|move): /,''):''; };
+// Statistiche per il profilo: Pokémon mandati in campo, mosse usate e KO (il KO va a chi ha inflitto l'ultimo danno diretto)
+const baseSp=s=>String(s||'').replace(/-Mega(-[XY])?$/,'').replace(/-(Busted|Blade|Hero|Primal|Crowned|Tera|Terastal|Stellar|Eternamax|Meteor|School|Complete|Zen|Pirouette|Sunshine|Gulping|Gorging|Hangry|Noice|Resolute)$/,'');
+function track(p){ if(!B) return; const S=B.stats||(B.stats={p1:{used:{},moves:{},kos:{}},p2:{used:{},moves:{},kos:{}}}); const k=p[1];
+  const who=x=>{ const id=parseId(x); if(!id||!S[id.side]) return null; const m=B.side[id.side]&&B.side[id.side].team[id.nick]; return {side:id.side,key:id.side+':'+id.nick,sp:baseSp(m&&m.species||id.nick)}; };
+  if(k==='switch'||k==='drag'){ const w=who(p[2]); if(w){ const sp=baseSp(String(p[3]||'').split(',')[0]); S[w.side].used[sp]=1; } }
+  else if(k==='move'&&!p.some(x=>x&&x.startsWith('[from]'))){ const w=who(p[2]); if(w){ S[w.side].moves[p[3]]=(S[w.side].moves[p[3]]||0)+1; B.lastActor=w; } }
+  else if(k==='-damage'&&!p.slice(4).some(x=>x&&x.startsWith('[from]'))){ const w=who(p[2]); if(w&&B.lastActor&&B.lastActor.side!==w.side){ (B.lastHit||(B.lastHit={}))[w.key]=B.lastActor; } }
+  else if(k==='faint'){ const w=who(p[2]); const h=w&&B.lastHit&&B.lastHit[w.key]; if(h){ S[h.side].kos[h.sp]=(S[h.side].kos[h.sp]||0)+1; delete B.lastHit[w.key]; } }
+  else if(k==='turn') B.lastActor=null; }
 async function handle(line){
-  const p=line.split('|'); const k=p[1]; const sideOf=id=>(parseId(id)||{}).side;
+  const p=line.split('|'); const k=p[1]; try{ track(p); }catch(e){} const sideOf=id=>(parseId(id)||{}).side;
   switch(k){
     case 'switch': case 'drag': case 'replace': {
       const id=parseId(p[2]); const species=p[3].split(',')[0]; const m=mon(id.side,id.nick); m.species=species; m.shiny=p[3].includes('shiny');
@@ -960,7 +969,7 @@ async function handle(line){
     case '-singleturn': { const n=(p[3]||'').replace('move: ',''); if(n==='Protect'||n==='Detect'){ say(`${label(p[2])} si protegge!`); return 800; } return 0; }
     case '-mega': say(`${label(p[2])} megaevolve!`); return 1000;
     case 'turn': { B.turn=+p[2]||0; const tb=$('turn'); tb.hidden=false; tb.textContent='Turno '+p[2]; say(`Turno ${esc(p[2])}`,'turn'); return 350; }
-    case 'win': B.over=true; timerClear(); musicStop(); say(`Vince ${esc(p[2])}!`,'win'); seriesEnd(String(p[2]||'')); return 0;
+    case 'win': B.over=true; timerClear(); musicStop(); say(`Vince ${esc(p[2])}!`,'win'); seriesEnd(String(p[2]||'')); try{ if(O.onStats) O.onStats({winner:String(p[2]||''),names:Object.assign({},O.names),stats:B.stats||null,turns:B.turn||0}); }catch(e){} return 0;
     case 'tie': B.over=true; say('Pareggio!'); return 0;
   }
   return 0;
