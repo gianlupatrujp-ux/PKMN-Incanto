@@ -58,10 +58,11 @@ const VIETATE = ['hiddenpower', 'return', 'frustration', 'batonpass', 'assist', 
     if (!nelGioco.has(base.name)) { report.push('base non nel gioco: ' + base.name); continue; }
     const stone = mega.requiredItem; if (!stone || !Dex.items.get(stone).exists) { report.push('pietra? ' + id); continue; }
     const src = sets7[id]; if (!src) { report.push('senza set gen7: ' + id); continue; }
-    const fisico = mega.baseStats.atk >= mega.baseStats.spa, lento = mega.baseStats.spe < 75;
+    const fisico0 = mega.baseStats.atk >= mega.baseStats.spa, lento = mega.baseStats.spe < 75;
     for (const s of src.sets) {
       const pool = [...new Set(s.movepool)].filter(mv => { const d = Dex.moves.get(mv); return d.exists && !VIETATE.includes(d.id) && !['Unobtainable', 'LGPE', 'CAP', 'Future'].includes(d.isNonstandard) && impara(base.id, d.id); });
       if (pool.length < 4) { report.push('poche mosse ' + id + ' ' + s.role); continue; }
+      let fisico = fisico0;
       // scelta delle 4 mosse: al massimo una di potenziamento e una di cura, poi attacchi di tipi diversi (prima lo STAB)
       const scelte = [], tipi = new Set(), D = mv => Dex.moves.get(mv);
       const prendi = mv => { if (!scelte.includes(mv) && scelte.length < 4) { scelte.push(mv); if (D(mv).category !== 'Status') tipi.add(D(mv).type); } };
@@ -71,6 +72,9 @@ const VIETATE = ['hiddenpower', 'return', 'frustration', 'batonpass', 'assist', 
       for (const m of att) if (!tipi.has(D(m).type)) prendi(m);
       for (const m of att) prendi(m);
       for (const m of pool) prendi(m);
+      // EV e natura seguono gli attacchi scelti (es. Diancie-Mega ha Attacco = Att. Sp. ma usa attacchi speciali)
+      const nF = scelte.filter(m => D(m).category === 'Physical').length, nS = scelte.filter(m => D(m).category === 'Special').length;
+      if (nF !== nS) fisico = nF > nS;
       const atkStat = fisico ? 'Atk' : 'SpA';
       const evs = lento ? { HP: 252, [atkStat]: 252, SpD: 4 } : { HP: 4, [atkStat]: 252, Spe: 252 };
       const natura = lento ? (fisico ? 'Adamant' : 'Modest') : (fisico ? 'Jolly' : 'Timid');

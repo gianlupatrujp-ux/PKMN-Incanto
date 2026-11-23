@@ -300,10 +300,10 @@ const MEGA_DATA = {
    "abilita": "Clear Body",
    "evs": {
     "HP": 4,
-    "Atk": 252,
+    "SpA": 252,
     "Spe": 252
    },
-   "natura": "Jolly",
+   "natura": "Timid",
    "mosse": [
     "Calm Mind",
     "Diamond Storm",

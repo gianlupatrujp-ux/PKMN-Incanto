@@ -194,7 +194,11 @@ function creaRegole(dati) {
     let fis = 0, spe = 0;
     for (const id of scelte) { const m = mossa(id); if (!attacco(m) || ['bodypress', 'foulplay', 'seismictoss', 'nightshade', 'superfang', 'ruination'].includes(id)) continue;
       if (m.category === 'Physical') fis++; else spe++; }
-    if (scelte.includes('bodypress')) return 'difesa';
+    // Body Press usa la Difesa: conta come "difesa" solo se gli altri attacchi sono al massimo uno
+    // (prima bastava averla per dare Choice Band o nature sbagliate a set con attacchi speciali, es. Magnezone)
+    // (contano solo gli attacchi da almeno 60 di potenza: Rapid Spin, U-turn ecc. non cambiano il ruolo)
+    const forti = scelte.filter(id => { const m = mossa(id); return attacco(m) && id !== 'bodypress' && (m.basePower || 0) >= 60 && !['foulplay', 'seismictoss', 'nightshade', 'superfang', 'ruination'].includes(id); }).length;
+    if (scelte.includes('bodypress') && forti <= 1) return 'difesa';
     if (!fis && !spe) return 'nessuno';
     return fis >= spe ? 'fisico' : 'speciale';
   }
@@ -209,6 +213,8 @@ function creaRegole(dati) {
     if (['geomancy', 'meteorbeam', 'electroshot'].some(id => scelte.includes(id))) return 'Power Herb';
     if ((scelte.includes('reflect') && scelte.includes('lightscreen')) || scelte.includes('auroraveil')) return 'Light Clay';
     if (scelte.includes('trick') || scelte.includes('switcheroo')) {
+      // in Champions Band e Specs non esistono: Choice Scarf, così Trick ha sempre uno strumento da scambiare
+      if (champ) return 'Choice Scarf';
       if (/Wallbreaker/.test(ruolo) || !veloce) return cat === 'fisico' ? 'Choice Band' : 'Choice Specs';
       return 'Choice Scarf';
     }
@@ -226,6 +232,8 @@ function creaRegole(dati) {
     return 'Leftovers';
   }
 
+  // C'è almeno un attacco fisico oltre a Body Press / Foul Play?
+  const haFisici = scelte => scelte.some(id => { const m = mossa(id); return attacco(m) && m.category === 'Physical' && !['bodypress', 'foulplay', 'seismictoss', 'nightshade', 'superfang', 'ruination'].includes(id); });
   function scegliEvNatura(specie, set, scelte, strumento) {
     const ruolo = set.role || '', cat = categoriaAttacco(scelte), b = specie.baseStats;
     const lento = b.spe <= 45 || scelte.includes('trickroom') || scelte.includes('gyroball');
@@ -238,12 +246,13 @@ function creaRegole(dati) {
       return { evs: { HP: 4, [atk]: 252, Spe: 252 }, natura };
     }
     if (/Bulky Attacker|AV Pivot|Doubles Bulky Attacker|Doubles Wallbreaker/.test(ruolo) || (lento && !/Support|Staller|Bulky Setup|Bulky Protect/.test(ruolo))) {
-      if (cat === 'nessuno' || cat === 'difesa') return { evs: { HP: 252, Def: 252, SpD: 4 }, natura: 'Impish' };
+      if (cat === 'nessuno' || cat === 'difesa') return { evs: { HP: 252, Def: 252, SpD: 4 }, natura: haFisici(scelte) ? 'Impish' : 'Bold' };
       return { evs: { HP: 252, [atk]: 252, SpD: 4 }, natura: cat === 'speciale' ? (lento ? 'Quiet' : 'Modest') : (lento ? 'Brave' : 'Adamant') };
     }
     // Ruoli difensivi: punti in PS e nella difesa più bassa delle due
-    const dif = b.def <= b.spd ? 'Def' : 'SpD';
-    const meno = cat === 'fisico' ? 'SpA' : 'Atk';
+    // (con Body Press si investe sempre in Difesa; la natura abbassa la statistica d'attacco che non si usa)
+    const dif = scelte.includes('bodypress') || b.def <= b.spd ? 'Def' : 'SpD';
+    const meno = cat === 'fisico' || (cat !== 'speciale' && haFisici(scelte)) ? 'SpA' : 'Atk';
     const nature = { Def: { Atk: 'Bold', SpA: 'Impish' }, SpD: { Atk: 'Calm', SpA: 'Careful' } };
     return { evs: { HP: 252, [dif]: 252, [dif === 'Def' ? 'SpD' : 'Def']: 4 }, natura: nature[dif][meno] };
   }
@@ -271,7 +280,17 @@ function creaRegole(dati) {
     if (/Z-Move|Dynamax/.test(set.role || '')) set.role = set.movepool.map(toId).some(id => SETUP.has(id)) ? 'Setup Sweeper' : 'Fast Attacker';
     const scelte = scegliMosse(specie, set, doppio, riserva);
     const abilita = scegliAbilita(specie, set);
-    const strumento = scegliStrumento(specie, set, scelte, abilita, doppio);
+    let strumento = scegliStrumento(specie, set, scelte, abilita, doppio);
+    // Con uno strumento Scelta si è bloccati su una mossa: le mosse di stato (tranne Trick/Switcheroo) diventano
+    // attacchi dello stesso set; se non ce ne sono abbastanza, niente Scelta (es. Houndstone con Will-O-Wisp)
+    if (/^Choice /.test(strumento)) {
+      const stato = scelte.filter(id => !attacco(mossa(id)) && !['trick', 'switcheroo'].includes(id));
+      const altri = [...new Set([...set.movepool, ...(riserva || [])].map(toId))].filter(id => legale(id) && attacco(mossa(id)) && !scelte.includes(id));
+      if (stato.length && altri.length >= stato.length) stato.forEach((id, i) => { scelte[scelte.indexOf(id)] = altri[i]; });
+      else if (stato.length) { strumento = champ ? 'Life Orb' : (doppio ? 'Sitrus Berry' : 'Leftovers');
+        // senza Scelta, Trick non ha niente di utile da scambiare
+        for (const t of ['trick', 'switcheroo']) if (scelte.includes(t)) { const a = altri.find(x => !scelte.includes(x)); if (a) scelte[scelte.indexOf(t)] = a; } }
+    }
     const { evs, natura } = scegliEvNatura(specie, set, scelte, strumento);
     const tera = (set.teraTypes && set.teraTypes[0]) || specie.types[0];
     // Hidden Power di un tipo si scrive "Hidden Power [Fuoco]" nel formato di Showdown
