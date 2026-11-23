@@ -181,6 +181,7 @@ details.remote ol{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:c
 .btn.sm.minibtn{font-size:11px;padding:6px 11px;border-width:2px;box-shadow:0 3px 0 var(--line);min-height:0}
 .twpickrow{display:flex;justify-content:flex-end;margin-top:4px}
 .twrec{margin:18px 0 10px}
+.twfoe{display:flex;gap:12px;align-items:center}.twfoe .twav{width:64px;height:64px}@media (max-width:380px){.twfoe .twav{width:48px;height:48px}}
 .pgo{justify-content:center;gap:8px;margin:0 0 12px}.pgo .btn{flex:1 1 150px}
 .twmode .opts,.opts.ptabs{display:flex!important;flex-wrap:wrap;gap:6px;margin:4px 0 8px;grid-template-columns:none!important}.twmode .opt,.ptabs .opt{flex:1 1 auto;width:auto;min-height:0;padding:6px 10px;text-align:center;justify-content:center}.opts.ptabs{flex-wrap:nowrap}.ptabs .opt{flex:1 1 0}
 .ptabs{padding:2px 10px!important;font-size:12px!important;min-height:0!important;margin-left:6px;border-width:2px!important;box-shadow:0 2px 0 var(--line)!important;vertical-align:middle}
@@ -380,6 +381,7 @@ html,body{margin:0}
 <script src="versi-data.js"></script>
 <script src="musica.js"></script>
 <script src="sprite-data.js"></script>
+<script src="avatar.js"></script>
 <script>
 /*CORE-START*/
 const TEAM_SIZE = 6, START_COINS = 25;
@@ -1373,7 +1375,7 @@ function profExport(){ const all=profAll(), k=localStorage.getItem(PROF_ME); if(
 // scalata della Torre dentro un codice importato: solo Pokémon esistenti, numeri e testi limitati
 function cleanRun(r){ if(!twCheck(r)) return undefined; const s=(v,n)=>String(v||'').slice(0,n), tr=r.trainer;
   return {floor:wInt(r.floor,1,9999,1),draws:r.draws.map(d=>({team:d.team.slice(0,6),choice:cleanChoice(d.choice)})),pick:wInt(r.pick,0,2,0),
-    trainer:{name:s(tr.name,16),cls:s(tr.cls,30),line:s(tr.line,90),team:tr.team.slice(0,6),choice:cleanChoice(tr.choice),ai:wInt(tr.ai,0,3,0),boss:!!tr.boss},
+    trainer:{name:s(tr.name,16),cls:s(tr.cls,30),line:s(tr.line,90),team:tr.team.slice(0,6),choice:cleanChoice(tr.choice),ai:wInt(tr.ai,0,4,0),boss:!!tr.boss,avatar:typeof Avatar!=='undefined'?Avatar.fix(tr.avatar):undefined},
     lost:!!r.lost,started:!!r.started,inBattle:!!r.inBattle,beaten:(Array.isArray(r.beaten)?r.beaten:[]).slice(-8).map(x=>({f:wInt(x&&x.f,1,9999,1),n:s(x&&x.n,50)}))}; }
 function profImport(code){ try{ const o=JSON.parse(decodeURIComponent(escape(atob(String(code||'').trim())))); const p=o&&o.p;
     if(!p||typeof p.nick!=='string'||!/^[0-9a-f]{32}$/.test(p.salt)||!/^(pbkdf2:[0-9a-f]{64}|fnv:[0-9a-f]{1,8})$/.test(p.hash)) return t('prof.errCode');
@@ -1457,6 +1459,12 @@ function twMegaOk(names,M,pool){ if(M.tier!=='champions') return names; const ca
   if(names.some(canMega)) return names; const dex=new Set(names.map(n=>MON_BY_NAME.get(n).dex)); const c=shuffle(pool).find(m=>!dex.has(m.dex)&&setsFor(m,M.format,M.tier).some(s=>s.mega));
   if(c) names=names.slice(0,5).concat(c.name); return names; }
 function twChoice(names,M){ const c={}; for(const n of names){ const k=setsFor(MON_BY_NAME.get(n),M.format,M.tier).length; c[n]=Math.floor(Math.random()*k); } return c; }
+// avatar dell'allenatore (disegni originali di avatar.js): l'Asso ha il Campione, alcune classi il loro disegno, gli altri uno a caso del suo genere
+const TW_AV_F=['a02','a04','a06','a08','a10','a13','a16','a17','a19'], TW_AV_CLS={3:'a08',8:'a16',1:'a18',13:'a11'};
+function twAvatar(boss,ci,gen){ if(typeof Avatar==='undefined') return undefined;
+  let id=boss?'a20':TW_AV_CLS[ci]; if(id&&!boss&&TW_AV_F.includes(id)!==(gen==='f')) id=null;
+  if(!id){ const l=Avatar.trainers.filter(x=>TW_AV_F.includes(x)===(gen==='f')&&x!=='a20'); id=l[Math.random()*l.length|0]; }
+  return Avatar.fix(id); }
 // avversari: nel gruppo "Tutti" i Pokémon diventano più forti salendo; negli altri gruppi si resta nel gruppo e cresce l'IA
 function twTrainer(f,M){ const boss=f%10===0, legends=f>=15||boss;
   let pool=M.tier==='tutti'?POOL.filter(m=>twTiers(f).includes(m.tier)&&(legends||!(m.legendary||m.mythical))):filterPool(POOL,{tier:M.tier,legends:M.tier==='champions'?false:(f>=8||boss)});
@@ -1465,7 +1473,7 @@ function twTrainer(f,M){ const boss=f%10===0, legends=f>=15||boss;
   const team=twMegaOk(twPick(pool,6,M),M,pool), lang=ui.lang==='en'?'en':'it';
   const ci=Math.random()*TW_CLASS.it.length|0, gen=boss?(Math.random()<.5?'m':'f'):(TW_GEN[ci]==='x'?(Math.random()<.5?'m':'f'):TW_GEN[ci]), nl=TW_NAMES[gen];
   return {name:nl[Math.random()*nl.length|0], cls:boss?(lang==='en'?'Tower Ace':'Asso della Torre'):TW_CLASS[lang][ci],
-    line:TW_LINES[lang][Math.random()*TW_LINES[lang].length|0], team, choice:f>=4?Object.fromEntries(team.map(n=>[n,0])):twChoice(team,M), ai:twAI(f), boss}; }
+    line:TW_LINES[lang][Math.random()*TW_LINES[lang].length|0], team, choice:f>=4?Object.fromEntries(team.map(n=>[n,0])):twChoice(team,M), ai:twAI(f), boss, avatar:twAvatar(boss,ci,gen)}; }
 // La scalata è legata al profilo (salvata dentro il profilo, quindi va anche con "Esporta"), una per modalità. Si salva solo
 // tra una lotta e l'altra: una lotta lasciata a metà (uscita o pagina chiusa) conta come sconfitta. A ogni tentativo si possono
 // estrarre fino a 3 squadre e sceglierne una; dopo la prima lotta la squadra non si cambia più.
@@ -1473,7 +1481,10 @@ function twDraw(M){ const pool=filterPool(POOL,{tier:M.tier,legends:true}); cons
 function twCheck(o){ return o&&Array.isArray(o.draws)&&o.draws.length>=1&&o.draws.length<=3&&o.draws.every(d=>d&&Array.isArray(d.team)&&d.team.length===6&&d.team.every(n=>MON_BY_NAME.has(n)))&&o.trainer&&Array.isArray(o.trainer.team)&&o.trainer.team.every(n=>MON_BY_NAME.has(n)); }
 function twRuns(p){ const r=p&&p.runs&&typeof p.runs==='object'?p.runs:{}; if(p&&p.run&&!r['singolo-tutti']) r['singolo-tutti']=p.run; return r; } // vecchi profili: una sola scalata
 function twLoad(key){ const p=profMe(); if(!p) return null; const M=twMode(key||twCur().key), o=twRuns(p)[M.key]; if(!twCheck(o)) return null;
-  o.pick=Math.min(Math.max(0,o.pick|0),o.draws.length-1); o.team=o.draws[o.pick].team; o.choice=o.draws[o.pick].choice; o.mode=M.key; return o; }
+  o.pick=Math.min(Math.max(0,o.pick|0),o.draws.length-1);
+  o.team=o.draws[o.pick].team; o.choice=o.draws[o.pick].choice; o.mode=M.key;
+  if(!o.trainer.avatar&&typeof Avatar!=='undefined'){ o.trainer.avatar=twAvatar(o.trainer.boss,-1,TW_NAMES.f.includes(o.trainer.name)?'f':'m'); twSave(o); } // scalate salvate prima degli avatar
+  return o; }
 function twSave(o){ const all=profAll(), k=localStorage.getItem(PROF_ME); if(!k||!all[k]) return; const M=twMode(o.mode); const c=Object.assign({},o); delete c.team; delete c.choice; delete c.mode;
   all[k].runs=twRuns(all[k]); delete all[k].run; all[k].runs[M.key]=c; profSaveAll(all); }
 function twNew(key){ if(!profMe()) return null; const M=twMode(key||twCur().key);
@@ -1482,7 +1493,7 @@ const twText=(names,choice,M)=>fightTeam({teams:[names.map(n=>MON_BY_NAME.get(n)
 async function twFight(){ const o=twLoad(); if(!o||o.lost) return; const M=twMode(o.mode); const b=document.getElementById('twBtn'); if(b){ b.disabled=true; b.textContent=t('fight.loading'); }
   try{ await loadFight(); }catch(e){ alert(t('fight.loadErr')); render(); return; }
   o.started=true; o.inBattle=true; twSave(o); const tr=o.trainer, me=profMe().nick, foe=tr.cls+' '+tr.name, team=o.team.slice(), fl=o.floor, label=t('tw.fmt',fl)+' · '+twModeName(M.key);
-  Lotta.open({lang:ui.lang, mode:'cpu', ai:tr.ai, showOpp:false, formatid:fightFormat({format:M.format,tier:M.tier}), formatName:label, names:{p1:me,p2:foe},
+  Lotta.open({lang:ui.lang, mode:'cpu', ai:tr.ai, showOpp:false, formatid:fightFormat({format:M.format,tier:M.tier}), formatName:label, names:{p1:me,p2:foe}, avatars:{p1:typeof profAvatar==='function'?profAvatar():undefined,p2:tr.avatar},
     teams:{p1:twText(team,o.choice,M), p2:twText(tr.team,tr.choice,M)}, intro:`${foe}: «${tr.line}»`, closeLabel:t('tw.back'),
     onStats:info=>{ profBattle(info,{p1:team,p2:tr.team},label,'torre',M.key); twResult(profKey(info.winner)===profKey(me),false,M.key); },
     onClose:()=>{ const x=twLoad(M.key); if(x&&x.inBattle) twResult(false,true,M.key); ui.screen='tower'; render(); } }); }
@@ -1508,7 +1519,7 @@ function vTower(){
   <section class="card"><h2 class="nm" style="margin:0">${o.lost?t('tw.lostT',o.floor):t('tw.floor',o.floor)}</h2><div class="twrec"><span class="chip">🏆 ${t('tw.best',best)}</span></div>
    <p class="muted" style="margin:0 0 8px;font-size:13px">${esc(twModeName(M.key))}</p>
    ${o.lost?`<div class="note warn">${t('tw.lostD',o.floor-1)}</div><div class="center"><button class="btn big" data-act="twnew">${t('tw.again')}</button></div>`:
-   `<div class="note${tr.boss?' warn':''}"><b>${tr.boss?'👑 ':''}${esc(tr.cls)} ${esc(tr.name)}</b> ${t('tw.wants')}<br><span class="muted">«${esc(tr.line)}»</span><br><span class="muted" style="font-size:13px">${t('tw.diff')}: <b style="color:#E3350D">${stars(tr.ai)}</b> · ${t('tw.six')}</span></div>
+   `<div class="note twfoe${tr.boss?' warn':''}">${tr.avatar&&typeof Avatar!=='undefined'?Avatar.html(tr.avatar,'twav',ui.lang):''}<div><b>${tr.boss?'👑 ':''}${esc(tr.cls)} ${esc(tr.name)}</b> ${t('tw.wants')}<br><span class="muted">«${esc(tr.line)}»</span><br><span class="muted" style="font-size:13px">${t('tw.diff')}: <b style="color:#E3350D">${stars(tr.ai)}</b> · ${t('tw.six')}</span></div></div>
    <div class="center"><button class="btn big" data-act="twfight" id="twBtn">⚔ ${t('tw.fight')}</button></div><p class="muted" style="font-size:12px;text-align:center">💾 ${t('tw.saved')}</p>`}</section>
   <section class="card"><span class="label">${t('tw.yourTeam')}</span>${draws}
    <p class="muted" style="font-size:13px">${t('tw.help')}</p>
