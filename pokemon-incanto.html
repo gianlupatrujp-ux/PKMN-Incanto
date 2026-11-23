@@ -184,7 +184,10 @@ details.remote ol{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:c
 .pgo{justify-content:center;gap:8px;margin:0 0 12px}
 /* avatar del profilo (disegni originali in avatar.js) */
 .phead{display:flex;align-items:center;gap:12px;min-width:0}.phead .avatar{width:76px;height:76px}.phead .pinfo{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0}.phead .nm{overflow-wrap:anywhere}
-.avpick{display:flex;flex-direction:column;gap:8px}.avgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px}
+.avpick{display:flex;flex-direction:column;gap:8px}
+.avgrp{border:2px solid var(--line);border-radius:12px;background:#fff;box-shadow:0 3px 0 var(--line)}.avgrp>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:8px 12px;min-height:44px}.avgrp>summary::-webkit-details-marker{display:none}
+.avgrp>summary:focus-visible{outline:3px solid #2A75BB;border-radius:10px}.avprev{display:flex;margin-left:auto}.avprev .avmini{margin:0 0 0 -6px!important}.avarrow{color:#E3350D;font-size:12px;transition:transform .15s}.avgrp[open] .avarrow{transform:rotate(180deg)}.avgrp[open]>summary{border-bottom:2px dashed #D9E2F2}.avgrp .avgrid{padding:8px}
+@media (max-width:360px){.avprev .avmini:nth-child(n+3){display:none}}.avgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px}
 .avbtn{appearance:none;border:0;background:none;padding:4px 2px;border-radius:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font:11px/1.2 var(--font-body);color:var(--muted);min-width:0}
 .avbtn .avatar{width:54px;height:54px}.avbtn span:last-child{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .avbtn[aria-pressed="true"]{background:#FFF6D1;box-shadow:inset 0 0 0 2px #FFCB05}.avbtn[aria-pressed="true"] .avatar{border-color:#E3350D}.avbtn:focus-visible{outline:3px solid #2A75BB}
@@ -1403,7 +1406,7 @@ function donut(w,l){ const tot=w+l, r=42, c=2*Math.PI*r, pw=tot?w/tot:0;
    <circle cx="60" cy="60" r="${r}" fill="none" stroke="#2DB36F" stroke-width="16" stroke-dasharray="${(c*pw).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 60 60)"/>`:''}
    <text x="60" y="60" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="800" fill="#1F2A44">${tot?Math.round(pw*100)+'%':'–'}</text></svg>`; }
 // scelta dell'avatar: allenatori e simboli dei tipi (tutti disegni originali)
-function avPicker(cur){ const grp=(lab,ids)=>`<p class="muted" style="font-size:13px;margin:4px 0 0"><b>${lab}</b></p><div class="avgrid">${ids.map(id=>`<button class="avbtn" data-act="pavatar" data-v="${id}" aria-pressed="${id===cur}" aria-label="${esc(Avatar.name(id,ui.lang))}">${Avatar.html(id,'',ui.lang)}<span>${esc(Avatar.name(id,ui.lang))}</span></button>`).join('')}</div>`;
+function avPicker(cur){ const grp=(lab,ids)=>`<details class="avgrp"><summary><b>${lab}</b> <span class="muted">(${ids.length})</span><span class="avprev" aria-hidden="true">${ids.slice(0,4).map(id=>Avatar.html(id,'avmini')).join('')}</span><span class="avarrow" aria-hidden="true">▼</span></summary><div class="avgrid">${ids.map(id=>`<button class="avbtn" data-act="pavatar" data-v="${id}" aria-pressed="${id===cur}" aria-label="${esc(Avatar.name(id,ui.lang))}">${Avatar.html(id,'',ui.lang)}<span>${esc(Avatar.name(id,ui.lang))}</span></button>`).join('')}</div></details>`;
   return `<div class="avpick" id="avpick">${grp(t('prof.avTrainers'),Avatar.trainers)}${grp(t('prof.avTypes'),Avatar.types)}<p class="hint" style="font-size:12px">${t('prof.avHelp')}</p></div>`; }
 function vProfile(){
   const me=profMe(), back=`<button class="btn ghost sm backlink" data-act="${ui.profBack&&ui.profBack!=='title'?'profback':'menu'}">${ui.profBack&&ui.profBack!=='title'?t('prof.backTo'):t('back')}</button><header class="brand"><h1><span class="h-poke">Pokémon</span> <span class="h-inc">Incanto</span></h1><p class="muted">${t('prof.title')}</p></header>`;
