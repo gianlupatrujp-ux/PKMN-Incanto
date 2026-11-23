@@ -1,0 +1,47 @@
+{
+  "version": 2,
+  "skills": {
+    "frontend-design": {
+      "source": "anthropics/skills",
+      "commit": "e4bb5d960d87126ff3b3a8af1a104b7db67560ba",
+      "sourceType": "github",
+      "skillPath": "skills/frontend-design/SKILL.md",
+      "computedHash": "83485963700bcf11d5bf78118facb301676b69d918fee2e45a95e7f1a2840f6c"
+    },
+    "javascript-pro": {
+      "source": "Jeffallan/claude-skills",
+      "commit": "4b94d98605baf742b751bb82832ace5caf942271",
+      "sourceType": "github",
+      "skillPath": "skills/javascript-pro/SKILL.md",
+      "computedHash": "568f43105bbeeb0091af272bffca7ee278ba6fdbfd710f0aee0f7dfbbe5b73cf"
+    },
+    "openai-develop-web-game": {
+      "source": "trailofbits/skills-curated",
+      "commit": "6d05be4889017b06fb15069f371afd220daffb62",
+      "sourceType": "github",
+      "skillPath": "plugins/openai-develop-web-game/skills/openai-develop-web-game/SKILL.md",
+      "computedHash": "532eb60ed09d2db63ce01b0fa987cf05de66d66ce464d1630f1a7a1d61f7f9f6"
+    },
+    "playwright-cli": {
+      "source": "microsoft/playwright-cli",
+      "commit": "c872a33cec77fa03c28fa7c6d1ad99d15d04ce42",
+      "sourceType": "github",
+      "skillPath": "skills/playwright-cli/SKILL.md",
+      "computedHash": "54c3f1e47b2566ecc3a2c1515823f77f4609edfe8029351924311dafc0d2ba66"
+    },
+    "test-playable-web-games": {
+      "source": "MengTo/Skills",
+      "commit": "d5463ad2357e3e1c1480cc00e5b8fe49628a253c",
+      "sourceType": "github",
+      "skillPath": "agent-skills/game-development/test-playable-web-games/SKILL.md",
+      "computedHash": "60509138b102acbc8cac4ebe23458f8a673fbb5deeeb9c75176cd3bd689a5c90"
+    },
+    "web-quality-audit": {
+      "source": "addyosmani/web-quality-skills",
+      "commit": "afa8da942115f2961fdbfa80807ea0b232ff6c00",
+      "sourceType": "github",
+      "skillPath": "skills/web-quality-audit/SKILL.md",
+      "computedHash": "fed16ecc3591b557381b15f4c1659b5536f064cecea851799c2dad4668b325b4"
+    }
+  }
+}
