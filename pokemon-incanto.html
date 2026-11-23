@@ -106,6 +106,12 @@ pre{margin:0;padding:12px;background:var(--bg);border:1px solid var(--line);bord
 .setlist{display:flex;flex-direction:column;gap:10px}
 .setrow{display:flex;flex-direction:column;gap:3px;font-size:14px;min-width:0}
 .setrow select{font:inherit;font-size:13px;color:var(--ink);background:var(--bg);border:2px solid var(--line);border-radius:8px;padding:7px 8px;width:100%;min-width:0}
+.setrow .edtop{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;min-width:0}
+.setrow .edtag{font-size:11px;font-weight:700;padding:1px 7px;border-radius:99px;background:#FFD84A;color:#1F2A44;margin-left:6px;white-space:nowrap}
+.editbox{border:2px dashed var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px;margin-top:4px;background:rgba(255,255,255,.6);min-width:0}
+.edgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;min-width:0}
+.edgrid label{display:flex;flex-direction:column;gap:2px;font-size:12px;font-weight:700;min-width:0}
+.editbox .muted{font-size:12px;margin:0}
 select:focus-visible{outline:3px solid var(--p2);outline-offset:2px}
 /* Duello d'asta: a sinistra giocatore 1, a destra giocatore 2, al centro l'offerta con la freccia verso chi sta vincendo */
 .lot.lead0{border-top:6px solid var(--p1)} .lot.lead1{border-top:6px solid var(--p2)}
@@ -511,8 +517,8 @@ function setsFor(mon, format, tier){ let v=SETS[mon.name]; if(v&&tier==='champio
 // In Champions vale la "Item Clause": due Pokémon della stessa squadra non possono avere lo stesso strumento.
 // mosse di stato più comuni nei set (per non dare uno strumento Scelta a chi le usa)
 const STATUS_MOVES=new Set(['Protect','Detect','Spiky Shield','King\'s Shield','Baneful Bunker','Silk Trap','Burning Bulwark','Swords Dance','Nasty Plot','Calm Mind','Dragon Dance','Bulk Up','Quiver Dance','Shell Smash','Recover','Roost','Slack Off','Soft-Boiled','Moonlight','Morning Sun','Synthesis','Wish','Rest','Substitute','Toxic','Will-O-Wisp','Thunder Wave','Spore','Sleep Powder','Yawn','Stealth Rock','Spikes','Toxic Spikes','Sticky Web','Defog','Rapid Spin','Taunt','Encore','Trick Room','Tailwind','Reflect','Light Screen','Aurora Veil','Follow Me','Rage Powder','Helping Hand','Wide Guard','Quick Guard','Fake Tears','Haze','Leech Seed','Coil','Agility','Iron Defense','Curse','Belly Drum','Trick','Switcheroo','Parting Shot','Memento','Destiny Bond','Strength Sap','Shore Up','Life Dew','Pollen Puff','Snarl','Icy Wind']);
-// (Pollen Puff, Snarl e Icy Wind sono attacchi: tolti sotto)
-['Pollen Puff','Snarl','Icy Wind'].forEach(x=>STATUS_MOVES.delete(x));
+// (Pollen Puff, Snarl, Icy Wind e Rapid Spin sono attacchi: tolti sotto)
+['Pollen Puff','Snarl','Icy Wind','Rapid Spin'].forEach(x=>STATUS_MOVES.delete(x));
 const ITEM_ALT=['Leftovers','Sitrus Berry','Life Orb','Focus Sash','Choice Scarf','Expert Belt','Shell Bell','Lum Berry','Mental Herb','White Herb','Scope Lens','Black Glasses'];
 const EV_ORDER=['HP','Atk','Def','SpA','SpD','Spe'];
 function setText(mon, s){
@@ -523,13 +529,72 @@ function setText(mon, s){
 // choice: { nomePokémon: indice del set scelto } (predefinito il primo)
 // tier: nel gruppo UU si usa la versione "basso" del set (senza Drizzle, Drought, Light Clay, vietati lì)
 // Set effettivi della squadra (con la versione per UU e la regola dello strumento unico di Champions applicate)
-function teamSets(team, format, choice, tier){
-  choice=choice||{};
-  if(tier==='champions') return champSets(team, format||'singolo', choice);
+// edits: { nomePokémon: {k: indice del set modificato, mosse:[...], strumento} } = mosse e strumento cambiati a mano.
+// Vengono sempre ricontrollati da cleanEdits (solo opzioni valide), quindi qui possono arrivare anche dati online.
+function teamSets(team, format, choice, tier, edits){
+  choice=choice||{}; format=format||'singolo';
+  const ed=cleanEdits(team, format, choice, tier, edits);
+  if(tier==='champions') return champSets(team, format, choice, ed);
   const basso=tier==='uu';
-  return team.map(m=>{ const ss=setsFor(m,format||'singolo',tier); let s=ss[choice[m.name]]||ss[0];
+  return team.map(m=>{ const ss=setsFor(m,format,tier), k=ss[choice[m.name]]?choice[m.name]:0; let s=ss[k];
     if(s&&basso&&s.basso) s=Object.assign({},s,s.basso);
+    if(s&&ed[m.name]) s=withEdit(s,ed[m.name],ss);
+    if(s) s=Object.assign({},s,{_k:k});
     return s||null; });
+}
+// ---------- Modifica di mosse e strumento ----------
+// Mosse ammesse: quelle presenti nei set di quel Pokémon per quel formato e gruppo (già verificate con il validatore).
+// Strumenti ammessi: quelli dei suoi set più alcuni comuni (in Champions solo strumenti esistenti in Champions;
+// nel gruppo UU niente Light Clay). Le Megapietre solo se il Pokémon le ha nei suoi set.
+const EDIT_ITEMS=['Leftovers','Sitrus Berry','Life Orb','Focus Sash','Choice Scarf','Choice Band','Choice Specs','Assault Vest','Heavy-Duty Boots','Rocky Helmet','Expert Belt','Weakness Policy','Lum Berry','Shell Bell','Mental Herb','White Herb','Scope Lens','Black Glasses','Light Clay'];
+const EDIT_ITEMS_CHAMP=['Leftovers','Sitrus Berry','Life Orb','Focus Sash','Choice Scarf','Rocky Helmet','Expert Belt','Lum Berry','Shell Bell','Mental Herb','White Herb','Scope Lens','Black Glasses','Quick Claw','Bright Powder','Light Clay'];
+function editOptions(mon, format, tier){
+  const ss=setsFor(mon, format||'singolo', tier), mosse=[], strumenti=[];
+  const add=(a,x)=>{ if(x&&!a.includes(x)) a.push(x); };
+  for(const s of ss){ (s.mosse||[]).forEach(x=>add(mosse,x)); add(strumenti,s.strumento); if(tier==='uu'&&s.basso) add(strumenti,s.basso.strumento); }
+  (tier==='champions'?EDIT_ITEMS_CHAMP.concat(ITEM_DIF,ITEM_OFF):EDIT_ITEMS).forEach(x=>add(strumenti,x));
+  return {mosse:mosse.sort(), strumenti:strumenti.filter(x=>!(tier==='uu'&&x==='Light Clay'))};
+}
+// Megaevoluzione legata a una Megapietra (presa dai set del Pokémon), altrimenti null
+function megaOf(ss,item){ const s=ss.find(x=>x.mega&&x.strumento===item); return s?s.mega:null; }
+const isChoiceItem=x=>/^Choice /.test(x||'');
+function withEdit(s,e,ss){ return Object.assign({},s,{mosse:e.mosse.slice(),strumento:e.strumento,mega:megaOf(ss,e.strumento),edited:true}); }
+// Tiene solo le modifiche valide: set giusto, mosse ammesse e diverse, strumento ammesso, niente "Scelta" con mosse di stato;
+// in Champions anche strumenti mai ripetuti tra le modifiche e al massimo 2 Megapietre.
+function cleanEdits(team, format, choice, tier, edits){
+  const out={}; if(!edits||typeof edits!=='object') return out;
+  const used=new Set(); let megas=0;
+  for(const m of team){ if(!m||m.hidden) continue; const e=Object.prototype.hasOwnProperty.call(edits,m.name)?edits[m.name]:null; if(!e||typeof e!=='object') continue;
+    const ss=setsFor(m,format,tier); const k=ss[choice&&choice[m.name]]?choice[m.name]:0; const base=ss[k];
+    if(!base||e.k!==k||!Array.isArray(e.mosse)||e.mosse.length!==(base.mosse||[]).length) continue;
+    const op=editOptions(m,format,tier);
+    if(!e.mosse.every(x=>typeof x==='string'&&op.mosse.includes(x))||new Set(e.mosse).size!==e.mosse.length) continue;
+    if(typeof e.strumento!=='string'||!op.strumenti.includes(e.strumento)) continue;
+    if(isChoiceItem(e.strumento)&&hasStatus({mosse:e.mosse})) continue;
+    if(tier==='champions'){ if(used.has(e.strumento)) continue; const mg=!!megaOf(ss,e.strumento); if(mg&&megas>=2) continue; used.add(e.strumento); if(mg) megas++; }
+    out[m.name]={k, mosse:e.mosse.slice(), strumento:e.strumento}; }
+  return out;
+}
+// Per il riquadro "Modifica" del Pokémon i della squadra: opzioni e, per ognuna, il motivo per cui non si può scegliere
+// (why: 'dup|Nome' strumento già di un compagno, 'mega3' terza Megapietra, 'mega1' unica Mega della squadra, 'choice' Scelta + mosse di stato).
+function editInfo(team, i, format, choice, tier, edits){
+  format=format||'singolo'; const m=team[i], eff=teamSets(team,format,choice,tier,edits), cur=eff[i];
+  if(!m||!cur) return null;
+  const ss=setsFor(m,format,tier), op=editOptions(m,format,tier);
+  const status=hasStatus(cur), choiceIt=isChoiceItem(cur.strumento);
+  const champ=tier==='champions';
+  const otherMegas=eff.filter((s,j)=>j!==i&&s&&s.mega).length;
+  // unica Mega possibile: nessun altro Pokémon (non modificato a mano) può prenderne una
+  const ed=cleanEdits(team,format,choice,tier,edits);
+  const altMega=team.some((x,j)=>j!==i&&x&&!ed[x.name]&&setsFor(x,format,tier).some(s=>s.mega));
+  const items=op.strumenti.map(n=>{ let why='';
+    if(champ){ const j=eff.findIndex((s,jj)=>jj!==i&&s&&s.strumento===n); if(j>=0) why='dup|'+team[j].name;
+      else if(megaOf(ss,n)&&!cur.mega&&otherMegas>=2) why='mega3';
+      else if(cur.mega&&!megaOf(ss,n)&&otherMegas===0&&!altMega) why='mega1'; }
+    if(!why&&isChoiceItem(n)&&status) why='choice';
+    return {n,why}; });
+  const mosse=op.mosse.map(n=>({n,why:choiceIt&&STATUS_MOVES.has(n)&&n!=='Trick'&&n!=='Switcheroo'?'choice':''}));
+  return {cur, k:cur._k, mosse, items};
 }
 // Pokémon Champions: almeno 1 e al massimo 2 Megapietre, e nessuno strumento ripetuto (Item Clause).
 // Criteri:
@@ -544,24 +609,26 @@ const ITEM_DIF=['Leftovers','Sitrus Berry','Lum Berry','Shell Bell','Mental Herb
 const ITEM_OFF=['Life Orb','Expert Belt','Focus Sash','Choice Scarf','Scope Lens','Black Glasses','Shell Bell'];
 const RECOVERY=new Set(['Recover','Roost','Slack Off','Soft-Boiled','Moonlight','Morning Sun','Synthesis','Wish','Rest','Strength Sap','Shore Up','Life Dew','Protect','Detect','Spiky Shield','King\'s Shield','Baneful Bunker','Silk Trap','Burning Bulwark','Substitute','Leech Seed']);
 const hasStatus=s=>(s.mosse||[]).some(x=>STATUS_MOVES.has(x)&&x!=='Trick'&&x!=='Switcheroo');
-function champSets(team, format, choice){
+function champSets(team, format, choice, ed){
+  ed=ed||{};
   const all=team.map(m=>setsFor(m,format,'champions'));
-  const explicit=team.map(m=>choice[m.name]!=null);
+  const edited=team.map(m=>!!ed[m.name]);
+  const explicit=team.map(m=>choice[m.name]!=null||!!ed[m.name]);
   const idx=team.map((m,i)=>{ const k=choice[m.name]; return k!=null&&all[i][k]?k:0; });
-  const S=team.map((m,i)=>all[i][idx[i]]?Object.assign({},all[i][idx[i]]):null);
+  const S=team.map((m,i)=>all[i][idx[i]]?(edited[i]?withEdit(all[i][idx[i]],ed[m.name],all[i]):Object.assign({},all[i][idx[i]])):null);
   // 1) Megapietre: al massimo 2...
   const megaAt=()=>S.map((s,i)=>s&&s.mega?i:-1).filter(i=>i>=0);
   let mg=megaAt();
-  if(mg.length>2){ const keep=mg.slice().sort((a,b)=>(explicit[b]-explicit[a])||(a-b)).slice(0,2);
-    for(const i of mg) if(!keep.includes(i)){ const k=all[i].findIndex(x=>!x.mega); if(k>=0){ idx[i]=k; S[i]=Object.assign({},all[i][k]); } else S[i]=Object.assign({},S[i],{strumento:'Leftovers',mega:null}); } }
+  if(mg.length>2){ const keep=mg.slice().sort((a,b)=>(edited[b]-edited[a])||(explicit[b]-explicit[a])||(a-b)).slice(0,2);
+    for(const i of mg) if(!keep.includes(i)&&!edited[i]){ const k=all[i].findIndex(x=>!x.mega); if(k>=0){ idx[i]=k; S[i]=Object.assign({},all[i][k]); } else S[i]=Object.assign({},S[i],{strumento:'Leftovers',mega:null}); } }
   // ...e almeno 1, se qualcuno della squadra può megaevolversi
   if(!megaAt().length){ let best=null;
-    team.forEach((m,i)=>{ const k=all[i].findIndex(x=>x.mega); if(k<0) return; const sc=(explicit[i]?0:100)-k*2-i*0.1; if(!best||sc>best.sc) best={i,k,sc}; });
+    team.forEach((m,i)=>{ if(edited[i]) return; const k=all[i].findIndex(x=>x.mega); if(k<0) return; const sc=(explicit[i]?0:100)-k*2-i*0.1; if(!best||sc>best.sc) best={i,k,sc}; });
     if(best){ idx[best.i]=best.k; S[best.i]=Object.assign({},all[best.i][best.k]); } }
   // 3) niente Scelta con mosse di stato
   S.forEach((s,i)=>{ if(s&&/^Choice/.test(s.strumento)&&hasStatus(s)) s.strumento=''; });
   // 2) strumenti contesi
-  const prio=i=>(explicit[i]?100:0)+(idx[i]===0?20:idx[i]===1?10:0)+(all[i].length<=2?5:0)-i*0.01;
+  const prio=i=>(edited[i]?1000:0)+(explicit[i]?100:0)+(idx[i]===0?20:idx[i]===1?10:0)+(all[i].length<=2?5:0)-i*0.01;
   const used=new Set();
   const order=S.map((s,i)=>i).filter(i=>S[i]).sort((a,b)=>prio(b)-prio(a));
   const megaCount=()=>S.filter(s=>s&&s.mega).length;
@@ -574,7 +641,7 @@ function champSets(team, format, choice){
     const dif=(s.mosse||[]).some(x=>RECOVERY.has(x))||hasStatus(s), lista=(dif?ITEM_DIF:ITEM_OFF).concat(ITEM_ALT);
     const it=lista.find(x=>!used.has(x)&&!(/^Choice/.test(x)&&hasStatus(s)));
     S[i]=Object.assign({},s,{strumento:it||'Leftovers',mega:null}); used.add(S[i].strumento); }
-  return S;
+  return S.map((s,i)=>s?Object.assign(s,{_k:idx[i]}):s);
 }
 // Cosa può vedere "viewer" (0/1 online, 'local' sullo schermo condiviso) di un Pokémon posseduto da "owner"
 // (null = all'asta). Se non può vederlo riceve solo l'indizio dell'asta al buio (tipo, numero o colore).
@@ -587,8 +654,8 @@ function canSee(g,owner,viewer,localRevealed){
   return g.hide==='fine'&&!!g.over&&!!(g.reveal&&g.reveal[owner]);
 }
 function monView(g,mon,owner,viewer,localRevealed){ return !mon||mon.hidden||canSee(g,owner,viewer,localRevealed)?mon:hintOf(mon,g.mode); }
-function exportText(team, format, choice, tier){
-  const ss=teamSets(team, format, choice, tier);
+function exportText(team, format, choice, tier, edits){
+  const ss=teamSets(team, format, choice, tier, edits);
   return team.map((m,i)=>ss[i]?setText(m,ss[i]):m.name).join('\n\n');
 }
 /*CORE-END*/
@@ -633,6 +700,9 @@ const I18N={
   'hist':'Aste concluse','col.winner':'Vincitore','col.price':'Prezzo','col.opener':'Apriva',
   'shinyBan':'✨ Pokémon shiny! ✨','formOf':f=>'Forma di '+f,'colorChip':c=>'Colore '+c,'dexNo':'N.','primaryType':'Tipo primario','dexNumber':'Numero di Pokédex','color':'Colore',
   'endTitle':'Squadre complete','spent':(s,l)=>`${s} spese · ${l} avanzate`,'setsLabel':'Set di ogni Pokémon','noSet':'nessun set: solo il nome',
+  'edit.btn':'✏️ Modifica','edit.close':'✓ Fatto','edit.move':n=>`Mossa ${n}`,'edit.item':'Strumento','edit.reset':'↺ Torna al set originale','edit.tag':'modificato',
+  'edit.help':'Puoi scegliere solo mosse e strumenti validi per questo Pokémon e questo formato. Abilità, natura ed EV restano quelli del set.','edit.helpChamp':' In Champions nessuno strumento si ripete e servono da 1 a 2 Megapietre.',
+  'edit.dup':n=>`già di ${n}`,'edit.mega3':'già 2 Mega in squadra','edit.mega1':'serve almeno 1 Mega','edit.choice':'non con mosse di stato','edit.choiceMove':'non con uno strumento Scelta','edit.used':'già scelta',
   'textLabel':'Testo per Pokémon Showdown','fmtLine':'Formato da scegliere su Showdown:','copy':'Copia testo','openSD':'Apri Pokémon Showdown ↗','fight.label':'Lotta','bo.aria':'Numero di lotte','bo.one':'Lotta singola','bo.three':'Al meglio di 3 (BO3)','bo.help':'Si gioca finché un giocatore vince 2 lotte, con le stesse squadre.','bo.label':(n,a,x,y,b)=>`Lotta ${n} di 3 · ${a} ${x}–${y} ${b}`,'bo.won':(n,s)=>`🏆 ${n} vince la serie ${s}!`,'bo.score':(a,s,b)=>`Serie: ${a} ${s} ${b}`,'bo.next':n=>`▶ Lotta ${n} di 3`,'fight.champ':'Regole Champions: niente Teracristallizzazione, si usano le Megaevoluzioni (al massimo 2 Megapietre per squadra) e prima di ogni lotta si scelgono 3 Pokémon su 6 in singolo, 4 su 6 in doppio. Il motore non conosce ancora Champions: i "Stat Points" diventano EV e qualche Mega nuova potrebbe non funzionare.','fight.textOnline':n=>`Lottate qui contro ${n}, ognuno dal suo dispositivo, con la chat per scrivervi. Chi ha creato la stanza fa girare la lotta: dell'avversario vedrai solo quello che si scopre lottando, come su Showdown.`,'fight.waitHost':n=>`In attesa che ${n} apra la lotta…`,'fight.btn':'Gioca qui','fight.loading':'Caricamento della lotta…','fight.back':'Torna alle squadre','fight.text':'Fate lottare le due squadre qui, su questo dispositivo: a ogni turno ognuno sceglie la sua mossa a turno (passandosi il dispositivo). I calcoli sono quelli di Pokémon Showdown. Oppure copiate il testo qui sotto e giocate su Showdown.','fight.beta':'Novità in prova: per ora la lotta è solo in italiano.','fight.loadErr':'Non riesco a caricare la lotta. Riprova.','fight.notYet':'Per ora la lotta dentro il gioco c’è solo nel singolo con i formati National Dex (non con Pokémon Champions né nel doppio). Usate il testo qui sotto per lottare su Pokémon Showdown.','openSDhint':'Si apre il sito ufficiale di Showdown in una nuova scheda: vai su Teambuilder → New Team → Import from text e incolla il testo copiato.',
   'copied':f=>'Copiato. Formato: '+f,'selected':'Selezionato: copia con Ctrl+C',
   'endIntro':(dbl,f,custom,note)=>`Set pronti per il ${dbl?'doppio':'singolo'}, presi dalle Random Battle di Pokémon Showdown. Dove ci sono più set puoi sceglierli dal menu. Su Showdown: Teambuilder, nuova squadra, "Import from text", incolla. Formato: <strong>${f}</strong>${custom?' (sfida diretta: non controlla le squadre, quindi accetta tutto)':', dove queste squadre sono valide'}${note}.`,
@@ -722,6 +792,9 @@ const I18N={
   'hist':'Finished auctions','col.winner':'Winner','col.price':'Price','col.opener':'Opener',
   'shinyBan':'✨ Shiny Pokémon! ✨','formOf':f=>f+' form','colorChip':c=>'Color: '+c,'dexNo':'No.','primaryType':'Primary type','dexNumber':'Pokédex number','color':'Color',
   'endTitle':'Teams complete','spent':(s,l)=>`${s} spent · ${l} left`,'setsLabel':'Set for each Pokémon','noSet':'no set: name only',
+  'edit.btn':'✏️ Edit','edit.close':'✓ Done','edit.move':n=>`Move ${n}`,'edit.item':'Item','edit.reset':'↺ Back to the original set','edit.tag':'edited',
+  'edit.help':'You can only pick moves and items that are valid for this Pokémon and this format. Ability, nature and EVs stay as in the set.','edit.helpChamp':' In Champions no item can repeat and you need 1 to 2 Mega Stones.',
+  'edit.dup':n=>`held by ${n}`,'edit.mega3':'already 2 Megas in the team','edit.mega1':'at least 1 Mega needed','edit.choice':'not with status moves','edit.choiceMove':'not with a Choice item','edit.used':'already chosen',
   'textLabel':'Text for Pokémon Showdown','fmtLine':'Format to choose on Showdown:','copy':'Copy text','openSD':'Open Pokémon Showdown ↗','fight.label':'Battle','bo.aria':'Number of battles','bo.one':'Single battle','bo.three':'Best of 3 (BO3)','bo.help':'Play until one player wins 2 battles, with the same teams.','bo.label':(n,a,x,y,b)=>`Battle ${n} of 3 · ${a} ${x}–${y} ${b}`,'bo.won':(n,s)=>`🏆 ${n} wins the series ${s}!`,'bo.score':(a,s,b)=>`Series: ${a} ${s} ${b}`,'bo.next':n=>`▶ Battle ${n} of 3`,'fight.champ':'Champions rules: no Terastallization, Mega Evolution is used (at most 2 Mega Stones per team) and before each battle you choose 3 of your 6 Pokémon in singles, 4 of 6 in doubles. The engine does not know Champions yet: "Stat Points" become EVs and some new Megas may not work.','fight.textOnline':n=>`Battle ${n} here, each on your own device, with chat. The room creator runs the battle: you only see what is revealed while battling, as on Showdown.`,'fight.waitHost':n=>`Waiting for ${n} to open the battle…`,'fight.btn':'Play here','fight.loading':'Loading the battle…','fight.back':'Back to the teams','fight.text':'Let the two teams battle here, on this device: each turn both players pick their move in turn (passing the device). Calculations are Pokémon Showdown’s. Or copy the text below and play on Showdown.','fight.beta':'New and in testing: for now the battle texts are in Italian only.','fight.loadErr':'Could not load the battle. Please try again.','fight.notYet':'For now the in-game battle is only available in singles with the National Dex formats (not Pokémon Champions nor doubles). Use the text below to battle on Pokémon Showdown.','openSDhint':'The official Showdown site opens in a new tab: go to Teambuilder → New Team → Import from text and paste the copied text.',
   'copied':f=>'Copied. Format: '+f,'selected':'Selected: copy with Ctrl+C',
   'endIntro':(dbl,f,custom,note)=>`Sets ready for ${dbl?'doubles':'singles'}, taken from Pokémon Showdown's Random Battles. Where there are several sets, pick one from the menu. On Showdown: Teambuilder, new team, "Import from text", paste. Format: <strong>${f}</strong>${custom?' (direct challenge: it does not check teams, so anything goes)':', where these teams are legal'}${note}.`,
@@ -803,7 +876,7 @@ const MODE_KEYS=['classica','tipo','numero','colore','verso'], FORMAT_KEYS=['sin
 const fmtNote=(format,tier)=>tier==='champions'&&format==='doppio'?t('fmtNote'):'';
 
 const $app=document.getElementById('app');
-const ui={screen:'title',lang:'it',format:'singolo',tier:'tutti',legends:true,mode:'classica',coins:'25',names:['',''],flip:null,game:null,draft:'',msg:'',setChoice:{}};
+const ui={screen:'title',lang:'it',format:'singolo',tier:'tutti',legends:true,mode:'classica',coins:'25',names:['',''],flip:null,game:null,draft:'',msg:'',setChoice:{},setEdit:{},editOpen:null};
 ui.lang=detectLang();
 ui.myName=''; ui.online=null; ui.joinCode=''; ui.setupOnline=false; ui.hide='subito'; ui.revealLocal=[false,false]; ui.celebN=null;
 try{ const st=new URLSearchParams(location.search).get('stanza'); if(st){ ui.joinCode=st.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,8); ui.screen='online'; } }catch(e){}
@@ -1184,13 +1257,50 @@ const ROLES={'Fast Attacker':'Attaccante veloce','Bulky Attacker':'Attaccante re
 const roleOne=r=>ui.lang==='en'?r.replace(/^Doubles /,''):(ROLES[r]||r);
 const roleName=r=>r.startsWith('Mega: ')?t('rolePrefix')+roleOne(r.slice(6)).toLowerCase():roleOne(r);
 const itemOf=(s,g)=>(g.tier==='uu'&&s.basso&&s.basso.strumento)||s.strumento;
-function setPicker(m,g,eff){
-  const ss=setsFor(m,g.format,g.tier), cur=ui.setChoice[m.name]||0;
+function setPicker(m,g,eff,i,j){
+  const ss=setsFor(m,g.format,g.tier), cur=eff&&eff._k!=null?eff._k:(ui.setChoice[m.name]||0);
   if(!ss.length) return `<div class="setrow"><strong>${disp(m)}</strong><span class="muted">${t('noSet')}</span></div>`;
-  if(ss.length===1) return `<div class="setrow"><strong>${disp(m)}</strong><span class="muted">${esc(roleName(ss[0].ruolo))} · ${esc(eff?eff.strumento:itemOf(ss[0],g))}</span></div>`;
-  return `<div class="setrow"><label for="set-${esc(m.name)}"><strong>${disp(m)}</strong></label><select id="set-${esc(m.name)}" data-setfor="${esc(m.name)}">${
-    ss.map((s,k)=>`<option value="${k}"${k===cur?' selected':''}>Set ${k+1}: ${esc(roleName(s.ruolo))} · ${esc(k===cur&&eff?eff.strumento:itemOf(s,g))}</option>`).join('')}</select></div>`;
+  const open=ui.editOpen===m.name, tag=eff&&eff.edited?`<span class="edtag">✏️ ${t('edit.tag')}</span>`:'';
+  const btn=`<button class="btn ghost sm minibtn" data-act="editset" data-n="${esc(m.name)}" aria-expanded="${open}">${open?t('edit.close'):t('edit.btn')}</button>`;
+  const head=ss.length===1
+    ?`<div class="edtop"><strong>${disp(m)}${tag}</strong>${btn}</div><span class="muted">${esc(roleName(ss[0].ruolo))} · ${esc(eff?eff.strumento:itemOf(ss[0],g))}</span>`
+    :`<div class="edtop"><label for="set-${esc(m.name)}"><strong>${disp(m)}${tag}</strong></label>${btn}</div><select id="set-${esc(m.name)}" data-setfor="${esc(m.name)}">${
+    ss.map((s,k)=>`<option value="${k}"${k===cur?' selected':''}>Set ${k+1}: ${esc(roleName(s.ruolo))} · ${esc(k===cur&&eff?eff.strumento:itemOf(s,g))}</option>`).join('')}</select>`;
+  return `<div class="setrow">${head}${open?editBox(m,g,i,j):''}</div>`;
 }
+// Riquadro per cambiare mosse e strumento (solo opzioni valide; quelle non sceglibili restano visibili ma disattivate con il motivo)
+function editBox(m,g,i,j){
+  const info=editInfo(g.teams[i],j,g.format,ui.setChoice,g.tier,ui.setEdit); if(!info) return '';
+  const cur=info.cur, nm=esc(m.name), why=w=>{ if(!w) return ''; if(w.startsWith('dup|')){ const x=MON_BY_NAME.get(w.slice(4)); return t('edit.dup',x?disp(x):esc(w.slice(4))); }
+    return t({mega3:'edit.mega3',mega1:'edit.mega1',choice:'edit.choice',used:'edit.used'}[w]||'edit.used'); };
+  const moves=cur.mosse.map((mv,k)=>`<label>${t('edit.move',k+1)}<select data-editmove="${nm}" data-i="${i}" data-j="${j}" data-k="${k}">${
+    info.mosse.map(o=>{ const w=o.n===mv?'':(cur.mosse.includes(o.n)?'used':o.why);
+      return `<option value="${esc(o.n)}"${o.n===mv?' selected':''}${w?' disabled':''}>${esc(o.n)}${w?' — '+(w==='choice'?t('edit.choiceMove'):why(w)):''}</option>`; }).join('')}</select></label>`).join('');
+  const item=`<label>${t('edit.item')}<select data-edititem="${nm}" data-i="${i}" data-j="${j}">${
+    info.items.map(o=>{ const sel=o.n===cur.strumento, w=sel?'':o.why;
+      return `<option value="${esc(o.n)}"${sel?' selected':''}${w?' disabled':''}>${esc(o.n)}${w?' — '+why(w):''}</option>`; }).join('')}</select></label>`;
+  return `<div class="editbox"><div class="edgrid">${moves}${item}</div><p class="muted">${t('edit.help')}${g.tier==='champions'?t('edit.helpChamp'):''}</p>${
+    cur.edited?`<div><button class="btn ghost sm minibtn" data-act="editreset" data-n="${nm}">${t('edit.reset')}</button></div>`:''}</div>`;
+}
+// Applica una modifica (mossa k o strumento) al Pokémon j della squadra i, partendo dal set effettivo attuale
+function setEditChange(i,j,field,k,val){
+  const g=ui.game, m=g&&g.teams[i]&&g.teams[i][j]; if(!m) return;
+  const info=editInfo(g.teams[i],j,g.format,ui.setChoice,g.tier,ui.setEdit); if(!info) return;
+  const e={k:info.k, mosse:info.cur.mosse.slice(), strumento:info.cur.strumento};
+  if(field==='move') e.mosse[k]=val; else e.strumento=val;
+  const prevE=ui.setEdit[m.name], prevC=ui.setChoice[m.name];
+  ui.setChoice[m.name]=info.k; ui.setEdit[m.name]=e;
+  if(!cleanEdits(g.teams[i],g.format,ui.setChoice,g.tier,ui.setEdit)[m.name]){ // non valida (non dovrebbe succedere: le opzioni sono già filtrate)
+    if(prevE) ui.setEdit[m.name]=prevE; else delete ui.setEdit[m.name]; if(prevC==null) delete ui.setChoice[m.name]; else ui.setChoice[m.name]=prevC; return; }
+  // se è tornata uguale al set originale non è più una modifica
+  const ss=setsFor(m,g.format,g.tier), b=ss[info.k], bItem=b&&itemOf(b,g);
+  if(b&&bItem===e.strumento&&b.mosse.join('|')===e.mosse.join('|')) delete ui.setEdit[m.name];
+}
+// Modifiche mandate dall'amico: solo Pokémon esistenti e testi corti; poi teamSets le ricontrolla tutte (cleanEdits)
+function cleanEditWire(c){ const o={}; if(c&&typeof c==='object') for(const k of Object.keys(c).slice(0,12)){ const v=c[k];
+  if(!MON_BY_NAME.has(k)||!v||typeof v!=='object') continue;
+  o[k]={k:wInt(v.k,0,9,0), mosse:Array.isArray(v.mosse)?v.mosse.slice(0,4).map(x=>String(x).slice(0,40)):[], strumento:String(v.strumento==null?'':v.strumento).slice(0,40)}; }
+  return o; }
 // "Gioca qui": la lotta dentro il gioco (lotta.js + simulatore di Showdown in lib/pkmn-sim.js, caricati solo quando servono).
 // Per ora: singolo, formati National Dex, su questo dispositivo.
 function fightOk(g){ return true; }
@@ -1198,7 +1308,7 @@ function fightOk(g){ return true; }
 // (National Dex AG in singolo, Doubles Custom Game in doppio) con i "Stat Points" convertiti in EV (1 punto ≈ 8 EV, max 252).
 function fightFormat(g){ if(g.tier==='champions') return g.format==='doppio'?'gen9doublescustomgame@@@Terastal Clause,Picked Team Size = 4':'gen9nationaldexag@@@Terastal Clause,Picked Team Size = 3';
   return showdownFormat(g.format,g.tier).toLowerCase().replace(/[^a-z0-9]/g,''); }
-function fightTeam(g,i,choice){ let tx=exportText(g.teams[i],g.format,choice,g.tier);
+function fightTeam(g,i,choice,edits){ let tx=exportText(g.teams[i],g.format,choice,g.tier,edits);
   if(g.tier==='champions') tx=tx.replace(/^EVs: (.+)$/gm,(m,l)=>{ const ev=l.split(' / ').map(p=>{ const [n,s]=p.split(' '); return [Math.min(252,(+n||0)*8),s]; });
     let over=ev.reduce((t,x)=>t+x[0],0)-510; for(let i=ev.length-1;i>=0&&over>0;i--){ const d=Math.min(over,ev[i][0]); ev[i][0]-=d; over-=d; } // massimo 510 EV in tutto
     return 'EVs: '+ev.filter(x=>x[0]>0).map(x=>x[0]+' '+x[1]).join(' / '); });
@@ -1223,8 +1333,8 @@ function seriesWin(i,nm0,nm1){ const S=ui.series; if(!S||S.bo!==3) return null; 
 async function startFight(){
   const g=ui.game, b=document.getElementById('fightBtn');
   if(ui.online&&isGuest()){ // l'amico chiede all'host di far partire la lotta (con i suoi set scelti)
-    const mine={}; for(const m of g.teams[1]) if(m&&!m.hidden&&ui.setChoice[m.name]!=null) mine[m.name]=ui.setChoice[m.name];
-    onlineSend({t:'act',a:'fight',d:{choice:mine,bo:ui.bo===3?3:1}}); if(b){ b.disabled=true; b.textContent=t('fight.waitHost',name(0)); }
+    const mine={}, ed={}; for(const m of g.teams[1]) if(m&&!m.hidden){ if(ui.setChoice[m.name]!=null) mine[m.name]=ui.setChoice[m.name]; if(ui.setEdit[m.name]) ed[m.name]=ui.setEdit[m.name]; }
+    onlineSend({t:'act',a:'fight',d:{choice:mine,edit:ed,bo:ui.bo===3?3:1}}); if(b){ b.disabled=true; b.textContent=t('fight.waitHost',name(0)); }
     loadFight().catch(()=>{}); return; }
   if(ui.online&&!(ui.online.conn&&ui.online.conn.open)) return;
   if(b){ b.disabled=true; b.textContent=t('fight.loading'); }
@@ -1238,7 +1348,7 @@ async function startFight(){
   const showOpp=g.mode==='classica'||!g.hide||g.hide==='subito'||(ui.revealLocal[0]&&ui.revealLocal[1]);
   if(ui.online){ // host: fa girare la lotta e manda all'amico solo la sua squadra e le specie dell'host
     const fid=fightFormat(g), ch=Object.assign({},ui.setChoice,ui.online.guestChoice||{});
-    const tHost=fightTeam(g,0,ui.setChoice), tGuest=fightTeam(g,1,ch);
+    const tHost=fightTeam(g,0,ui.setChoice,ui.setEdit), tGuest=fightTeam(g,1,ch,ui.online.guestEdit||{});
     const nH=nm0, nG=nm1;
     Lotta.open(Object.assign({onStats:info=>profBattle(info,{p1:g.teams[0].map(m=>m.name),p2:g.teams[1].map(m=>m.name)},fmt), lang:ui.lang, mode:'online', role:'host', showOpp:false, net:{send:onlineSend}, formatid:fid, formatName:fmt, names:{p1:nH,p2:nG},
       teams:{p1:tHost,p2:tGuest}, closeLabel:t('fight.back'), onClose:()=>render() },ser));
@@ -1246,7 +1356,7 @@ async function startFight(){
     return; }
   Lotta.open(Object.assign({onStats:info=>profBattle(info,{p1:g.teams[0].map(m=>m.name),p2:g.teams[1].map(m=>m.name)},fmt), lang:ui.lang, mode:'two', showOpp, formatid:fightFormat(g), formatName:fmt,
     names:{p1:nm0, p2:nm1},
-    teams:{p1:fightTeam(g,0,ui.setChoice), p2:fightTeam(g,1,ui.setChoice)},
+    teams:{p1:fightTeam(g,0,ui.setChoice,ui.setEdit), p2:fightTeam(g,1,ui.setChoice,ui.setEdit)},
     closeLabel:t('fight.back'), onClose:()=>render() },ser));
 }
 async function guestFight(m){
@@ -1279,9 +1389,9 @@ function vEnd(){
     return head+mostra+`
      <div class="chips">${g.teams[i].map(m=>`<span class="tchip mon" style="${colorStyle(m,g.mode)};box-shadow:inset 0 0 0 1px var(--line)">${spr(m,'mini')}${disp(m)}</span>`).join('')}</div>
      <div class="muted" style="font-size:13px">${g.teams[i].map(m=>disp(m)+' ('+typeName(m.type)+(m.type2?'/'+typeName(m.type2):'')+')').join(' · ')}</div>
-     ${ui.online&&ui.online.me!==i?`<div class="note">🔒 ${t('online.oppSets',name(i))}</div></section>`:`<span class="label">${t('setsLabel')}</span><div class="setlist">${(eff=>g.teams[i].map((m,j)=>setPicker(m,g,eff[j])).join(''))(teamSets(g.teams[i],g.format,ui.setChoice,g.tier))}</div>
+     ${ui.online&&ui.online.me!==i?`<div class="note">🔒 ${t('online.oppSets',name(i))}</div></section>`:`<span class="label">${t('setsLabel')}</span><div class="setlist">${(eff=>g.teams[i].map((m,j)=>setPicker(m,g,eff[j],i,j)).join(''))(teamSets(g.teams[i],g.format,ui.setChoice,g.tier,ui.setEdit))}</div>
      <span class="label">${t('textLabel')}</span>
-     <div class="fmtline">${t('fmtLine')} <strong>${showdownFormat(g.format,g.tier)}</strong>${fmtNote(g.format,g.tier)}</div><pre id="ex${i}">${esc(exportText(g.teams[i],g.format,ui.setChoice,g.tier))}</pre>
+     <div class="fmtline">${t('fmtLine')} <strong>${showdownFormat(g.format,g.tier)}</strong>${fmtNote(g.format,g.tier)}</div><pre id="ex${i}">${esc(exportText(g.teams[i],g.format,ui.setChoice,g.tier,ui.setEdit))}</pre>
      <div class="row"><button class="btn ghost" data-act="copy" data-i="${i}">${t('copy')}</button><a class="btn play2" href="https://play.pokemonshowdown.com/teambuilder" target="_blank" rel="noopener noreferrer" style="text-decoration:none">${t('openSD')}</a><span class="muted" id="cp${i}" aria-live="polite"></span></div><p class="muted" style="font-size:12px">${t('openSDhint')}</p></section>`}`;}).join('');
   const intro=Object.keys(SETS).length
     ?t('endIntro',g.format==='doppio',showdownFormat(g.format,g.tier),g.format==='doppio'&&g.tier!=='champions',fmtNote(g.format,g.tier))
@@ -1802,27 +1912,27 @@ function applyWireState(m){
   o.canUndo=m.canUndo===true; o.undoReq=m.undoReq&&(m.undoReq.from===0||m.undoReq.from===1)?{from:m.undoReq.from}:null;
   const scr=['lobby','flip','game'].includes(m.screen)?m.screen:'lobby';
   if(!(ui.screen==='end'&&scr==='game')) ui.screen=scr;
-  if(!ui.game) ui.setChoice={};
+  if(!ui.game){ ui.setChoice={};ui.setEdit={};ui.editOpen=null; }
   const now=ui.game&&ui.game.auction?ui.game.n+':'+ui.game.auction.bid:'';
   if(now!==prev) setDraftFromGame();
 }
 // Azioni di gioco eseguite dall'host (anche quelle arrivate dal guest). Restituisce un codice d'errore o null.
 function hostApply(a,d,player){
   const g=ui.game;
-  if(a==='fight'){ if(player!==1||!g||!g.over) return null; ui.online.guestChoice=cleanChoice(d&&d.choice); ui.bo=d&&d.bo===3?3:1; ui.series=null; startFight(); return null; }
+  if(a==='fight'){ if(player!==1||!g||!g.over) return null; ui.online.guestChoice=cleanChoice(d&&d.choice); ui.online.guestEdit=cleanEditWire(d&&d.edit); ui.bo=d&&d.bo===3?3:1; ui.series=null; startFight(); return null; }
   if(a==='toflip'){ if(player!==0||!ui.names[1]&&!(ui.online.conn&&ui.online.conn.open)) return null; ui.screen='flip'; ui.flip=null; }
   else if(a==='flip'){ if(player!==0||ui.screen!=='flip'||ui.flip) return null; ui.flip=Math.random()<0.5?'testa':'croce'; }
   else if(a==='begin'){ if(player!==0||!ui.flip) return null;
     ui.revealLocal=[false,false]; ui.celebN=null;
     ui.game=newGame({format:ui.format,mode:ui.mode,hide:ui.hide,coins:Number(ui.coins),tier:ui.tier,legends:ui.legends,
       pool:filterPool(POOL,{tier:ui.tier,legends:ui.legends}),firstOpener:ui.flip==='testa'?0:1});
-    ui.screen='game'; ui.setChoice={}; }
+    ui.screen='game'; ui.setChoice={};ui.setEdit={};ui.editOpen=null; }
   else if(a==='draw'){ if(!g||g.auction||g.over) return null; startAuction(g); setDraftFromGame(); }
   else if(a==='raise'){ if(!g||!g.auction) return null; if(g.auction.turn!==player) return 'turn';
     const err=raise(g,player,parseInt(d.amount,10)); if(err) return err; setDraftFromGame(); }
   else if(a==='pass'){ if(!g||!g.auction) return null; if(g.auction.turn!==player) return 'turn'; pass(g,player); }
   else if(a==='reveal'){ if(!g||!g.over||g.hide!=='fine') return null; g.reveal[player]=true; }
-  else if(a==='newround'){ if(player!==0) return null; ui.game=null; ui.flip=null; ui.screen='lobby'; ui.setChoice={}; }
+  else if(a==='newround'){ if(player!==0) return null; ui.game=null; ui.flip=null; ui.screen='lobby'; ui.setChoice={};ui.setEdit={};ui.editOpen=null; }
   return null;
 }
 function leaveOnline(){
@@ -1943,7 +2053,7 @@ function act(a,d){
     else {ui.msg='';ui.screen='flip';ui.flip=null;}}
   else if(a==='flip'){ui.flip=Math.random()<0.5?'testa':'croce';}
   else if(a==='begin'){ui.revealLocal=[false,false];ui.celebN=null;ui.game=newGame({format:ui.format,mode:ui.mode,hide:ui.hide,coins:Number(ui.coins),tier:ui.tier,legends:ui.legends,
-    pool:filterPool(POOL,{tier:ui.tier,legends:ui.legends}),firstOpener:ui.flip==='testa'?0:1});ui.screen='game';ui.msg='';ui.setChoice={};}
+    pool:filterPool(POOL,{tier:ui.tier,legends:ui.legends}),firstOpener:ui.flip==='testa'?0:1});ui.screen='game';ui.msg='';ui.setChoice={};ui.setEdit={};ui.editOpen=null;}
   else if(a==='draw'){startAuction(g);ui.msg='';ui.draft=g.auction?String(g.auction.bid+1):'';}
   else if(a==='raise'){const p=g.auction.turn;const err=raise(g,p,parseInt(ui.draft,10));ui.msg=err?errText(err):'';
     if(!err){ui.draft=String(Math.min(g.auction.bid+1,Math.max(maxBid(g,g.auction.turn),g.auction.bid+1)));}}
@@ -2023,7 +2133,9 @@ function act(a,d){
   else if(a==='playcry'){ playCry(true); return; }
   else if(a==='bo'){ ui.bo=d.v==='3'?3:1; }
   else if(a==='copy'&&ui.online&&+d.i!==ui.online.me){ return; } // online la squadra dell'avversario non si copia
-  else if(a==='copy'){const i=+d.i,tx=exportText(g.teams[i],g.format,ui.setChoice,g.tier),out=document.getElementById('cp'+i);
+  else if(a==='editset'){ ui.editOpen=ui.editOpen===d.n?null:d.n; }
+  else if(a==='editreset'){ delete ui.setEdit[d.n]; }
+  else if(a==='copy'){const i=+d.i,tx=exportText(g.teams[i],g.format,ui.setChoice,g.tier,ui.setEdit),out=document.getElementById('cp'+i);
     const fb=()=>{const r=document.createRange();r.selectNodeContents(document.getElementById('ex'+i));const s=getSelection();s.removeAllRanges();s.addRange(r);out.textContent=t('selected');};
     try{navigator.clipboard.writeText(tx).then(()=>{out.textContent=t('copied',showdownFormat(g.format,g.tier));},fb);}catch(e){fb();}
     return;}
@@ -2034,7 +2146,12 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');
   if(b&&!b.disabled)act(b.dataset.act,b.dataset);});
 document.addEventListener('change',e=>{
   const n=e.target.dataset&&e.target.dataset.setfor;
-  if(n!==undefined){ui.setChoice[n]=+e.target.value;const y=scrollY;render();scrollTo(0,y);const s=document.getElementById('set-'+n);if(s)s.focus();}});
+  if(n!==undefined){ui.setChoice[n]=+e.target.value;delete ui.setEdit[n];const y=scrollY;render();scrollTo(0,y);const s=document.getElementById('set-'+n);if(s)s.focus();}
+  const ds=e.target.dataset||{}, em=ds.editmove, ei=ds.edititem;
+  if(em!==undefined||ei!==undefined){ setEditChange(+ds.i,+ds.j,em!==undefined?'move':'item',+ds.k,e.target.value);
+    const y=scrollY;render();scrollTo(0,y);
+    const sel=em!==undefined?`[data-editmove][data-i="${+ds.i}"][data-j="${+ds.j}"][data-k="${+ds.k}"]`:`[data-edititem][data-i="${+ds.i}"][data-j="${+ds.j}"]`;
+    const s=document.querySelector(sel); if(s) s.focus(); }});
 document.addEventListener('input',e=>{
   if(e.target.id==='n0'){ui.names[0]=e.target.value; if(ui.setupOnline) ui.myName=e.target.value;}
   if(e.target.id==='myname')ui.myName=e.target.value;
