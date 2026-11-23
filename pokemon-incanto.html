@@ -671,6 +671,7 @@ const I18N={
   'online.opening':'Creazione della stanza…','online.waiting':"In attesa dell'amico: mandagli il codice o il link",
   'online.joined':n=>`${n} è entrato!`,'online.connecting':c=>`Collegamento alla stanza ${c}`,'online.connected':n=>`Connesso! In attesa che ${n} avvii la partita`,
   'online.notfound':c=>`Stanza ${c} non trovata: controlla il codice o chiedi un nuovo link.`,'online.full':'La stanza è già piena.',
+  'online.via.direct':'Collegamento: diretto tra i due dispositivi','online.via.relay':'Collegamento: tramite il server ponte (TURN)',
   'online.blocked':'Il collegamento diretto con l\'altro giocatore non si apre: succede quando siete su reti diverse che lo bloccano (rete mobile, alcuni router). Serve un server ponte (TURN), non ancora attivo.','online.error':'Connessione non riuscita. Riprova; su alcune reti molto protette (es. aziendali o scolastiche) il gioco online potrebbe non funzionare.',
   'online.lost':n=>`Connessione persa con ${n}.`,'online.left':n=>`${n} ha lasciato la partita.`,
   'online.hostWait':"Rimani su questa pagina: l'amico può rientrare con lo stesso link.",'online.rejoin':'Riconnetti','online.menu':'Torna al menu',
@@ -759,6 +760,7 @@ const I18N={
   'online.opening':'Creating the room…','online.waiting':'Waiting for your friend: send them the code or the link',
   'online.joined':n=>`${n} joined!`,'online.connecting':c=>`Connecting to room ${c}`,'online.connected':n=>`Connected! Waiting for ${n} to start the game`,
   'online.notfound':c=>`Room ${c} not found: check the code or ask for a new link.`,'online.full':'The room is already full.',
+  'online.via.direct':'Connection: direct between the two devices','online.via.relay':'Connection: through the relay server (TURN)',
   'online.blocked':'The direct connection with the other player does not open: this happens when you are on different networks that block it (mobile data, some routers). A relay server (TURN) is needed, not active yet.','online.error':'Connection failed. Try again; on some very restricted networks (e.g. office or school) online play may not work.',
   'online.lost':n=>`Connection lost with ${n}.`,'online.left':n=>`${n} left the game.`,
   'online.hostWait':'Stay on this page: your friend can rejoin with the same link.','online.rejoin':'Reconnect','online.menu':'Back to menu',
@@ -1560,12 +1562,23 @@ let peerLibPromise=null;
 // Finché è vuoto si usa solo lo STUN di Google (funziona solo quando la rete permette il collegamento diretto).
 const TURN_CFG={url:'https://pkmn_incanto.metered.live/api/v1/turn/credentials?apiKey=82e7ef7e266a7da02c855197be3a5822bb38'};
 let iceCache=null;
-async function iceConfig(){ const base=[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}];
-  if(!TURN_CFG.url) return {iceServers:base};
-  if(iceCache&&Date.now()-iceCache.at<30*60*1000) return {iceServers:base.concat(iceCache.list)};
+// Per le prove: con ?ponte=1 nell'indirizzo si passa SOLO dal server ponte, come se i due giocatori fossero su reti
+// che bloccano il collegamento diretto (così si prova il TURN anche con due schede dello stesso computer).
+const FORCE_RELAY=/[?&]ponte=1(&|$)/.test(location.search);
+async function iceConfig(){ const c=await iceServersList(); return FORCE_RELAY?{iceServers:c,iceTransportPolicy:'relay'}:{iceServers:c}; }
+async function iceServersList(){ const base=[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}];
+  if(!TURN_CFG.url) return base;
+  if(iceCache&&Date.now()-iceCache.at<30*60*1000) return base.concat(iceCache.list);
   try{ const r=await fetch(TURN_CFG.url,{cache:'no-store'}); const list=await r.json();
     const ok=(Array.isArray(list)?list:[]).filter(x=>x&&x.urls&&(typeof x.urls==='string'||Array.isArray(x.urls))).slice(0,8).map(x=>({urls:x.urls,username:x.username,credential:x.credential}));
-    iceCache={at:Date.now(),list:ok}; return {iceServers:base.concat(ok)}; }catch(e){ return {iceServers:base}; } }
+    iceCache={at:Date.now(),list:ok}; return base.concat(ok); }catch(e){ return base; } }
+// Dopo il collegamento guarda quale strada usa (diretta o server ponte): si mostra nella stanza per capire i problemi di rete
+async function detectRoute(o,conn){ try{ const pc=conn.peerConnection; if(!pc||!pc.getStats) return; const st=await pc.getStats(); let pair=null;
+  st.forEach(r=>{ if(!pair&&r.type==='transport'&&r.selectedCandidatePairId) pair=st.get(r.selectedCandidatePairId); });
+  if(!pair) st.forEach(r=>{ if(!pair&&r.type==='candidate-pair'&&(r.selected||(r.nominated&&r.state==='succeeded'))) pair=r; });
+  if(!pair) return; const l=st.get(pair.localCandidateId), rm=st.get(pair.remoteCandidateId);
+  o.via=(l&&l.candidateType==='relay')||(rm&&rm.candidateType==='relay')?'relay':'direct';
+  if(ui.online===o&&ui.screen==='lobby') render(); }catch(e){} }
 function loadPeerLib(){
   if(window.Peer) return Promise.resolve();
   if(!peerLibPromise) peerLibPromise=new Promise((res,rej)=>{const s=document.createElement('script'); s.src='lib/peerjs.min.js';
@@ -1717,11 +1730,14 @@ async function joinRoom(code,opts){
 }
 function attachConn(o,conn){
   o.conn=conn;
-  conn.on('open',()=>{ if(ui.online!==o) return; o.status='connected';
+  conn.on('open',()=>{ if(ui.online!==o) return; o.status='connected'; conn._ok=true; o.via=null; setTimeout(()=>detectRoute(o,conn),1200);
     if(o.role==='guest') conn.send({t:'hello',name:ui.myName||''}); else broadcast();
     render(); });
   conn.on('data',m=>{ if(ui.online===o) onlineMessage(m); });
-  const persa=()=>{ if(ui.online===o&&o.conn===conn&&o.status!=='left'){ o.status='lost'; ui.askUndo=false; render(); } };
+  const persa=()=>{ if(ui.online!==o||o.conn!==conn) return;
+    // collegamento mai aperto (es. tentativo fallito dell'amico): chi ha creato la stanza continua ad aspettare
+    if(!conn._ok){ if(o.role==='host') o.conn=null; return; }
+    if(o.status!=='left'){ o.status='lost'; ui.askUndo=false; render(); } };
   conn.on('close',persa); conn.on('error',persa);
 }
 function onlineMessage(m){
@@ -1732,7 +1748,8 @@ function onlineMessage(m){
   if(m.t==='bstart'&&isGuest()){ o.bq=[]; guestFight(m); return; }
   if(isHost()){
     if(m.t==='act'&&!['draw','raise','pass','reveal','fight'].includes(m.a)) return; // il guest può solo estrarre, rilanciare e passare
-    if(m.t==='hello'){ ui.names[1]=String(m.name||'').slice(0,16); o.status='connected'; broadcast(); render(); }
+    // se l'amico rientra (pagina ricaricata) senza nome durante la partita, si tiene quello di prima
+    if(m.t==='hello'){ const nn=String(m.name||'').slice(0,16); if(nn||!ui.game) ui.names[1]=nn; o.status='connected'; broadcast(); render(); }
     else if(m.t==='act'){ const err=hostApply(m.a,m.d||{},1); if(err) onlineSend({t:'err',code:err}); broadcast(); render(); }
     else if(m.t==='undo-req'){ if(ui.game&&canUndo(ui.game)&&!o.undoReq){ o.undoReq={from:1}; broadcast(); render(); } }
     else if(m.t==='undo-answer'){ if(o.undoReq&&o.undoReq.from===0){
@@ -1876,7 +1893,8 @@ function vLobby(){
   return `<div class="topbar"><header class="brand"><h1><span class="h-poke">Pokémon</span> <span class="h-inc">Incanto</span></h1>${settingsChips()}</header>
    <div class="topbtns"><button class="btn ghost sm" data-act="leaveonline">${t('online.menu')}</button></div></div>
    ${onlineBanner()}
-   <section class="card lot"><h2>${t('online.room')}</h2>${body}</section>`;
+   <section class="card lot"><h2>${t('online.room')}</h2>${body}
+   ${conn&&o.via?`<p class="muted" style="font-size:12px;text-align:center;margin:8px 0 0">${t('online.via.'+o.via)}</p>`:''}</section>`;
 }
 // Richiesta di annullamento arrivata dall'altro giocatore
 function vUndoReq(){
