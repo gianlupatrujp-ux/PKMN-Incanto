@@ -487,6 +487,42 @@ const CSS=`#lotta{position:fixed;inset:0;z-index:60;overflow:auto;background:#F6
   #lotta.dbl .hud{width:42%}#lotta.dbl .hud.p2b{top:max(25%,calc(2% + 72px))}#lotta.dbl .hud.p1b{bottom:max(25%,calc(2% + 62px))}
   #lotta.dbl .mon.p2{right:28%;width:28%;top:13%;height:33%}#lotta.dbl .mon.p2b{right:1%;width:28%;top:17%;height:33%}
   #lotta.dbl .mon.p1{left:0;width:28%;height:40%}#lotta.dbl .mon.p1b{left:26%;width:28%;height:36%;bottom:4%}#lotta.dbl .lt-team.tg{grid-template-columns:repeat(2,1fr)}
+}
+/* riquadri degli allenatori fuori dal campo (stile Showdown): avatar, nome e squadra */
+#lotta .lt-stage{display:grid;grid-template-columns:124px minmax(0,1fr) 124px;grid-template-areas:"t1 ar t2";gap:8px;align-items:stretch}
+#lotta .lt-stage>.arena{grid-area:ar;min-width:0}
+#lotta .trainer{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0;font:800 12px/1.2 'Inter',sans-serif;color:var(--line)}
+#lotta .trainer.p1{grid-area:t1;justify-content:flex-end}#lotta .trainer.p2{grid-area:t2;justify-content:flex-start}
+#lotta .trainer .avatar,#lotta .trainer .lt-av0{width:72px;height:72px;box-shadow:0 3px 0 var(--line)}
+#lotta .lt-av0{display:inline-grid;place-items:center;flex:none;border-radius:50%;border:3px solid var(--line);background:#fff;font:900 26px 'Inter',sans-serif;color:var(--line)}
+#lotta .trainer .tnm{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
+#lotta .trainer{--k:1}
+#lotta .tteam{display:grid;grid-template-columns:repeat(3,calc(40px*var(--k)));gap:2px 0;justify-content:center}
+#lotta .tpk{width:calc(40px*var(--k));height:calc(30px*var(--k));display:grid;place-items:center;position:relative;padding:0;border:0;background:none;cursor:help}
+#lotta .pkic{display:block;width:calc(40px*var(--k));height:calc(30px*var(--k));background:url(sprites/pokemonicons-sheet.png) no-repeat;background-size:calc(480px*var(--k)) auto;background-position:calc(var(--c)*-40px*var(--k)) calc(var(--r)*-30px*var(--k))}
+#lotta .pkic{image-rendering:pixelated}@media (max-width:1199px),(max-height:500px){#lotta .pkic{image-rendering:auto}}
+#lotta .tpk.ball img{width:calc(20px*var(--k));height:calc(20px*var(--k))}
+
+#lotta .tpk.ball{cursor:default}
+#lotta .tpk.ko .pkic{opacity:.35;filter:grayscale(1)}
+#lotta .tpk.stx::after{content:'';position:absolute;right:1px;bottom:1px;width:7px;height:7px;border-radius:50%;background:#F2C21B;border:1.5px solid var(--line)}
+@media (min-width:821px) and (min-height:501px){#lotta .lt-main{grid-template-columns:minmax(0,950px) minmax(260px,1fr)}#lotta.logmin .lt-left{max-width:1030px}}
+@media (min-width:821px) and (max-width:1199px) and (min-height:501px){#lotta .lt-main{grid-template-columns:minmax(0,1fr) minmax(220px,30%)}#lotta .lt-stage{grid-template-columns:84px minmax(0,1fr) 84px;gap:6px}#lotta .trainer .avatar,#lotta .trainer .lt-av0{width:58px;height:58px}#lotta .trainer{--k:.65}}
+@media (max-width:820px){
+  #lotta .lt-stage{grid-template-columns:minmax(0,1fr);grid-template-areas:"t2" "ar" "t1";gap:5px}
+  #lotta .trainer{flex-direction:row;justify-content:flex-start;gap:6px;background:#fff;border:2px solid var(--line);border-radius:10px;padding:2px 6px 2px 3px}
+  #lotta .trainer .avatar,#lotta .trainer .lt-av0{width:32px;height:32px;border-width:2px;box-shadow:none;font-size:15px}
+  #lotta .trainer .tnm{flex:1;text-align:left}
+  #lotta .trainer{--k:.8}#lotta .tteam{display:flex;gap:0;margin-left:auto}
+}
+@media (max-width:360px){#lotta .trainer{--k:.65}#lotta .trainer .avatar,#lotta .trainer .lt-av0{width:28px;height:28px}}
+@media (max-height:500px) and (orientation:landscape){
+  #lotta .lt-stage{grid-template-columns:70px minmax(0,1fr) 70px;grid-template-areas:"t1 ar t2";gap:5px}
+  #lotta .trainer{flex-direction:column;background:none;border:0;padding:0;gap:3px;font-size:10px}
+  #lotta .trainer.p1{justify-content:flex-end}#lotta .trainer.p2{justify-content:flex-start}
+  #lotta .trainer .avatar,#lotta .trainer .lt-av0{width:44px;height:44px;border-width:2px}
+  #lotta .trainer .tnm{flex:none;text-align:center}
+  #lotta .trainer{--k:.55}#lotta .tteam{display:grid;grid-template-columns:repeat(3,calc(40px*var(--k)));margin-left:0}
 }`;
 const {BattleStreams, Teams, Dex} = PkmnSim;
 const TYPE_COLORS={Normal:'#A8A77A',Fire:'#EE8130',Water:'#6390F0',Electric:'#D9B300',Grass:'#5FAE34',Ice:'#4FB8C9',Fighting:'#C22E28',
@@ -562,8 +598,7 @@ function drawSide(x){ if(String(x).length>2){ drawPos(x); ballsDbl(); return; } 
 function stackDbl(){ if(!isDbl()||!root) return; const ar=$('arena'), h2=$('hudp2'), h2b=$('hudp2b'), h1=$('hudp1'), h1b=$('hudp1b'); if(!ar) return; const gap=-3;
   if(h2&&h2b){ h2b.style.top=(!h2.hidden?h2.offsetTop+h2.offsetHeight+gap:h2.offsetTop)+'px'; }
   if(h1&&h1b){ h1b.style.bottom=(!h1.hidden?ar.clientHeight-h1.offsetTop+gap+3:ar.clientHeight-h1.offsetTop-h1.offsetHeight)+'px'; } }
-function ballsDbl(){ if(!isDbl()) return; setTimeout(stackDbl,0); const src=$('ballsxp2'), hb=$('hudp2b'); if(!src) return; const sb=hb&&!hb.hidden&&hb.querySelector('.sb'); let dst=sb&&sb.querySelector('.balls.moved');
-  if(!sb){ src.style.visibility=''; return; } if(!dst){ dst=document.createElement('div'); dst.className='balls moved'; sb.appendChild(dst); } dst.innerHTML=src.innerHTML; src.style.visibility='hidden'; src.style.height='0'; }
+function ballsDbl(){ if(isDbl()) setTimeout(stackDbl,0); }
 // effetti temporanei mostrati come su Showdown (etichette sotto la barra dei PS)
 const VOL={confusion:'Confuso',leechseed:'Leech Seed',taunt:'Taunt',encore:'Encore',yawn:'Yawn',focusenergy:'Focus Energy',attract:'Infatuato',curse:'Curse',disable:'Disable',embargo:'Embargo',healblock:'Heal Block',magnetrise:'Magnet Rise',aquaring:'Aqua Ring',ingrain:'Ingrain',flashfire:'Flash Fire',slowstart:'Slow Start',protosynthesis:'Protosynthesis',quarkdrive:'Quark Drive',charge:'Charge',torment:'Torment',nightmare:'Nightmare',powertrick:'Power Trick',smackdown:'Smack Down',telekinesis:'Telekinesis',throatchop:'Throat Chop',saltcure:'Salt Cure',syrupbomb:'Syrup Bomb',tarshot:'Tar Shot',imprison:'Imprison',laserfocus:'Laser Focus',miracleeye:'Miracle Eye',foresight:'Foresight',odorsleuth:'Odor Sleuth',noretreat:'No Retreat',octolock:'Octolock',partiallytrapped:'Intrappolato',doomdesire:'Doom Desire',futuresight:'Future Sight',gastroacid:'Gastro Acid',glaiverush:'Glaive Rush',minimize:'Minimize',defensecurl:'Defense Curl',dynamax:'Dynamax',substitute:'Substitute'};
 const STATN={atk:'Att.',def:'Dif.',spa:'Att.Sp.',spd:'Dif.Sp.',spe:'Vel.'};
@@ -584,17 +619,12 @@ function drawPos(sid){ const side=sideOfPos(sid);
   const seeItem=setVisible(side)||m.itemSeen;
   hud.innerHTML=`<div class="sb" data-tip="act:${sid}"><div class="sbn"><b>${esc(m.species)}</b>${m.shiny?'<i class="shy">✨</i>':''}<small>L100</small></div>
     <div class="sbbar"><div class="tr"><div class="fill" id="lt-fill${sid}"></div></div><span class="pct" id="lt-pct${sid}"></span></div>
-    <div class="sbst">${m.st&&m.st!=='fnt'?`<span class="st ${m.st}">${m.st.toUpperCase()}</span>`:''}${m.tera?`<span class="st" style="background:${TYPE_COLORS[m.tera]||'#666'}">TERA ${(TIPI[m.tera]||m.tera).toUpperCase()}</span>`:''}${boostChips(m)}${volChips(m)}<span class="hpn" id="lt-num${sid}"></span></div>
-    <div class="balls" id="lt-ballsx${sid}"></div></div>`;
+    <div class="sbst">${m.st&&m.st!=='fnt'?`<span class="st ${m.st}">${m.st.toUpperCase()}</span>`:''}${m.tera?`<span class="st" style="background:${TYPE_COLORS[m.tera]||'#666'}">TERA ${(TIPI[m.tera]||m.tera).toUpperCase()}</span>`:''}${boostChips(m)}${volChips(m)}<span class="hpn" id="lt-num${sid}"></span></div></div>`;
   hpView(sid);
   const key=m.species+(m.shiny?'*':'');
   if(el.dataset.sp!==key){ el.dataset.sp=key; el.innerHTML=spriteImg(m.species,side==='p1',m.shiny);
     const im=el.querySelector('img[data-front]'); if(im) im.onerror=()=>{ if(im.dataset.front){ im.src=im.dataset.front; im.dataset.front=''; im.classList.add('flip'); } }; }
   el.classList.toggle('sub',!!m.sub);
-  if(sid!==side){ const bx=$('ballsx'+sid); if(bx) bx.remove(); return; }
-  $('ballsx'+sid).innerHTML=B.sets[sid].map((set,i)=>{ const t=Object.values(s.team).find(x=>setOf(sid,x.species)===set);
-    const ko=!!t&&t.st==='fnt'; const cls=ko?'ko':(t&&t.st&&t.st!=='fnt'?'stx':'');
-    return `<button class="${cls}" ${setVisible(sid)?`data-tip="set:${sid}:${i}"`:''} aria-label="Pokémon ${i+1}"></button>`; }).join('');
 }
 // ---------- scenari del campo di lotta (disegni originali in SVG, ispirati ai campi dei giochi) ----------
 const SCENES=['prato','spiaggia','foresta','grotta','citta'];
@@ -735,7 +765,32 @@ function drawField(){
   const lab=[]; if(B.weather) lab.push(WEATHER[B.weather]||B.weather); for(const k in B.field) lab.push(B.field[k]);
   $('wlabel').innerHTML=lab.map(x=>`<span>${esc(x)}</span>`).join('');
 }
-function draw(){ drawSide('p1'); drawSide('p2'); drawField(); }
+function draw(){ drawSide('p1'); drawSide('p2'); drawField(); drawTrainers(); }
+// ---------- riquadri degli allenatori (avatar, nome e squadra, stile Showdown) ----------
+function avId(sid){ const A=typeof Avatar!=='undefined'?Avatar:null; if(!A) return null; const id=O.avatars&&O.avatars[sid]; if(A.valid(id)) return id;
+  if(sid==='p1') return A.def;   // avversario senza avatar: uno fisso ricavato dal nome (lo stesso allenatore ha sempre la stessa faccia)
+  const L=A.trainers&&A.trainers.length?A.trainers:A.ids; let h=7; for(const c of String(O.names[sid]||'')) h=(h*31+c.charCodeAt(0))>>>0; return L[h%L.length]; }
+function avHTML(sid){ const id=avId(sid); if(id) return Avatar.html(Avatar.fix(id),'lt-avatar',O.lang==='en'?'en':'it');
+  return `<span class="lt-av0" aria-hidden="true">${esc((String(O.names[sid]||'?').trim().charAt(0)||'?').toUpperCase())}</span>`; }
+function iconImg(species){ const D=typeof ICON_DATA!=='undefined'?ICON_DATA:{}, sp=Dex.species.get(species);
+  let i=D[species]; if(i===undefined&&sp.exists) i=D[sp.name]!==undefined?D[sp.name]:D[sp.baseSpecies]!==undefined?D[sp.baseSpecies]:sp.num; i=Math.max(0,Math.min(1643,i|0));
+  return `<i class="pkic" style="--c:${i%12};--r:${Math.floor(i/12)}" role="img" aria-label="${esc(species)}"></i>`; }
+function teamSlots(sid){ const s=B.side[sid], sets=B.sets[sid]||[], ts=(B.tsize||{})[sid];
+  const live=set=>Object.values(s.team).find(x=>setOf(sid,x.species)===set);
+  const one=(m,tip,label)=>{ const cls=m&&m.st==='fnt'?' ko':(m&&m.st?' stx':''); return `<button class="tpk${cls}" data-tip="${tip}" aria-label="${esc(label)}">${iconImg(label)}</button>`; };
+  if(setVisible(sid)){ // squadra visibile: icone di tutti (solo quelli portati in lotta, nell'ordine della squadra)
+    let idx=sets.map((x,i)=>i); const rq=B.req[sid];
+    if(rq&&!rq.teamPreview&&rq.side&&Array.isArray(rq.side.pokemon)){ const keep=new Set(rq.side.pokemon.map(p=>sets.indexOf(setOf(sid,String(p.details||'').split(',')[0]))).filter(i=>i>=0)); if(keep.size) idx=idx.filter(i=>keep.has(i)); }
+    else if(ts) idx=idx.slice(0,ts);
+    return idx.map(i=>{ const m=live(sets[i]); return one(m,`set:${sid}:${i}`,m?m.species:sets[i].species); }).join(''); }
+  // squadra nascosta: icone solo dei Pokémon già visti, Poké Ball per gli altri
+  const seen=Object.keys(s.team), n=Math.max(seen.length,Math.min(6,ts||sets.length||6));
+  let h=seen.map((k,i)=>{ const m=s.team[k]; return one(m,`pk:${sid}:${i}`,m.species); }).join('');
+  for(let i=seen.length;i<n;i++) h+=`<span class="tpk ball"><img src="sprites/fx/pokeball.png" alt="Poké Ball"></span>`;
+  return h; }
+function sendAv(){ if(O.net&&O.net.send&&typeof Avatar!=='undefined') O.net.send({t:'bav',a:Avatar.fix(O.avatars.p1||Avatar.def)}); }
+function drawTrainers(){ if(!root||!B) return; for(const sid of ['p1','p2']){ const el=$('tr'+sid); if(!el) continue;
+  const h=`${avHTML(sid)}<span class="tnm">${PN(sid)}</span><span class="tteam">${teamSlots(sid)}</span>`; if(el._h!==h){ el._h=h; el.innerHTML=h; } } }
 // riga solo nella cronaca (senza cambiare il messaggio grande)
 function logLine(html,kind){ const box=$('log'); if(!box) return; const d=document.createElement('div'); d.className='le'+(kind?' '+kind:''); d.innerHTML=html; box.appendChild(d); B.log.push(d.textContent); box.scrollTop=box.scrollHeight; }
 // barra dell'abilità che entra in azione (come su Showdown): "Garchomp: Pelle Ruvida"
@@ -1019,6 +1074,7 @@ async function handle(line){
     case 'turn': { shieldsOff(); B.turn=+p[2]||0; const tb=$('turn'); tb.hidden=false; tb.textContent='Turno '+p[2]; say(`Turno ${esc(p[2])}`,'turn'); return 350; }
     case 'win': B.over=true; timerClear(); musicStop(); say(`Vince ${esc(p[2])}!`,'win'); seriesEnd(String(p[2]||'')); try{ if(O.onStats) O.onStats({winner:String(p[2]||''),names:Object.assign({},O.names),stats:B.stats||null,turns:B.turn||0}); }catch(e){} return 0;
     case 'tie': B.over=true; say('Pareggio!'); return 0;
+    case 'teamsize': { const sd=p[2]; if(sd==='p1'||sd==='p2'){ (B.tsize=B.tsize||{})[sd]=Math.max(1,Math.min(6,parseInt(p[3],10)||6)); drawTrainers(); } return 0; }
   }
   return 0;
 }
@@ -1458,6 +1514,7 @@ function tipHTML(key){
   if(kind==='item') return itemTip(a);
   if(kind==='act'){ const sd=sideOfPos(a), m=actMon(a); if(!m) return ''; const set=setOf(sd,m.species)||{moves:[]};
     const rq=B.req[sd]&&B.req[sd].side&&B.req[sd].side.pokemon.find(x=>String(x.ident||'').split(': ')[1]===m.nick); return monTip(sd,set,m,setVisible(sd)&&rq?rq.stats:null); }
+  if(kind==='pk'){ const k=Object.keys(B.side[a].team)[+b], m=k&&B.side[a].team[k]; if(!m) return ''; return monTip(a,setOf(a,m.species)||{moves:[]},m,null); }
   if(kind==='set'){ const set=B.sets[a][+b]; if(!set||!setVisible(a)) return ''; const live=Object.values(B.side[a].team).find(x=>setOf(a,x.species)===set); return monTip(a,set,live,null); }
   if(kind==='req'){ const rp=B.req[a]&&B.req[a].side.pokemon[+b]; if(!rp) return ''; const sp=rp.details.split(',')[0]; const set=setOf(a,sp)||{moves:[]};
     const live=Object.values(B.side[a].team).find(x=>setOf(a,x.species)===set); const h=parseHP(rp.condition); const it=rp.item?Dex.items.get(rp.item).name:null;
@@ -1515,6 +1572,7 @@ function net(m){
   if(!root||!B||!O||!O.net||!m||typeof m!=='object') return;
   if(m.t==='chat'){ const now=Date.now(); B.rcv=(B.rcv||[]).filter(t=>now-t<8000); if(B.rcv.length>=10) return; B.rcv.push(now);
     chatAdd(O.names.p2,String(m.x||'').replace(/\s+/g,' ').trim().slice(0,200),false); sfxChat(); return; }
+  if(m.t==='bav'){ const a=String(m.a||''); if(/^[a-z]\d{2}$/.test(a)&&(typeof Avatar==='undefined'||Avatar.valid(a))){ O.avatars.p2=a; drawTrainers(); } return; }
   if(m.t==='bexit'){ if(B.over) return; timerClear(); say(`${PN('p2')} ha lasciato la lotta.`); if(O.role==='host') B.streams.omniscient.write('>forcelose p2'); else { B.over=true; say(`Vince ${PN('p1')}!`,'win'); musicStop(); prompt(); } return; }
   if(O.role==='host'){
     if(m.t==='bc'){ const c=String(m.c||''); if(CHOICE_OK.test(c)&&!B.over) B.streams.p2.write(c); }
@@ -1654,11 +1712,15 @@ function open(opts){
   if(root) close(true);
   O=Object.assign({mode:'two',showOpp:true,names:{p1:'Giocatore 1',p2:'Giocatore 2'},formatid:'gen9nationaldexag'},opts);
   O.dbl=/doubles|vgc/.test(O.formatid);
+  O.avatars=Object.assign({},O.avatars);
+  try{ const pa=typeof profAvatar==='function'&&profAvatar(); if(pa){ if(O.mode!=='two'){ if(!O.avatars.p1) O.avatars.p1=pa; }
+      else { const me=typeof profMe==='function'&&profMe(); for(const sd of ['p1','p2']) if(me&&me.nick&&O.names[sd]===me.nick&&!O.avatars[sd]) O.avatars[sd]=pa; } } }catch(e){}
   if(!document.getElementById('lotta-css')){ const s=document.createElement('style'); s.id='lotta-css'; s.textContent=CSS; document.head.appendChild(s); }
   root=document.createElement('div'); root.id='lotta'; root.setAttribute('role','dialog'); root.setAttribute('aria-label','Lotta');
   root.innerHTML=`<div class="lt-wrap"><div class="lt-top"><h2 class="lt-title">${O.lang==='en'?'Battle':'Lotta'}</h2><span class="lt-muted">${esc(O.formatName||'')}<span id="lt-scene"></span></span>${O.series?`<span class="lt-series">${esc(O.series)}</span>`:''}<button class="tool lt-chatopen" data-lt="chatmin" aria-label="Apri la chat">💬 Chat<b class="unread" id="lt-unread" hidden></b></button><button class="tool lt-reopen" data-lt="logmin" aria-label="Apri la cronaca della lotta" title="Apri la cronaca della lotta">📜 Cronaca</button><span class="lt-tools" id="lt-tools"></span><button class="btn ghost ff" data-lt="ff">🏳 Arrenditi</button><button class="btn ghost" data-lt="exit">Esci dalla lotta</button></div>
    <div class="lt-main"><div class="lt-left">
    <div class="lt-info"><span class="turnb" id="lt-turn" hidden></span><span class="wlabel" id="lt-wlabel" hidden></span></div>
+   <div class="lt-stage"><div class="trainer p1" id="lt-trp1"></div><div class="trainer p2" id="lt-trp2"></div>
    <div class="arena" id="lt-arena">
     <div class="bg" id="lt-bg"></div>
     <div class="tfx" id="lt-tfx" hidden></div><div class="rfx" id="lt-rfx" hidden></div>
@@ -1668,8 +1730,7 @@ function open(opts){
     <div class="mon p2 out" id="lt-monp2" data-tip="act:p2"></div><div class="mon p2b out" id="lt-monp2b" data-tip="act:p2b"></div><div class="mon p1b out" id="lt-monp1b" data-tip="act:p1b"></div><div class="mon p1 out" id="lt-monp1" data-tip="act:p1"></div>
     <div class="wfx" id="lt-wfx" hidden></div>
     <div class="hud p2" id="lt-hudp2" hidden></div><div class="hud p2b" id="lt-hudp2b" hidden></div><div class="hud p1" id="lt-hudp1" hidden></div><div class="hud p1b" id="lt-hudp1b" hidden></div>
-    <div class="balls p2" id="lt-ballsp2"></div><div class="balls p1" id="lt-ballsp1"></div>
-   </div>
+   </div></div>
    <div class="lt-msg" id="lt-msg" aria-live="polite"></div>
    <section class="ctrl" id="lt-ctrl"></section></div>
    <div class="lt-side"><aside class="lt-right" id="lt-right"><button class="lt-logh" data-lt="logmin" aria-label="Riduci la cronaca">Cronaca della lotta <span class="arr">▾</span></button><div class="lt-logbox" id="lt-log"></div></aside>
@@ -1689,7 +1750,10 @@ function open(opts){
   if(O.net){ root.classList.add('online'); $('chatp').hidden=false; if(LS('lt-chatmin',false)) root.classList.add('chatmin'); }
   const sc=SCENES.includes(O.scene)?O.scene:pickNew(SCENES,'lt-lastscene');
   $('arena').className='arena sc-'+sc; $('bg').innerHTML=sceneSVG(sc); $('scene').textContent=' · Sfondo: '+SCENE_NAMES[sc];
-  drawField(); say('La lotta sta per cominciare!'); loadPS(); drawTools(); loadJS('descrizioni-data.js').catch(()=>{}); loadJS('audio-data.js').then(()=>{ if(root) musicStart(); }).catch(()=>{}); B.tick=setInterval(timerTick,250);
+  drawField(); drawTrainers(); if(typeof ICON_DATA==='undefined') loadJS('icone-data.js').then(()=>{ if(root){ for(const sd of ['p1','p2']){ const el=$('tr'+sd); if(el) el._h=''; } drawTrainers(); } }).catch(()=>{});
+  if(typeof Avatar==='undefined') loadJS('avatar.js').then(()=>{ if(root){ drawTrainers(); sendAv(); } }).catch(()=>{}); else sendAv();
+
+  say('La lotta sta per cominciare!'); loadPS(); drawTools(); loadJS('descrizioni-data.js').catch(()=>{}); loadJS('audio-data.js').then(()=>{ if(root) musicStart(); }).catch(()=>{}); B.tick=setInterval(timerTick,250);
   if(O.intro) say(esc(O.intro),'turn');
   if(O.role==='guest'){ say(`In attesa che ${PN('p2')} faccia partire la lotta…`); return; }   // l'amico non ha il motore: riceve tutto dall'host
   const streams=BattleStreams.getPlayerStreams(new BattleStreams.BattleStream()); B.streams=streams;
