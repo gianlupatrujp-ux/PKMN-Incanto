@@ -1460,10 +1460,10 @@ function twMegaOk(names,M,pool){ if(M.tier!=='champions') return names; const ca
   if(c) names=names.slice(0,5).concat(c.name); return names; }
 function twChoice(names,M){ const c={}; for(const n of names){ const k=setsFor(MON_BY_NAME.get(n),M.format,M.tier).length; c[n]=Math.floor(Math.random()*k); } return c; }
 // avatar dell'allenatore (disegni originali di avatar.js): l'Asso ha il Campione, alcune classi il loro disegno, gli altri uno a caso del suo genere
-const TW_AV_F=['a02','a04','a06','a08','a10','a13','a16','a17','a19'], TW_AV_CLS={3:'a08',8:'a16',1:'a18',13:'a11'};
-function twAvatar(boss,ci,gen){ if(typeof Avatar==='undefined') return undefined;
-  let id=boss?'a20':TW_AV_CLS[ci]; if(id&&!boss&&TW_AV_F.includes(id)!==(gen==='f')) id=null;
-  if(!id){ const l=Avatar.trainers.filter(x=>TW_AV_F.includes(x)===(gen==='f')&&x!=='a20'); id=l[Math.random()*l.length|0]; }
+const TW_AV_CLS={3:'a08',8:'a16',1:'a18',13:'a11'}, TW_AV_BOSS='a20';
+function twAvatar(boss,ci,gen){ if(typeof Avatar==='undefined') return undefined; gen=gen==='f'?'f':'m';
+  let id=boss?TW_AV_BOSS:TW_AV_CLS[ci]; if(id&&!boss&&Avatar.gender(id)!==gen) id=null;
+  if(!id){ const l=Avatar.trainers.filter(x=>Avatar.gender(x)===gen&&x!==TW_AV_BOSS); id=l.length?l[Math.random()*l.length|0]:Avatar.random('trainers',gen); }
   return Avatar.fix(id); }
 // avversari: nel gruppo "Tutti" i Pokémon diventano più forti salendo; negli altri gruppi si resta nel gruppo e cresce l'IA
 function twTrainer(f,M){ const boss=f%10===0, legends=f>=15||boss;
