@@ -112,7 +112,7 @@ const embSVG=(e)=>`<svg viewBox="0 0 100 100" aria-hidden="true"><rect width="10
 const EN={Esploratore:'Explorer',Viaggiatrice:'Traveler',Lottatore:'Brawler',Coordinatrice:'Coordinator',Ranger:'Ranger',Idol:'Idol',Meccanico:'Mechanic',Scienziata:'Scientist',Rivale:'Rival',Campeggiatrice:'Camper',Medium:'Medium',Fulmine:'Bolt',Sciatrice:'Skier',Ombra:'Shadow',Surfista:'Surfer',Nuotatrice:'Swimmer',Pittrice:'Painter',Pescatore:'Fisher',Montanara:'Mountaineer',Campione:'Champion',
   Fuoco:'Fire',Acqua:'Water',Erba:'Grass',Elettro:'Electric',Ghiaccio:'Ice',Psico:'Psychic',Buio:'Dark',Drago:'Dragon',Folletto:'Fairy',Spettro:'Ghost',Lotta:'Fighting',Acciaio:'Steel'};
 const LIST=[], BY={};
-ANIME.forEach((o,i)=>{ const id='a'+String(i+1).padStart(2,'0'); LIST.push(id); BY[id]={n:o.n,draw:()=>animeSVG(o)}; });
+ANIME.forEach((o,i)=>{ const id='a'+String(i+1).padStart(2,'0'); LIST.push(id); BY[id]={n:o.n,g:o.f?'f':'m',draw:()=>animeSVG(o)}; });
 EMB.forEach((e,i)=>{ const id='t'+String(i+1).padStart(2,'0'); LIST.push(id); BY[id]={n:e[0],draw:()=>embSVG(e)}; });
 const cache={};
 // stile di base (cerchio con bordo come i riquadri del gioco); chi lo usa può cambiarlo con le sue regole CSS
@@ -130,7 +130,9 @@ return {
   svg:id=>{ id=fix(id); return cache[id]||(cache[id]=BY[id].draw()); },
   // <span class="avatar CLS" role="img" aria-label="nome">svg</span>; il testo viene solo da questo file (sicuro)
   html:(id,cls,lang)=>{ id=fix(id); const n=lang==='en'?(EN[BY[id].n]||BY[id].n):BY[id].n; return '<span class="avatar'+(cls?' '+String(cls).replace(/[^\w -]/g,''):'')+'" role="img" aria-label="'+n+'">'+(cache[id]||(cache[id]=BY[id].draw()))+'</span>'; },
-  random:(only)=>{ const l=only==='trainers'?LIST.filter(x=>x[0]==='a'):LIST; return l[Math.random()*l.length|0]; }
+  gender:id=>(BY[fix(id)].g||null),                  // 'f' / 'm' per gli allenatori, null per i simboli
+  // random('trainers') solo allenatori; random('trainers','f'|'m') anche per genere
+  random:(only,g)=>{ let l=only==='trainers'?LIST.filter(x=>x[0]==='a'):LIST; if(g==='f'||g==='m') l=l.filter(x=>BY[x].g===g); return l[Math.random()*l.length|0]; }
 };
 })();
 if(typeof module!=="undefined") module.exports=Avatar;
