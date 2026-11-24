@@ -1,6 +1,9 @@
-// Pokémon Incanto: set con Megaevoluzione per il gruppo "Nat Dex OU (Mega)".
+// Pokémon Incanto: set con Megaevoluzione per i gruppi "Nat Dex OU (Mega)" e "Nat Dex Uber".
 // Uso (Node.js 18+, dopo scarica-pokemon.js e scarica-set.js):  node scarica-mega.js
-// Produce: mega-data.js (const MEGA_DATA), caricato dal gioco.
+// Produce: mega-data.js, caricato dal gioco:
+//   const MEGA_DATA  = Mega con tier OU/UUBL (gruppo Nat Dex OU (Mega), come prima);
+//   const MEGA_UBER  = tutte le Mega permesse in [Gen 9] National Dex Ubers (tier Uber, OU, UUBL, UU, RUBL; le AG come
+//                      Rayquaza-Mega sono vietate). Ogni set ha il campo "tier" della sua Mega.
 //
 // Il formato [Gen 9] National Dex (OU) di Pokémon Showdown vieta la Teracristallizzazione e permette le Megaevoluzioni.
 // Si prendono le Megaevoluzioni con tier National Dex OU o UUBL (da data/formats-data.ts) e, come base dei set,
@@ -39,11 +42,11 @@ const VIETATE = ['hiddenpower', 'return', 'frustration', 'batonpass', 'assist', 
   const vmData = {}; vm.createContext(vmData); vm.runInContext(fs.readFileSync(path.join(DIR, 'pokemon-data.js'), 'utf8').replace(/^const /m, 'var '), vmData);
   const nelGioco = new Set(vmData.POKEMON_DATA.map(p => p.name));
 
-  // Mega con tier National Dex OU o UUBL
-  const megaOk = [];
+  // Mega con tier National Dex da Uber a RUBL
+  const TIER_UBER = ['Uber', 'OU', '(OU)', 'UUBL', 'UU', 'RUBL'], megaOk = [], tierDi = {};
   for (const m of fd.matchAll(/\n\t(\w*mega\w*): \{([^}]*)\}/g)) {
     const t = (/natDexTier: "([^"]+)"/.exec(m[2]) || /tier: "([^"]+)"/.exec(m[2]) || [])[1];
-    if (t === 'OU' || t === 'UUBL') megaOk.push(m[1]);
+    if (TIER_UBER.includes(t)) { megaOk.push(m[1]); tierDi[m[1]] = t; }
   }
   // mosse imparabili: learnset della specie e delle sue pre-evoluzioni
   const impara = (sp, mv) => { let s = Dex.species.get(sp); const seen = new Set();
@@ -60,7 +63,8 @@ const VIETATE = ['hiddenpower', 'return', 'frustration', 'batonpass', 'assist', 
     const src = sets7[id]; if (!src) { report.push('senza set gen7: ' + id); continue; }
     const fisico0 = mega.baseStats.atk >= mega.baseStats.spa, lento = mega.baseStats.spe < 75;
     for (const s of src.sets) {
-      const pool = [...new Set(s.movepool)].filter(mv => { const d = Dex.moves.get(mv); return d.exists && !VIETATE.includes(d.id) && !['Unobtainable', 'LGPE', 'CAP', 'Future'].includes(d.isNonstandard) && impara(base.id, d.id); });
+      // Return/Frustration non esistono più in gen 9: al loro posto Double-Edge (es. Altaria-Mega con Pixilate)
+      const pool = [...new Set(s.movepool.map(mv => ['return', 'frustration'].includes(mv) ? 'doubleedge' : mv))].filter(mv => { const d = Dex.moves.get(mv); return d.exists && !VIETATE.includes(d.id) && !['Unobtainable', 'LGPE', 'CAP', 'Future'].includes(d.isNonstandard) && impara(base.id, d.id); });
       if (pool.length < 4) { report.push('poche mosse ' + id + ' ' + s.role); continue; }
       let fisico = fisico0;
       // scelta delle 4 mosse: al massimo una di potenziamento e una di cura, poi attacchi di tipi diversi (prima lo STAB)
@@ -79,15 +83,18 @@ const VIETATE = ['hiddenpower', 'return', 'frustration', 'batonpass', 'assist', 
       const evs = lento ? { HP: 252, [atkStat]: 252, SpD: 4 } : { HP: 4, [atkStat]: 252, Spe: 252 };
       const natura = lento ? (fisico ? 'Adamant' : 'Modest') : (fisico ? 'Jolly' : 'Timid');
       const abil = Object.values(base.abilities).find(a => !['Shadow Tag', 'Arena Trap', 'Moody'].includes(a));
-      const set = { ruolo: 'Mega ' + (mega.forme.replace('Mega', '').replace('-', ' ').trim() || '') + ' · ' + s.role, strumento: stone, abilita: abil, evs, natura, mosse: scelte.map(m => D(m).name), mega: mega.name };
+      const set = { ruolo: 'Mega ' + (mega.forme.replace('Mega', '').replace('-', ' ').trim() || '') + ' · ' + s.role, strumento: stone, abilita: abil, evs, natura, mosse: scelte.map(m => D(m).name), mega: mega.name, tier: tierDi[id] };
       set.ruolo = set.ruolo.replace(/ {2,}/g, ' ').replace('Mega  ·', 'Mega ·');
       (out[base.name] = out[base.name] || []);
       if (!out[base.name].some(x => x.mosse.join() === set.mosse.join() && x.strumento === set.strumento)) out[base.name].push(set);
     }
   }
-  const head = '// Generato da scarica-mega.js: set con Megaevoluzione per il gruppo Nat Dex OU (Mega).\n// Fonte: Pokémon Showdown (licenza MIT), set Random Battle gen 7 e tier National Dex.\n';
-  fs.writeFileSync(path.join(DIR, 'mega-data.js'), head + 'const MEGA_DATA = ' + JSON.stringify(out, null, 1) + ';\n');
-  console.log('Pokémon con Mega:', Object.keys(out).length, '- set:', Object.values(out).reduce((a, b) => a + b.length, 0));
+  const soloOU = {};
+  for (const [k, v] of Object.entries(out)) { const ou = v.filter(x => x.tier === 'OU' || x.tier === 'UUBL'); if (ou.length) soloOU[k] = ou; }
+  const head = '// Generato da scarica-mega.js: set con Megaevoluzione per i gruppi Nat Dex OU (Mega) e Nat Dex Uber.\n// Fonte: Pokémon Showdown (licenza MIT), set Random Battle gen 7 e tier National Dex.\n';
+  fs.writeFileSync(path.join(DIR, 'mega-data.js'), head + 'const MEGA_DATA = ' + JSON.stringify(soloOU, null, 1) + ';\nconst MEGA_UBER = ' + JSON.stringify(out, null, 1) + ';\n');
+  console.log('Nat Dex OU (Mega):', Object.keys(soloOU).length, 'Pokémon -', Object.values(soloOU).reduce((a, b) => a + b.length, 0), 'set');
+  console.log('Nat Dex Uber - Pokémon con Mega:', Object.keys(out).length, '- set:', Object.values(out).reduce((a, b) => a + b.length, 0));
   for (const [k, v] of Object.entries(out)) console.log(' ', k, '→', v.map(s => s.strumento + ': ' + s.mosse.join(', ')).join(' | '));
   if (report.length) console.log('Note:\n ' + report.join('\n '));
 })().catch(e => { console.error(e); process.exit(1); });
