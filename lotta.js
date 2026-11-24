@@ -1099,157 +1099,330 @@ function effOf(moveId,sid,fp){
 
 // ---------- scelte ----------
 function need(sid){ const r=B.req[sid]; return r&&!r.wait&&B.answered[sid]!==r.rqid; }
-function send(sid,choice){ if(B.tSid===sid) timerClear(); B.answered[sid]=B.req[sid].rqid; B.err=''; if(O.role==='guest') O.net.send({t:'bc',c:choice}); else B.streams[sid].write(choice); $('ctrl').innerHTML='<p class="lt-wait">Il turno è in corso…</p>'; hideTip(); setTimeout(prompt,30); }
-// ---------- Intelligenza del computer (Torre Lotta) ----------
-// Livello 0: mosse a caso. 1: sceglie quasi sempre l'attacco che fa più danno. 2: calcola il danno stimato, cerca il KO
-// (priorità se basta), si cura, piazza trappole e si potenzia quando è al sicuro, cambia Pokémon se rischia grosso.
-// 3: come 2 ma senza errori, prevede meglio, usa Mega/Tera nel momento giusto. Stima i danni con le statistiche base
-// (come farebbe un giocatore esperto), senza sbirciare i set dell'avversario.
-const AI_SETUP={swordsdance:1,dragondance:1,nastyplot:1,calmmind:1,bulkup:1,quiverdance:1,shellsmash:1,coil:1,agility:1,rockpolish:1,victorydance:1,tidyup:1,shiftgear:1,growth:1,honeclaws:1,workup:1,curse:1,bellydrum:1,irondefense:.5,amnesia:.5,cosmicpower:.5};
-const AI_HEAL={recover:1,roost:1,softboiled:1,slackoff:1,moonlight:1,morningsun:1,synthesis:1,shoreup:1,milkdrink:1,healorder:1,strengthsap:1,wish:.6,rest:.7,lifedew:.5,junglehealing:.5};
+function send(sid,choice){ aiObserve(sid,choice); if(B.tSid===sid) timerClear(); B.answered[sid]=B.req[sid].rqid; B.err=''; if(O.role==='guest') O.net.send({t:'bc',c:choice}); else B.streams[sid].write(choice); $('ctrl').innerHTML='<p class="lt-wait">Il turno è in corso…</p>'; hideTip(); setTimeout(prompt,30); }
+// ---------- Intelligenza del computer: 10 livelli ----------
+// Livello 1: gioca quasi a caso. Dal 2 in poi l'abilità cresce sempre più in fretta fino al 10.
+// Idee prese dall'IA di Run & Bun (conosce la tua squadra; KO veloce > KO lento; priorità quando sta per cadere ed è più lento;
+// mai potenziarsi se l'avversario lo manda KO; regole per cure, trappole, Protect, paralisi) e dal gioco dei giocatori forti di
+// VGC/Champions (guardare un turno avanti, prevedere cambi e Protect, attacchi concentrati, controllo della velocità, non sprecare
+// il Pokémon che vince la partita, nei BO3 adattarsi a come gioca l'avversario: dal livello 8 la memoria O.aiMem passa da una lotta all'altra).
+// rnd: probabilità di giocare a caso · noise: errore nei punteggi · sw: quanto spesso fa un cambio giusto · spd: tiene conto di chi è più veloce
+// know: conosce i tuoi set veri (statistiche, mosse, strumento, abilità) · look: guarda avanti (1 = il turno, 2 = anche chi vince lo scontro)
+// pred / mem: forza delle previsioni di cambi e Protect / peso della memoria · prev: scelta dei Pokémon all'inizio · tera: uso della Tera
+const AIL=[null,
+ {rnd:.6, noise:45, sw:0,   spd:0,know:0,look:0,pred:0,  mem:0,  prev:0,tera:0},
+ {rnd:.08,noise:20, sw:.3,  spd:0,know:0,look:0,pred:0,  mem:0,  prev:1,tera:1},
+ {rnd:.04,noise:14, sw:.45, spd:1,know:0,look:0,pred:0,  mem:0,  prev:1,tera:1},
+ {rnd:.02,noise:10, sw:.6,  spd:1,know:0,look:0,pred:0,  mem:0,  prev:1,tera:1},
+ {rnd:.01,noise:7,  sw:.75, spd:1,know:0,look:0,pred:0,  mem:0,  prev:1,tera:2},
+ {rnd:0,  noise:4.5,sw:.9,  spd:1,know:1,look:0,pred:0,  mem:0,  prev:2,tera:2},
+ {rnd:0,  noise:3,  sw:1,   spd:1,know:1,look:1,pred:0,  mem:0,  prev:2,tera:2},
+ {rnd:0,  noise:2,  sw:1,   spd:1,know:1,look:1,pred:.5, mem:.5, prev:3,tera:2},
+ {rnd:0,  noise:1,  sw:1,   spd:1,know:1,look:2,pred:.75,mem:.75,prev:3,tera:3},
+ {rnd:0,  noise:.3, sw:1,   spd:1,know:1,look:2,pred:1,  mem:1,  prev:3,tera:3}];
+const AI_SETUP={swordsdance:1,dragondance:1,nastyplot:1,calmmind:1,bulkup:1,quiverdance:1,shellsmash:1,coil:1,agility:1,rockpolish:1,autotomize:1,victorydance:1,tidyup:1,shiftgear:1,growth:1,honeclaws:1,workup:1,curse:1,bellydrum:1,filletaway:1,irondefense:.5,amnesia:.5,cosmicpower:.5,acidarmor:.5,cottonguard:.5};
+const AI_HEAL={recover:1,roost:1,softboiled:1,slackoff:1,moonlight:1,morningsun:1,synthesis:1,shoreup:1,milkdrink:1,healorder:1,strengthsap:1,rest:1};
 const AI_HAZ={stealthrock:'stealthrock',spikes:'spikes',toxicspikes:'toxicspikes',stickyweb:'stickyweb'};
-const AI_STATUS={willowisp:'brn',thunderwave:'par',toxic:'tox',spore:'slp',sleeppowder:'slp',hypnosis:'slp',yawn:'slp',glare:'par',nuzzle:'par',stunspore:'par',poisonpowder:'psn'};
+const AI_STATUS={willowisp:'brn',thunderwave:'par',toxic:'tox',spore:'slp',sleeppowder:'slp',hypnosis:'slp',yawn:'slp',glare:'par',nuzzle:'par',stunspore:'par',poisonpowder:'psn',darkvoid:'slp',sing:'slp',lovelykiss:'slp'};
+const AI_SPREAD=['allAdjacentFoes','allAdjacent'];
+const PROTECTS_ID=new Set(['protect','detect','kingsshield','spikyshield','banefulbunker','silktrap','burningbulwark','obstruct','maxguard']);
+// abilità che annullano un tipo di mossa (Run & Bun: l'IA conosce le tue abilità)
+const AB_IMM={Levitate:'Ground','Earth Eater':'Ground','Flash Fire':'Fire','Well-Baked Body':'Fire','Water Absorb':'Water','Storm Drain':'Water','Dry Skin':'Water','Volt Absorb':'Electric','Lightning Rod':'Electric','Motor Drive':'Electric','Sap Sipper':'Grass'};
+const AB_NOST={par:['Limber'],slp:['Insomnia','Vital Spirit','Sweet Veil'],brn:['Water Veil','Water Bubble','Thermal Exchange'],psn:['Immunity','Pastel Veil'],tox:['Immunity','Pastel Veil']};
+const aiOther=s=>s==='p1'?'p2':'p1';
+const aiMem=()=>O.aiMem||(O.aiMem={});
+const aiW=()=>B.weather||'';
 function aiStat(base,lvl,isHP){ return isHP?Math.floor((2*base+31+21)*lvl/100)+lvl+10:Math.floor(((2*base+31+21)*lvl/100+5)); }
 function aiMul(st){ return st>0?(2+st)/2:2/(2-st); }
 function aiEff(type,defTypes){ if(!Dex.getImmunity(type,defTypes)) return 0; return Math.pow(2,Dex.getEffectiveness(type,defTypes)); }
-// danno stimato (in % dei PS massimi del difensore) di una mossa
-function aiDmg(mv,atk,def){ if(!mv||mv.category==='Status') return 0; let bp=mv.basePower||0;
-  if(mv.id==='seismictoss'||mv.id==='nightshade') return 100/def.hpStat*100;
-  if(!bp) bp=mv.id==='lowkick'||mv.id==='grassknot'?80:mv.id==='heavyslam'||mv.id==='heatcrash'?80:mv.id==='gyroball'||mv.id==='electroball'?80:60;
-  if(mv.multihit) bp*=Array.isArray(mv.multihit)?(mv.multihit[1]>=5?3.1:2):mv.multihit;
-  const phys=mv.category==='Physical', A=(phys?atk.atk:atk.spa)*aiMul((atk.boosts||{})[phys?'atk':'spa']||0), D=(phys?def.def:def.spd)*aiMul((def.boosts||{})[phys?'def':'spd']||0);
-  const type=mv.id==='terablast'&&atk.tera?atk.tera:mv.type;
-  let d=(Math.floor(Math.floor(2*atk.lvl/5+2)*bp*A/D)/50+2)*.925;
-  if(atk.types.includes(type)) d*=atk.adapt?2:1.5; d*=aiEff(type,def.types);
-  if(phys&&atk.st==='brn'&&atk.ability!=='Guts') d*=.5; if(mv.id==='facade'&&atk.st) d*=2;
-  return d/def.hpStat*100; }
-// descrizione "da giocatore" di un Pokémon in campo: per il proprio lato statistiche vere, per l'altro stime dalle base
-function aiMon(side,sp,extra){ const s=Dex.species.get(sp); const lvl=100, b=s.baseStats;
-  const o={sp:s.name,types:s.types.slice(),lvl,hpStat:aiStat(b.hp,lvl,true),atk:aiStat(b.atk,lvl),def:aiStat(b.def,lvl),spa:aiStat(b.spa,lvl),spd:aiStat(b.spd,lvl),spe:aiStat(b.spe,lvl),boosts:{},st:'',ability:Object.values(s.abilities)[0]};
+// descrizione "da giocatore" di un Pokémon: statistiche stimate dalle base (come farebbe un giocatore esperto senza vedere i set)
+function aiMon(side,sp,extra){ const s=Dex.species.get(sp); const lvl=100, b=s.baseStats; const ab=Object.values(s.abilities);
+  const o={sp:s.name,types:s.types.slice(),origTypes:s.types.slice(),lvl,hpStat:aiStat(b.hp,lvl,true),atk:aiStat(b.atk,lvl),def:aiStat(b.def,lvl),spa:aiStat(b.spa,lvl),spd:aiStat(b.spd,lvl),spe:aiStat(b.spe,lvl),boosts:{},st:'',ability:ab.length===1?ab[0]:null,item:'',hpPct:100,side};
   return Object.assign(o,extra||{}); }
-function cpuSmart(r,level){
-  if(r.teamPreview) return aiPreview(r,level);
-  const me=r.side.pokemon, act=me.find(x=>x.active)||me[0], foeM=actMon('p1');
-  const bench=me.map((m,i)=>({m,i})).filter(x=>!x.m.active&&!x.m.condition.endsWith(' fnt'));
-  const myInfo=x=>{ const sp=x.details.split(',')[0]; const m=aiMon('p2',sp); const S=x.stats||{}; Object.assign(m,{atk:S.atk||m.atk,def:S.def||m.def,spa:S.spa||m.spa,spd:S.spd||m.spd,spe:S.spe||m.spe});
-    const hp=parseHP(x.condition); m.hpStat=hp&&hp.max||m.hpStat; m.hpPct=hp&&hp.max?hp.hp/hp.max*100:0; m.st=hp&&hp.st||''; m.ability=Dex.abilities.get(x.ability||x.baseAbility).name; m.adapt=m.ability==='Adaptability';
-    const tm=B.side.p2.team[x.ident.split(': ')[1]]; if(tm){ m.boosts=tm.boosts||{}; if(tm.tera) m.types=[tm.tera]; } if(x.terastallized) m.types=[x.terastallized]; return m; };
-  const foe=level>=4?aiFoe('p1',level):foeM?aiMon('p1',foeM.species,{boosts:foeM.boosts||{},st:foeM.st||'',hpPct:foeM.max?foeM.hp/foeM.max*100:100}):null;
-  if(foe&&foeM.tera) foe.types=[foeM.tera];
-  // la peggior mossa che l'avversario può avere: i suoi tipi (STAB) con potenza 90
-  const threat=(def)=>{ if(!foe) return 0; if(level>=4&&foe.moves) return aiThreat(foe,def); let best=0; for(const ty of foe.types){ const fake={id:'x',type:ty,basePower:90,category:foe.atk>=foe.spa?'Physical':'Special'}; best=Math.max(best,aiDmg(fake,foe,def)); } return best; };
-  const sw=()=>{ if(!bench.length) return null; let best=null; for(const x of bench){ const m=myInfo(x.m); const th=threat(m), hit=foe?Math.max(...m.types.map(ty=>aiDmg({id:'x',type:ty,basePower:80,category:m.atk>=m.spa?'Physical':'Special'},m,foe))):0;
-      const sc=-th*1.2+hit*.8+m.hpPct*.3; if(!best||sc>best.sc) best={i:x.i,sc}; } return best; };
-  if(r.forceSwitch){ const b=sw(); return b?'switch '+(b.i+1):'pass'; }
-  const a=r.active[0], mine=myInfo(act); if(!foe) return cpuSingle(r);
+// un Pokémon dalla richiesta del motore (dati veri): per il proprio lato sempre, per l'altro solo se l'IA conosce i set
+function aiOwn(x,side){ const sp=x.details.split(',')[0]; const m=aiMon(side,sp); const S=x.stats||{};
+  Object.assign(m,{atk:S.atk||m.atk,def:S.def||m.def,spa:S.spa||m.spa,spd:S.spd||m.spd,spe:S.spe||m.spe});
+  const hp=parseHP(x.condition); m.hpStat=hp&&hp.max||m.hpStat; m.hpPct=hp&&hp.max?hp.hp/hp.max*100:0; m.st=hp&&hp.st||'';
+  m.ability=Dex.abilities.get(x.ability||x.baseAbility).name; m.item=x.item?Dex.items.get(x.item).name:''; m.nick=String(x.ident).split(': ')[1]; m.active=!!x.active;
+  m.moves=(x.moves||[]).map(id=>Dex.moves.get(id)).filter(d=>d.exists);
+  const tm=B.side[side]&&B.side[side].team[m.nick]; if(tm){ m.boosts=tm.boosts||{}; if(tm.tera){ m.types=[tm.tera]; m.tera=tm.tera; } else if(tm.tchange&&tm.tchange.length) m.types=tm.tchange.slice(); }
+  if(x.terastallized){ m.types=[x.terastallized]; m.tera=x.terastallized; } return m; }
+// la squadra dell'altro lato vista dall'IA: con know i set veri, altrimenti specie (note dalla schermata della squadra), PS visti, mosse già usate
+function aiOppTeam(F,know){ const out=[], acts=[B.side[F].act,B.side[F].actb].filter(Boolean);
+  if(know&&B.req[F]&&B.req[F].side){ for(const x of B.req[F].side.pokemon){ const o=aiOwn(x,F); if(o.hpPct>0) out.push(o); } return out; }
+  const team=Object.values(B.side[F].team), M=aiMem(), used=new Set();
+  for(const s of B.sets[F]||[]){ const base=Dex.species.get(s.species).baseSpecies;
+    const tm=team.find(t=>!used.has(t.nick)&&(t.nick===s.name||Dex.species.get(t.species).baseSpecies===base)); if(tm) used.add(tm.nick);
+    const o=aiMon(F,tm?tm.species:s.species,{nick:tm?tm.nick:(s.name||s.species)});
+    if(tm){ o.hpPct=tm.max?tm.hp/tm.max*100:100; o.st=tm.st||''; o.boosts=tm.boosts||{}; if(tm.tera){ o.types=[tm.tera]; o.tera=tm.tera; } else if(tm.tchange&&tm.tchange.length) o.types=tm.tchange.slice();
+      if(tm.itemSeen) o.item=tm.item||''; if(tm.abilitySeen) o.ability=tm.abilitySeen; o.active=acts.includes(tm.nick); }
+    const seen=M.mv&&M.mv[baseSp(o.sp)]; o.moves=seen?Object.keys(seen).map(id=>Dex.moves.get(id)).filter(d=>d.exists):[]; o.partial=true;
+    if(o.hpPct>0&&!(tm&&tm.st==='fnt')) out.push(o); }
+  return out; }
+function aiSpe(x){ if(!x) return 0; let s=x.spe*aiMul((x.boosts||{}).spe||0); if(x.st==='par'&&x.ability!=='Quick Feet') s*=.5; if(x.item==='Choice Scarf') s*=1.5; if(x.item==='Iron Ball') s*=.5;
+  const ab=x.ability, w=aiW(); if((ab==='Swift Swim'&&/Rain|Primordial/.test(w))||(ab==='Chlorophyll'&&/Sunny|Desolate/.test(w))||(ab==='Sand Rush'&&/Sand/.test(w))||(ab==='Slush Rush'&&/Snow|Hail/.test(w))) s*=2;
+  if(x.side&&B.cond[x.side]&&B.cond[x.side].tailwind) s*=2; return s; }
+const aiTR=()=>!!(B.field&&B.field.trickroom);
+function aiPrio(mv,x){ if(!mv) return 0; let p=mv.priority||0; if(x&&x.ability==='Prankster'&&mv.category==='Status') p++; if(x&&x.ability==='Gale Wings'&&mv.type==='Flying'&&x.hpPct>=99) p++;
+  if(x&&x.ability==='Triage'&&mv.flags&&mv.flags.heal) p+=3; if(mv.id==='grassyglide'&&B.field&&B.field.grassyterrain) p++; return p; }
+// chi agisce prima tra a (mossa ma) e b (mossa mb): priorità, poi velocità (Distorsione la inverte); a parità l'IA si crede più veloce (come Run & Bun)
+function aiFirst(a,ma,b,mb){ const pa=aiPrio(ma,a), pb=aiPrio(mb,b); if(pa!==pb) return pa>pb; const sa=aiSpe(a), sb=aiSpe(b); return aiTR()?sa<=sb:sa>=sb; }
+const aiSash=(x,d)=>x&&x.hpPct>=99.5&&(x.item==='Focus Sash'||x.ability==='Sturdy')&&d<200;
+// danno stimato (in % dei PS massimi del difensore). roll: .925 media, .85 minimo, 1 massimo
+function aiDmg(mv,A,D,roll){ if(!mv||!A||!D||mv.category==='Status') return 0; roll=roll||.925; const id=mv.id;
+  if(id==='seismictoss'||id==='nightshade') return aiEff(id==='nightshade'?'Ghost':'Fighting',D.types)?100/D.hpStat*100:0;
+  if(id==='superfang'||id==='ruination'||id==='naturesmadness') return aiEff(mv.type,D.types)?D.hpPct/2:0;
+  if(id==='finalgambit'||id==='endeavor'||id==='counter'||id==='mirrorcoat'||id==='metalburst') return 0;
+  let bp=mv.basePower||0;
+  if(!bp) bp=id==='lowkick'||id==='grassknot'?80:id==='heavyslam'||id==='heatcrash'?80:id==='gyroball'||id==='electroball'?80:60;
+  if(id==='acrobatics'&&!A.item) bp*=2; if(id==='knockoff'&&D.item) bp*=1.5; if(id==='hex'&&D.st) bp*=2; if(id==='facade'&&A.st&&A.st!=='slp') bp*=2;
+  if(id==='venoshock'&&/psn|tox/.test(D.st)) bp*=2; if(id==='eruption'||id==='waterspout'||id==='dragonenergy') bp=Math.max(1,150*(A.hpPct||100)/100);
+  if(id==='brine'&&D.hpPct<=50) bp*=2; if(id==='boltbeak'||id==='fishiousrend') bp*=1.5;
+  if(mv.multihit) bp*=Array.isArray(mv.multihit)?(A.ability==='Skill Link'?mv.multihit[1]:mv.multihit[1]>=5?3.1:2):mv.multihit;
+  let type=id==='terablast'&&A.tera?A.tera:mv.type; const ab=A.ability||'', dab=D.ability||'';
+  const ate={Aerilate:'Flying',Pixilate:'Fairy',Refrigerate:'Ice',Galvanize:'Electric'}; if(type==='Normal'&&ate[ab]){ type=ate[ab]; bp*=1.2; }
+  const eff=aiEff(type,D.types); if(!eff) return 0;
+  if(dab&&AB_IMM[dab]===type&&ab!=='Mold Breaker') return 0; if(dab==='Wonder Guard'&&eff<2) return 0;
+  if(mv.flags&&((dab==='Bulletproof'&&mv.flags.bullet)||(dab==='Soundproof'&&mv.flags.sound))) return 0;
+  if(type==='Ground'&&D.item==='Air Balloon') return 0;
+  const phys=mv.category==='Physical', hitsDef=phys||id==='psyshock'||id==='psystrike'||id==='secretsword';
+  let atkS=id==='bodypress'?A.def:id==='foulplay'?D.atk:(phys?A.atk:A.spa), defS=hitsDef?D.def:D.spd;
+  atkS*=aiMul(((id==='foulplay'?D.boosts:A.boosts)||{})[id==='bodypress'?'def':phys?'atk':'spa']||0);
+  if(ab!=='Unaware') defS*=aiMul((D.boosts||{})[hitsDef?'def':'spd']||0);
+  if(phys&&(ab==='Huge Power'||ab==='Pure Power')) atkS*=2; if(phys&&(ab==='Hustle'||(ab==='Guts'&&A.st))) atkS*=1.5;
+  if(A.item==='Choice Band'&&phys) atkS*=1.5; if(A.item==='Choice Specs'&&!phys) atkS*=1.5;
+  if(D.item==='Assault Vest'&&!hitsDef) defS*=1.5; if(D.item==='Eviolite'&&Dex.species.get(D.sp).nfe) defS*=1.5;
+  const w=aiW(); if(/Sand/.test(w)&&!hitsDef&&D.types.includes('Rock')) defS*=1.5; if(/Snow/.test(w)&&hitsDef&&D.types.includes('Ice')) defS*=1.5;
+  let d=Math.floor(Math.floor(2*A.lvl/5+2)*bp*atkS/Math.max(1,defS))/50+2;
+  const orig=A.origTypes||A.types; if(A.types.includes(type)||orig.includes(type)||ab==='Protean'||ab==='Libero'){ let st=ab==='Adaptability'?2:1.5; if(A.tera&&A.tera===type&&orig.includes(type)) st=ab==='Adaptability'?2.25:2; d*=st; }
+  d*=eff;
+  if(/Sunny|Desolate/.test(w)){ if(type==='Fire') d*=1.5; if(type==='Water') d*=/Desolate/.test(w)?0:.5; }
+  if(/Rain|Primordial/.test(w)){ if(type==='Water') d*=1.5; if(type==='Fire') d*=/Primordial/.test(w)?0:.5; }
+  if(phys&&A.st==='brn'&&ab!=='Guts'&&id!=='facade') d*=.5;
+  const fl=mv.flags||{};
+  if(ab==='Technician'&&bp<=60) d*=1.5; if(ab==='Tough Claws'&&fl.contact) d*=1.3; if(ab==='Sheer Force'&&mv.secondaries) d*=1.3; if(ab==='Iron Fist'&&fl.punch) d*=1.2;
+  if(ab==='Strong Jaw'&&fl.bite) d*=1.5; if(ab==='Sharpness'&&fl.slicing) d*=1.5; if(ab==='Mega Launcher'&&fl.pulse) d*=1.5; if(ab==='Punk Rock'&&fl.sound) d*=1.3;
+  if(ab==='Tinted Lens'&&eff<1) d*=2; if(ab==='Water Bubble'&&type==='Water') d*=2; if(ab==='Steelworker'&&type==='Steel') d*=1.5; if(ab==='Transistor'&&type==='Electric') d*=1.3; if(ab==="Dragon's Maw"&&type==='Dragon') d*=1.5; if(ab==='Rocky Payload'&&type==='Rock') d*=1.5;
+  if(dab==='Thick Fat'&&(type==='Fire'||type==='Ice')) d*=.5; if((dab==='Heatproof'||dab==='Water Bubble')&&type==='Fire') d*=.5; if(dab==='Purifying Salt'&&type==='Ghost') d*=.5;
+  if(dab==='Fluffy'){ if(fl.contact) d*=.5; if(type==='Fire') d*=2; } if(dab==='Ice Scales'&&!phys) d*=.5; if(dab==='Fur Coat'&&phys) d*=.5; if(dab==='Punk Rock'&&fl.sound) d*=.5;
+  if((dab==='Multiscale'||dab==='Shadow Shield')&&D.hpPct>=99.5) d*=.5; if((dab==='Filter'||dab==='Solid Rock'||dab==='Prism Armor')&&eff>1) d*=.75;
+  if(A.item==='Life Orb') d*=1.3; if(A.item==='Expert Belt'&&eff>1) d*=1.2;
+  const sc=(D.side&&B.cond[D.side])||{}; if(sc.auroraveil||(hitsDef?sc.reflect:sc.lightscreen)) d*=isDbl()?2732/4096:.5;
+  let pct=d*roll/D.hpStat*100;
+  if(pct>=D.hpPct&&aiSash(D,pct)&&!mv.multihit) pct=D.hpPct-.5;
+  return pct; }
+// danni da trappole entrando in campo
+function aiHaz(x){ const c=(x.side&&B.cond[x.side])||{}; if(x.item==='Heavy-Duty Boots'||x.ability==='Magic Guard') return 0; let d=0;
+  if(c.stealthrock) d+=12.5*aiEff('Rock',x.types);
+  if(c.spikes&&!x.types.includes('Flying')&&x.ability!=='Levitate'&&x.item!=='Air Balloon') d+=[0,12.5,16.7,25][Math.min(3,c.spikes)]; return d; }
+// mosse che l'IA considera per un Pokémon: quelle vere (o già viste); se ne conosce meno di 4 aggiunge un attacco del suo tipo da 90 di potenza
+function aiMoves(x){ const l=(x.moves||[]).filter(m=>m.category!=='Status'); if(x.partial&&(x.moves||[]).length<4) for(const ty of x.types) l.push({id:'x',name:ty,type:ty,basePower:90,category:x.atk>=x.spa?'Physical':'Special',priority:0,flags:{}}); return l; }
+function aiBest(A,D,roll){ let best={mv:null,d:0}; if(!A||!D) return best; for(const m of aiMoves(A)){ const d=aiDmg(m,A,D,roll)*(isDbl()&&AI_SPREAD.includes(m.target)?.75:1); if(d>best.d) best={mv:m,d}; } return best; }
+function aiThreat(A,D,roll){ return aiBest(A,D,roll).d; }
+// chi vince lo scontro uno contro uno (ognuno usa il suo attacco migliore): 1 vince a, -1 vince b
+function aiRace(a,aHp,b,bHp){ if(aHp<=0) return -1; if(bHp<=0) return 1; const ba=aiBest(a,b), bb=aiBest(b,a);
+  const ta=ba.d>0?Math.ceil(bHp/ba.d):99, tb=bb.d>0?Math.ceil(aHp/bb.d):99; if(ta===99&&tb===99) return 0; if(ta!==tb) return ta<tb?1:-1; return aiFirst(a,ba.mv,b,bb.mv)?1:-1; }
+// quanto vale un Pokémon: quota degli avversari rimasti che batte uno contro uno (per non sprecare chi vince la partita)
+function aiVal(x,opp){ if(!opp.length) return 0; let w=0; for(const o of opp) if(aiRace(x,x.hpPct,o,o.hpPct)>0) w++; return w/opp.length; }
+const aiNoise=L=>Math.random()*AIL[L].noise;
+
+// ---------- singolo ----------
+function aiSingle(r,L,S){ const P=AIL[L], F=aiOther(S), M=aiMem();
+  if(r.teamPreview) return aiPreview(r,L,S);
+  if(Math.random()<P.rnd) return cpuSingle(r);
+  const team=r.side.pokemon, opp=aiOppTeam(F,P.know), foe=opp.find(o=>o.active);
+  const own=team.map((x,i)=>Object.assign(aiOwn(x,S),{idx:i,pos:S})).filter(o=>o.hpPct>0), bench=own.filter(o=>!team[o.idx].active);
+  if(r.forceSwitch){ if(!bench.length) return 'pass'; return 'switch '+(aiReplace(bench,foe,opp,L).idx+1); }
+  const a=r.active&&r.active[0], mine=own.find(o=>team[o.idx].active); if(!a||!mine||!foe) return cpuSingle(r);
   const opts=a.moves.map((m,i)=>({m,i,d:Dex.moves.get(m.id||m.move)})).filter(x=>!x.m.disabled&&(x.m.pp===undefined||x.m.pp>0));
   if(!opts.length) return 'move 1';
-  if(level<=0||(level===1&&Math.random()<.25)) return cpuSingle(r);
-  const faster=mine.spe*aiMul(mine.boosts.spe||0)*(mine.st==='par'?.5:1) > foe.spe*aiMul(foe.boosts.spe||0)*(foe.st==='par'?.5:1);
-  const danger=threat(mine), myHp=mine.hpPct, foeHp=foe.hpPct, sideFoe=B.cond.p1||{};
-  for(const o of opts){ const mv=o.d; let s=0;
-    if(mv.category!=='Status'){ const dmg=aiDmg(mv,mine,foe); s=Math.min(dmg,foeHp+10);
-      if(dmg>=foeHp){ s+=60; if(mv.priority>0) s+=faster?5:40; if(!faster&&myHp<=danger) s+=mv.priority>0?30:0; }
-      if(mv.self&&mv.self.boosts&&Object.values(mv.self.boosts).some(v=>v<0)&&dmg<foeHp) s-=8;
-      if(mv.recoil||mv.mindBlownRecoil) s-=myHp<30?15:3;
-      if(mv.flags&&mv.flags.charge&&mv.id!=='solarbeam') s-=25;
-      if(level>=2&&(mv.accuracy!==true&&mv.accuracy<85)) s*=mv.accuracy/100;
-      if(mv.id==='fakeout'&&!B.fakeoutUsed) s+=12; if(mv.id==='uturn'||mv.id==='voltswitch'||mv.id==='flipturn') s+=danger>=myHp&&bench.length?15:2; }
-    else { const id=mv.id;
-      if(AI_SETUP[id]){ const safe=danger<myHp*.45; const boosted=Object.values(mine.boosts).reduce((a,b)=>a+Math.max(0,b),0); s=safe&&boosted<4?38*AI_SETUP[id]:0; if(id==='bellydrum') s=myHp>75&&safe?45:0; if(id==='shellsmash') s=safe||faster?50:5; }
-      else if(AI_HEAL[id]){ s=myHp<45?55*AI_HEAL[id]:myHp<70?18*AI_HEAL[id]:0; if(id==='rest'&&mine.st) s+=15; }
-      else if(AI_HAZ[id]){ const c=sideFoe[AI_HAZ[id]]||0; s=(id==='spikes'?c<3:id==='toxicspikes'?c<2:!c)?30-(B.turn>8?15:0):0; if(danger>=myHp) s-=20; }
-      else if(AI_STATUS[id]){ const t=AI_STATUS[id]; s=foe.st?0:22; if(t==='brn'&&foe.atk>foe.spa) s+=15; if(t==='brn'&&foe.types.includes('Fire')) s=0; if(t==='par'&&(foe.types.includes('Electric')||(id==='thunderwave'&&foe.types.includes('Ground')))) s=0; if(t==='tox'&&(foe.types.includes('Steel')||foe.types.includes('Poison'))) s=0; if(t==='slp'&&(id==='sleeppowder'||id==='spore')&&foe.types.includes('Grass')) s=0; if(t==='slp') s+=10; }
-      else if(id==='protect'||id==='detect'||id==='kingsshield'||id==='spikyshield'||id==='banefulbunker'||id==='silktrap') s=(B.lastProtect?0:(mine.st==='tox'||danger>=myHp)?12:4);
-      else if(id==='substitute') s=myHp>60&&danger<30?20:0;
-      else if(id==='defog'||id==='rapidspin'||id==='mortalspin'||id==='courtchange'){ const mc=B.cond.p2||{}; s=(mc.stealthrock||mc.spikes||mc.toxicspikes||mc.stickyweb)?32:0; }
-      else if(id==='taunt'||id==='encore') s=10; else if(id==='trick'||id==='switcheroo') s=12; else if(id==='destinybond') s=myHp<30&&!faster?40:0;
-      else s=8; }
-    if(level===1) s+=Math.random()*25; else if(level===2) s+=Math.random()*10; else s+=Math.random()*2;
-    o.s=s; }
-  opts.sort((x,y)=>y.s-x.s); const best=opts[0];
-  // cambio: se resto in campo vado KO (o quasi) e ho in panchina qualcuno messo molto meglio
-  const b=level>=2&&bench.length&&!a.trapped&&!a.maybeTrapped?sw():null, stay=-danger*1.2+(best.s)*.8+myHp*.3;
-  (B.aiLog=B.aiLog||[]).push({me:mine.sp,foe:foe.sp,danger:Math.round(danger),hp:Math.round(myHp),best:best.d&&best.d.name,s:Math.round(best.s),sw:b&&{to:me[b.i].details.split(',')[0],sc:Math.round(b.sc)},stay:Math.round(stay)}); if(B.aiLog.length>40) B.aiLog.shift();
-  if(b){
-    if(danger>=myHp*.9&&best.s<60&&b.sc>stay+25&&(level>=3||Math.random()<.6)) return 'switch '+(b.i+1);
-    // bloccato su una mossa inutile (es. strumento Scelta): meglio cambiare
-    if(opts.length===1&&best.s<15&&b.sc>stay) return 'switch '+(b.i+1); }
-  let ch='move '+(best.i+1);
-  if(best.d&&best.d.id==='protect') B.lastProtect=true; else B.lastProtect=false;
-  if(a.canMegaEvo) ch+=' mega';
-  else if(a.canTerastallize&&level>=2){ const tt=a.canTerastallize; const useT=best.d&&best.d.category!=='Status'&&(best.d.type===tt||best.d.id==='terablast');
-    const defensive=level>=3&&danger>=myHp&&threat(Object.assign({},mine,{types:[tt]}))<danger*.5; if(useT&&(best.s>=60||myHp<60)||defensive) ch+=' terastallize'; }
+  const fBest=aiBest(foe,mine,P.look>=2?1:.925), danger=fBest.d;
+  const c={P,L,S,F,M,mine,foe,opp,own,bench,danger,fBest,myHp:mine.hpPct,foeHp:foe.hpPct,faster:aiFirst(mine,null,foe,null)};
+  for(const o of opts) o.s=aiScoreMove(o.d,c);
+  // previsione: se l'avversario sta per cambiare, colpisce chi entra (o si potenzia/piazza trappole nel turno libero)
+  c.pS=0; if(P.pred&&opp.length>1){ const pS=aiPSwitch(c); const Y=pS>.2?aiPredIn(c):null;
+    if(Y){ c.pS=pS; c.Y=Y; for(const o of opts){ if(o.d.category!=='Status'){ const dy=aiDmg(o.d,mine,Y); o.s=(1-pS)*o.s+pS*(Math.min(dy,Y.hpPct+10)+(dy>=Y.hpPct?30:0)); } else if(AI_SETUP[o.d.id]||AI_HAZ[o.d.id]||AI_STATUS[o.d.id]) o.s+=pS*15; } } }
+  const trapped=a.trapped||a.maybeTrapped; let pick=null;
+  if(P.look){ // un turno avanti: quanto perdo restando (o cambiando) e chi vince poi lo scontro
+    const acts=opts.map(o=>({o,s:o.s+aiLookMove(o,c)}));
+    if(!trapped) for(const b of bench) acts.push({b,s:aiLookSwitch(b,c)});
+    for(const x of acts) x.s+=aiNoise(L); acts.sort((x,y)=>y.s-x.s); pick=acts[0];
+  } else {
+    for(const o of opts) o.s+=aiNoise(L); opts.sort((x,y)=>y.s-x.s); pick={o:opts[0],s:opts[0].s};
+    // cambio "a regola": se resto vado KO e in panchina c'è chi regge molto meglio
+    if(!trapped&&bench.length&&Math.random()<P.sw){ const b=bench.map(x=>({x,sc:aiSwScore(x,foe)})).sort((p,q)=>q.sc-p.sc)[0], best=opts[0], stay=-danger*1.2+best.s*.8+c.myHp*.3;
+      if((danger>=c.myHp*.9&&best.s<60&&b.sc>stay+25)||(best.s<5&&b.sc>stay&&c.myHp>50)) pick={b:b.x}; } }
+  (B.aiLog=B.aiLog||[]).push({L,me:mine.sp,foe:foe.sp,danger:Math.round(danger),hp:Math.round(c.myHp),pS:Math.round(c.pS*100),Y:c.Y&&c.Y.sp,pick:pick.b?'→'+pick.b.sp:pick.o.d.name,s:Math.round(pick.s)}); if(B.aiLog.length>60) B.aiLog.shift();
+  if(pick.b){ B.aiSwT=B.turn; return 'switch '+(pick.b.idx+1); }
+  const best=pick.o; let ch='move '+(best.i+1); B.aiLastProt=PROTECTS_ID.has(best.d.id)?B.turn:B.aiLastProt;
+  if(a.canMegaEvo) ch+=' mega'; else if(a.canTerastallize&&aiTeraOk(a.canTerastallize,best,c)) ch+=' terastallize';
   return ch; }
+// punteggio di una mossa (scala: circa i "% di PS" tolti, più bonus come nell'IA di Run & Bun)
+function aiScoreMove(mv,c){ const {P,L,mine,foe,danger,faster,myHp,foeHp}=c, id=mv.id; let s=0;
+  const dead=danger>=myHp&&!aiSash(mine,danger), slower=!faster, foeInc=foe.st==='slp'||foe.st==='frz';
+  if(mv.category!=='Status'){
+    const dAvg=aiDmg(mv,mine,foe), dKO=L>=8?aiDmg(mv,mine,foe,.85):dAvg; s=Math.min(dAvg,foeHp+10);
+    const pr=aiPrio(mv,mine)>0&&!(B.field&&B.field.psychicterrain), first=pr||faster;
+    if(dKO>=foeHp){ s+=!P.spd?60:first?70:(dead?0:35); }
+    if(P.spd&&dead&&slower&&pr) s+=40;
+    if(P.spd&&dead&&!first) s*=.35;
+    if(mv.self&&mv.self.boosts&&Object.values(mv.self.boosts).some(v=>v<0)&&dKO<foeHp) s-=8;
+    if(mv.recoil||mv.mindBlownRecoil) s-=myHp<30?15:3;
+    if(mv.flags&&mv.flags.charge&&mine.item!=='Power Herb'&&!(id==='solarbeam'&&/Sunny|Desolate/.test(aiW()))) s-=30;
+    if(mv.flags&&mv.flags.recharge&&dKO<foeHp) s-=20;
+    if(L>=2&&mv.accuracy!==true&&mv.accuracy<100) s*=mv.accuracy/100;
+    if(id==='fakeout'||id==='firstimpression'){ const fresh=B.aiFresh&&B.aiFresh[mine.pos||c.S]===B.turn; s=fresh?s+(id==='fakeout'?(foe.types.includes('Ghost')||foe.ability==='Inner Focus'?-40:14):0):-60; }
+    if(id==='suckerpunch'&&B.aiSucker===B.turn-1) s*=.5;
+    if(id==='knockoff'&&foe.item) s+=6;
+    if(['uturn','voltswitch','flipturn'].includes(id)&&c.bench.length) s+=danger>=myHp*.6?15:3;
+    if(mv.drain) s+=Math.min(dAvg,foeHp)*mv.drain[0]/mv.drain[1]*(myHp<70?.5:.15);
+    if(['icywind','electroweb','rocktomb','bulldoze','mudshot','lowsweep'].includes(id)&&slower&&!dead&&!['Clear Body','White Smoke','Contrary'].includes(foe.ability)) s+=8;
+    if((id==='explosion'||id==='selfdestruct'||id==='mistyexplosion')&&myHp>40) s-=40;
+    return s; }
+  const fm=foe.moves||[], boosted=Object.values(mine.boosts||{}).reduce((a,b)=>a+Math.max(0,b),0);
+  if(AI_SETUP[id]){ if(dead||foe.ability==='Unaware'&&id!=='swordsdance') return -20;
+    s=boosted>=4?0:30*AI_SETUP[id]; if(slower&&danger*2>=myHp) s-=20; if(foeInc) s+=20; if(L>=9) s+=aiSetupGain(mv,c);
+    if(id==='bellydrum') s=myHp>75&&danger<myHp-50?45:0; if(id==='shellsmash') s=danger<myHp*.5?50:5; if((id==='agility'||id==='rockpolish'||id==='autotomize')&&faster) s=-10;
+    if(id==='curse'&&mine.types.includes('Ghost')) s=myHp>60&&foe.hpPct>50?18:0; return s; }
+  if(AI_HEAL[id]) return myHp>=99?-20:aiShouldHeal(c,id)?55:(myHp>=85?-6:5);
+  if(AI_HAZ[id]){ const cnd=B.cond[c.F]||{}, lv=cnd[AI_HAZ[id]]||0, ok=id==='spikes'?lv<3:id==='toxicspikes'?lv<2:!lv;
+    if(!ok) return -20; s=10+c.opp.length*5+(B.aiFresh&&B.aiFresh[mine.pos||c.S]===B.turn?8:0)-(B.turn>10?8:0); if(dead) s-=25; if(id==='stickyweb') s+=5; return s; }
+  if(AI_STATUS[id]){ const t=AI_STATUS[id]; if(foe.st||(AB_NOST[t]||[]).includes(foe.ability)||foe.ability==='Purifying Salt'||foe.ability==='Good as Gold'||foe.ability==='Magic Bounce') return -20;
+    if(t==='slp'&&(B.field&&(B.field.electricterrain||B.field.mistyterrain))) return -20;
+    s=22; if(t==='brn'&&(foe.types.includes('Fire')||foe.ability==='Guts')) return -20; if(t==='brn'&&foe.atk>foe.spa) s+=15;
+    if(t==='par'&&(foe.types.includes('Electric')||(id==='thunderwave'&&(foe.types.includes('Ground')||foe.ability==='Volt Absorb')))) return -20;
+    if(t==='par'&&!faster&&aiSpe(mine)>aiSpe(foe)/2) s+=15; if((t==='tox'||t==='psn')&&(foe.types.includes('Steel')||foe.types.includes('Poison'))) return -20;
+    if(t==='slp'&&(id==='sleeppowder'||id==='spore')&&(foe.types.includes('Grass')||foe.ability==='Overcoat'||foe.item==='Safety Goggles')) return -20; if(t==='slp') s+=12;
+    if(mv.accuracy!==true&&L>=2) s*=mv.accuracy/100; if(dead&&slower) s-=15; return s; }
+  if(PROTECTS_ID.has(id)){ s=B.aiLastProt===B.turn-1?-30:4; if(/psn|tox|brn/.test(mine.st)) s-=4; if(/psn|tox|brn/.test(foe.st)) s+=8; if((B.cond[c.S]||{}).wish) s+=25; return s; }
+  if(id==='substitute') return myHp<=50||fm.some(m=>m.flags&&m.flags.sound)?-20:foeInc?28:(danger<25?18:0);
+  if(['defog','rapidspin','mortalspin','courtchange'].includes(id)){ const mc=B.cond[c.S]||{}; return (mc.stealthrock||mc.spikes||mc.toxicspikes||mc.stickyweb)?30:0; }
+  if(id==='taunt') return fm.some(m=>m.category==='Status')?(faster?26:16):6;
+  if(id==='encore'){ const lm=M_last(c,foe); return lm&&lm.category==='Status'&&faster?40:4; }
+  if(id==='trick'||id==='switcheroo') return /Choice|Toxic Orb|Flame Orb|Iron Ball|Lagging Tail|Sticky Barb|Black Sludge/.test(mine.item||'')?24:6;
+  if(id==='destinybond') return dead&&faster?45:dead?12:0;
+  if(id==='trickroom') return aiTR()?-40:(slower?32:-10);
+  if(id==='tailwind') return (B.cond[c.S]||{}).tailwind?-30:(slower?30:6);
+  if(id==='painsplit') return myHp<foe.hpPct-20?35:0;
+  if(id==='wish') return myHp<60?28:8;
+  if(id==='healingwish'||id==='lunardance'||id==='memento') return myHp<30&&c.bench.length?30:0;
+  if(id==='reflect'||id==='lightscreen'||id==='auroraveil'){ const sc=B.cond[c.S]||{}; return sc[id]||(id==='auroraveil'&&!/Snow|Hail/.test(aiW()))?-20:18; }
+  if(id==='haze'||id==='roar'||id==='whirlwind'){ const fb=Object.values(foe.boosts||{}).reduce((a,b)=>a+Math.max(0,b),0); return fb>=2?40:(id!=='haze'&&Object.keys(B.cond[c.F]||{}).some(k=>AI_HAZ[k])?14:2); }
+  if(id==='leechseed') return foe.types.includes('Grass')?-20:18;
+  return 8; }
+const M_last=(c,foe)=>{ const id=c.M.last&&c.M.last[foe.nick]; return id?Dex.moves.get(id):null; };
+// Run & Bun "conviene curarsi?"
+function aiShouldHeal(c,id){ const {mine,danger,faster,myHp}=c, heal=id==='rest'?100:50; if(mine.st==='tox') return false; if(danger>=heal&&danger<myHp) return false;
+  if(faster){ if(danger>=myHp) return danger<myHp+heal; if(myHp<40) return true; if(myHp<66) return Math.random()<.5; }
+  else { if(myHp<50) return true; if(myHp<70) return Math.random()<.75; } return false; }
+// livello 9+: dopo il potenziamento divento abbastanza forte (o veloce) da vincere?
+function aiSetupGain(mv,c){ const bo=mv.boosts||(mv.self&&mv.self.boosts)||{}; const m2=Object.assign({},c.mine,{boosts:Object.assign({},c.mine.boosts)});
+  for(const k in bo) m2.boosts[k]=Math.max(-6,Math.min(6,(m2.boosts[k]||0)+bo[k]));
+  const before=aiBest(c.mine,c.foe).d, after=aiBest(m2,c.foe).d, fast=aiFirst(m2,null,c.foe,null); let g=0;
+  if(after>before*1.25) g+=8; if(after>=c.foeHp&&fast) g+=18; if(c.danger*2>=c.myHp) g-=15;
+  if(c.opp.length>1&&c.opp.filter(o=>!o.active).every(o=>aiThreat(o,m2)<c.myHp*.5)) g+=10; return g; }
+// probabilità che l'avversario cambi Pokémon: di base (35% se minacciato) corretta con quello che ha fatto finora
+function aiPSwitch(c){ const thr=aiBest(c.mine,c.foe).d>=c.foe.hpPct*.8, prior=thr?.35:.06, k=c.M[thr?'thr':'calm'];
+  let p=prior; if(k&&c.P.mem) p=prior+c.P.mem*((k.sw+prior*3)/(k.n+3)-prior); return Math.min(.9,p)*Math.min(1,c.P.pred+.25); }
+// chi entrerà: quello che ha già usato contro questo Pokémon (memoria), altrimenti chi resiste meglio al mio attacco migliore
+function aiPredIn(c){ const cand=c.opp.filter(o=>!o.active); if(!cand.length) return null;
+  const sw=c.P.mem&&c.M.swTo&&c.M.swTo[baseSp(c.mine.sp)]; if(sw){ const top=cand.map(o=>({o,n:sw[baseSp(o.sp)]||0})).sort((a,b)=>b.n-a.n)[0]; if(top.n) return top.o; }
+  return cand.map(o=>({o,s:-aiBest(c.mine,o).d+aiThreat(o,c.mine)*.5})).sort((a,b)=>b.s-a.s)[0].o; }
+// guardare un turno avanti, restando con una mossa: quanto danno ricevo prima/dopo, vado KO prima di agire?, chi vince poi lo scontro
+function aiLookMove(o,c){ const {mine,foe,fBest,P}=c, mv=o.d; let v=0;
+  const first=aiFirst(mine,mv,foe,fBest.mv), dealt=mv.category==='Status'?0:aiDmg(mv,mine,foe), kill=dealt>=c.foeHp;
+  let taken=(first&&kill)?0:Math.min(c.danger,c.myHp); if(PROTECTS_ID.has(mv.id)&&B.aiLastProt!==B.turn-1) taken=0;
+  const dies=taken>=c.myHp&&!aiSash(mine,taken);
+  taken*=(1-c.pS); v-=taken*(1+(P.mem?.4*aiVal(mine,c.opp):0)); if(dies&&!first) v-=o.s*.6; if(dies) v-=30*(1-c.pS);
+  if(P.look>=2&&!dies&&!kill){ const r=aiRace(mine,c.myHp-taken,foe,c.foeHp-dealt); v+=r*18; }
+  return v; }
+function aiLookSwitch(b,c){ const {foe,fBest,P}=c; let taken=aiDmg(fBest.mv,foe,b)*(1-c.pS)+aiHaz(b); taken=Math.min(taken,b.hpPct);
+  let v=-taken*(1+(P.mem?.4*aiVal(b,c.opp):0))-8; if(taken>=b.hpPct) v-=40; if(B.aiSwT===B.turn-1) v-=12;
+  if(P.look>=2&&taken<b.hpPct) v+=aiRace(b,b.hpPct-taken,foe,c.foeHp)*22; else { const hit=aiBest(b,foe).d; v+=Math.min(hit,c.foeHp)*.3; }
+  return v; }
+function aiSwScore(x,foe){ const hit=aiBest(x,foe).d; return -aiThreat(foe,x)*1.2+hit*.8+x.hpPct*.3-aiHaz(x); }
+// chi mandare in campo dopo un KO: dal livello 5 come Run & Bun (prima chi è più veloce e lo manda KO, poi chi lo manda KO e regge il colpo),
+// dal 7 chi vince lo scontro, dall'8 senza sacrificare il Pokémon più prezioso
+function aiReplace(bench,foe,opp,L){ if(L<=1||!foe) return bench[Math.random()*bench.length|0];
+  const sc=bench.map(x=>{ let s=aiSwScore(x,foe); if(L>=5){ const bx=aiBest(x,foe), bf=aiBest(foe,x), hz=aiHaz(x);
+      if(bx.d>=foe.hpPct&&aiFirst(x,bx.mv,foe,bf.mv)) s+=200; else if(bx.d>=foe.hpPct&&bf.d<x.hpPct-hz) s+=150;
+      if(L>=7){ const rc=aiRace(x,x.hpPct-hz,foe,foe.hpPct); s+=rc*40; if(L>=8&&rc<0) s-=aiVal(x,opp)*40; } }
+    return {x,s:s+aiNoise(L)}; }).sort((a,b)=>b.s-a.s); return sc[0].x; }
+// Tera: 1 = quando l'attacco è del tipo Tera ed è forte; 2 = anche per assicurare un KO o per non andare KO; 3 = solo quando serve davvero
+function aiTeraOk(tt,best,c){ const T=c.P.tera; if(!T) return false; const mv=best.d, off=mv.category!=='Status'&&(mv.type===tt||mv.id==='terablast');
+  if(T===1) return off&&(best.s>=60||c.myHp<60);
+  const m2=Object.assign({},c.mine,{types:[tt],tera:tt}), dNow=aiDmg(mv,c.mine,c.foe), dT=off?aiDmg(mv,m2,c.foe):0;
+  const killT=dT>=c.foeHp&&dNow<c.foeHp, saves=c.danger>=c.myHp&&aiThreat(c.foe,m2)<c.myHp*.6;
+  if(T===2) return killT||saves||(off&&best.s>=70);
+  const v=aiVal(c.mine,c.opp); return (killT&&(v>=.5||c.opp.length<=2))||(saves&&v>=.34)||(c.opp.length===1&&(killT||saves)); }
 
-// ---------- IA avanzata (livello 4) e IA tattica del doppio ----------
-// Livello 4 ("Asso"): come le IA più dure delle ROM modificate, conosce la tua squadra (statistiche e mosse vere) e la usa
-// per calcolare i danni che riceve e quelli che infligge, invece di stimarli dalle statistiche base.
-function aiFoe(pos,level){ const fm=actMon(pos); if(!fm||fm.st==='fnt') return null;
-  const o=aiMon('p1',fm.species,{boosts:fm.boosts||{},st:fm.st||'',hpPct:fm.max?fm.hp/fm.max*100:100,pos});
-  if(fm.tera) o.types=[fm.tera]; else if(fm.tchange&&fm.tchange.length) o.types=fm.tchange.slice();
-  if(level>=4&&B.req&&B.req.p1&&B.req.p1.side){ const rp=B.req.p1.side.pokemon.find(x=>String(x.ident||'').split(': ')[1]===fm.nick);
-    if(rp){ const S=rp.stats||{}; Object.assign(o,{atk:S.atk||o.atk,def:S.def||o.def,spa:S.spa||o.spa,spd:S.spd||o.spd,spe:S.spe||o.spe,moves:(rp.moves||[]).map(id=>Dex.moves.get(id)).filter(m=>m.exists)});
-      const h=parseHP(rp.condition); if(h&&h.max) o.hpStat=h.max; o.ability=Dex.abilities.get(rp.ability||rp.baseAbility).name; } }
-  return o; }
-// danno massimo che "foe" può fare a "def": con il livello 4 le sue mosse vere, altrimenti uno STAB da 90 di potenza
-function aiThreat(foe,def){ if(!foe||!def) return 0; let best=0;
-  if(foe.moves&&foe.moves.length){ for(const m of foe.moves) best=Math.max(best,aiDmg(m,foe,def)*(['allAdjacentFoes','allAdjacent'].includes(m.target)&&isDbl()?.75:1)); return best; }
-  for(const ty of foe.types){ const fake={id:'x',type:ty,basePower:90,category:foe.atk>=foe.spa?'Physical':'Special'}; best=Math.max(best,aiDmg(fake,foe,def)); } return best; }
-function aiSpe(x){ return x.spe*aiMul((x.boosts||{}).spe||0)*(x.st==='par'?.5:1); }
-// scelta dei Pokémon alla schermata della squadra (Champions e doppio): i migliori contro la squadra avversaria
-function aiPreview(r,level){ const N=pickN(r)||(isDbl()?2:1), team=r.side.pokemon;
-  if(level<3) return 'team '+shuffleArr(team.map((x,i)=>i+1)).slice(0,Math.max(N,isDbl()?2:1)).join('');
-  const foes=(B.sets.p1||[]).map(s=>aiMon('p1',s.species));
-  const score=team.map((p,i)=>{ const sp=p.details.split(',')[0], me=aiMon('p2',sp); const S=p.stats||{}; Object.assign(me,{atk:S.atk||me.atk,def:S.def||me.def,spa:S.spa||me.spa,spd:S.spd||me.spd,spe:S.spe||me.spe});
-    let s=0; for(const f of foes){ const off=Math.max(...me.types.map(ty=>aiDmg({id:'x',type:ty,basePower:90,category:me.atk>=me.spa?'Physical':'Special'},me,f))); const def=aiThreat(f,me); s+=Math.min(off,100)-Math.min(def,100)*0.8; }
-    if(isDbl()&&(p.moves||[]).some(m=>['fakeout','tailwind','trickroom','followme','ragepowder','helpinghand'].includes(m))) s+=40;
-    return {i,s}; }).sort((a,b)=>b.s-a.s);
-  return 'team '+score.slice(0,Math.max(N,isDbl()?2:1)).map(x=>x.i+1).join(''); }
-const AI_SPREAD=['allAdjacentFoes','allAdjacent'];
-function cpuDblSmart(r,level){
-  const team=r.side.pokemon;
-  if(r.teamPreview) return aiPreview(r,level);
-  const foesPos=['p1','p1b'], foes=foesPos.map(p=>aiFoe(p,level)), myPos=['p2','p2b'];
-  const info=x=>{ const sp=x.details.split(',')[0]; const m=aiMon('p2',sp); const S=x.stats||{}; Object.assign(m,{atk:S.atk||m.atk,def:S.def||m.def,spa:S.spa||m.spa,spd:S.spd||m.spd,spe:S.spe||m.spe});
-    const hp=parseHP(x.condition); m.hpStat=hp&&hp.max||m.hpStat; m.hpPct=hp&&hp.max?hp.hp/hp.max*100:0; m.st=hp&&hp.st||''; m.ability=Dex.abilities.get(x.ability||x.baseAbility).name; m.adapt=m.ability==='Adaptability';
-    const tm=B.side.p2.team[String(x.ident).split(': ')[1]]; if(tm){ m.boosts=tm.boosts||{}; if(tm.tera) m.types=[tm.tera]; else if(tm.tchange&&tm.tchange.length) m.types=tm.tchange.slice(); } if(x.terastallized) m.types=[x.terastallized]; return m; };
-  const bench=team.map((p,j)=>({p,j})).filter(x=>!x.p.active&&!x.p.condition.endsWith(' fnt'));
-  // panchina: chi regge meglio i due avversari in campo e li colpisce meglio
-  const benchScore=x=>{ const m=info(x.p); let s=m.hpPct*.3; for(const f of foes) if(f){ s-=aiThreat(f,m)*.9; s+=Math.max(...m.types.map(ty=>aiDmg({id:'x',type:ty,basePower:80,category:m.atk>=m.spa?'Physical':'Special'},m,f)))*.5; } return s; };
+// ---------- scelta dei Pokémon alla schermata della squadra ----------
+// prev 1: stima dalle statistiche base; 2: conosce i tuoi set; 3: + ricorda chi hai portato e con chi hai iniziato (BO3)
+function aiPreview(r,L,S){ const P=AIL[L], N=pickN(r)||(isDbl()?2:1), team=r.side.pokemon, need=Math.max(N,isDbl()?2:1), F=aiOther(S), M=aiMem();
+  if(!P.prev) return 'team '+shuffleArr(team.map((x,i)=>i+1)).slice(0,need).join('');
+  const foes=P.prev>=2&&B.req[F]&&B.req[F].side?B.req[F].side.pokemon.map(x=>aiOwn(x,F)):(B.sets[F]||[]).map(s=>Object.assign(aiMon(F,s.species),{partial:true,moves:[]}));
+  const cnt=(l,sp)=>(l||[]).filter(g=>g.includes(sp)).length, games=(M.brought||[]).length;
+  const w=foes.map(f=>{ const sp=baseSp(f.sp); return P.prev>=3&&games?.5+cnt(M.brought,sp)/games:1; });
+  const mine=team.map((p,i)=>Object.assign(aiOwn(p,S),{i}));
+  const mu=(me,f)=>Math.min(aiBest(me,f).d,100)-Math.min(aiThreat(f,me),100)*.8;
+  const score=mine.map(me=>{ let s=0; foes.forEach((f,j)=>{ s+=w[j]*mu(me,f); });
+    if(isDbl()&&(team[me.i].moves||[]).some(m=>['fakeout','tailwind','trickroom','followme','ragepowder','helpinghand'].includes(m))) s+=40;
+    return {i:me.i,me,s:s+aiNoise(L)*2}; }).sort((a,b)=>b.s-a.s);
+  let chosen=score.slice(0,need);
+  // dal livello 8: chi è probabile che tu mandi in campo per primo (BO3) → scelgo l'apertura migliore contro di lui
+  if(P.prev>=3&&(M.leads||[]).length){ const lc={}; for(const g of M.leads) for(const sp of g) lc[sp]=(lc[sp]||0)+1;
+    const nl=isDbl()?2:1, lead=Object.entries(lc).sort((a,b)=>b[1]-a[1]).slice(0,nl).map(([sp])=>foes.find(f=>baseSp(f.sp)===sp)).filter(Boolean);
+    if(lead.length){ const ls=x=>lead.reduce((t,f)=>t+mu(x.me,f)+aiRace(x.me,100,f,100)*25,0); const ord=chosen.slice().sort((a,b)=>ls(b)-ls(a)); chosen=ord.slice(0,nl).concat(chosen.filter(x=>!ord.slice(0,nl).includes(x))); } }
+  return 'team '+chosen.map(x=>x.i+1).join(''); }
+
+// ---------- doppio ----------
+// Attacchi concentrati (bonus se insieme si fa KO), mosse ad area, Fake Out al primo turno, Protect quando i due avversari possono
+// mandarlo KO, Tailwind/Trick Room se più lenti, Follow Me/Helping Hand/Wide Guard, stati sul più pericoloso, cambi in grave pericolo.
+// Dal livello 8 prevede i Protect (memoria) e non spreca attacchi su chi si protegge; ricorda se concentri gli attacchi.
+function aiDouble(r,L,S){ const P=AIL[L], F=aiOther(S), M=aiMem(), team=r.side.pokemon;
+  if(r.teamPreview) return aiPreview(r,L,S);
+  if(Math.random()<P.rnd) return cpuDbl(r);
+  const opp=aiOppTeam(F,P.know), fPos=[F,F+'b'], myPos=[S,S+'b'];
+  const foes=fPos.map(p=>{ const m=actMon(p); if(!m||m.st==='fnt'||!m.hp) return null; return opp.find(o=>o.nick===m.nick)||null; });
+  const own=team.map((x,i)=>Object.assign(aiOwn(x,S),{idx:i,pos:i<2?myPos[i]:S}));
+  const bench=own.filter((o,i)=>!team[i].active&&o.hpPct>0);
+  const benchScore=x=>{ let s=x.hpPct*.3-aiHaz(x); for(const f of foes) if(f){ s-=aiThreat(f,x)*.9; const h=aiBest(x,f).d; s+=Math.min(h,f.hpPct)*.5; if(L>=5&&h>=f.hpPct) s+=aiFirst(x,null,f,null)?40:20; } return s+aiNoise(L); };
   const used=[];
-  if(r.forceSwitch){ return r.forceSwitch.map((need,i)=>{ if(!need) return 'pass'; const c=bench.filter(x=>!used.includes(x.j)).map(x=>({x,s:benchScore(x)})).sort((a,b)=>b.s-a.s)[0]; if(!c) return 'pass'; used.push(c.x.j); return 'switch '+(c.x.j+1); }).join(', '); }
-  const mine=[0,1].map(i=>team[i]&&!team[i].condition.endsWith(' fnt')?info(team[i]):null);
-  const tailOn=!!(B.cond.p2&&B.cond.p2.tailwind), trOn=!!(B.field&&B.field.trickroom);
-  const mySpe=mine.filter(Boolean).map(aiSpe), foeSpe=foes.filter(Boolean).map(aiSpe), avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
-  const slower=avg(mySpe)<avg(foeSpe);
+  if(r.forceSwitch){ if(L<=1) return cpuDbl(r); return r.forceSwitch.map(need=>{ if(!need) return 'pass'; const c=bench.filter(x=>!used.includes(x.idx)).map(x=>({x,s:benchScore(x)})).sort((a,b)=>b.s-a.s)[0]; if(!c) return 'pass'; used.push(c.x.idx); return 'switch '+(c.x.idx+1); }).join(', '); }
+  const mine=[0,1].map(i=>team[i]&&!team[i].condition.endsWith(' fnt')?own[i]:null);
+  const tailOn=!!(B.cond[S]&&B.cond[S].tailwind), trOn=aiTR();
+  const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0, slower=avg(mine.filter(Boolean).map(aiSpe))<avg(foes.filter(Boolean).map(aiSpe));
+  const foc=M.foc&&P.mem?.55+P.mem*((M.foc.same+.55*3)/(M.foc.n+3)-.55):.55;   // quanto l'avversario concentra gli attacchi
+  const pProt=foes.map(f=>aiPProtect(f,mine,P,M));
   const plans=[null,null]; let megaUsed=false, teraUsed=false;
-  B.aiProt=B.aiProt||{};
   for(let i=0;i<2;i++){
     const a=r.active&&r.active[i], me=mine[i]; if(!a||!me){ plans[i]='pass'; continue; }
-    const ally=mine[1-i], allyPos=myPos[1-i];
-    const danger=foes.reduce((t,f)=>t+(f?aiThreat(f,me):0),0), single=Math.max(0,...foes.map(f=>f?aiThreat(f,me):0));
+    const ally=mine[1-i];
+    const th=foes.map(f=>f?aiThreat(f,me):0), single=Math.max(0,...th), sum=th[0]+th[1], danger=single+foc*(sum-single);
+    const before=foes.reduce((t,f,k)=>t+(f&&!aiFirst(me,null,f,null)?th[k]:0),0), deadFirst=P.spd&&before>=me.hpPct&&!aiSash(me,before);
     const opts=[];
-    a.moves.forEach((m,j)=>{ if(m.disabled||(m.pp!==undefined&&m.pp<=0)) return; const d=Dex.moves.get(m.id); const t=m.target||d.target; let base=0;
-      const add=(tgt,s,note)=>opts.push({j,tgt,s,d,note});
-      if(d.category!=='Status'){
-        if(AI_SPREAD.includes(t)){ let s=0, kos=0; foes.forEach(f=>{ if(!f) return; const dm=aiDmg(d,me,f)*.75; s+=Math.min(dm,f.hpPct); if(dm>=f.hpPct) kos++; });
+    a.moves.forEach((m,j)=>{ if(m.disabled||(m.pp!==undefined&&m.pp<=0)) return; const d=Dex.moves.get(m.id); const t=m.target||d.target;
+      const add=(tgt,s)=>opts.push({j,tgt,s,d});
+      if(d.category!=='Status'){ const pr=aiPrio(d,me)>0, slow=deadFirst&&!pr?.4:1, acc=L>=2&&d.accuracy!==true?d.accuracy/100:1;
+        if(AI_SPREAD.includes(t)){ let s=0, kos=0; foes.forEach((f,k)=>{ if(!f) return; const dm=aiDmg(d,me,f)*.75; s+=Math.min(dm,f.hpPct)*(1-pProt[k]); if(dm>=f.hpPct) kos+=1-pProt[k]; });
           if(t==='allAdjacent'&&ally){ const hurt=aiDmg(d,me,ally)*.75; s-=hurt*1.3; if(hurt>=ally.hpPct) s-=80; }
-          if(['icywind','electroweb','bulldoze','snarl'].includes(d.id)) s+=12; add(null,s+kos*45); }
-        else { foes.forEach((f,k)=>{ if(!f) return; const dm=aiDmg(d,me,f); let s=Math.min(dm,f.hpPct); if(dm>=f.hpPct) s+=50+(d.priority>0?20:0);
-            if(d.id==='fakeout'){ if(B.aiFresh&&B.aiFresh[myPos[i]]===B.turn&&!f.types.includes('Ghost')) s+=48+aiThreat(f,ally||me)*.2; else s=-50; }
-            add(String(k+1),s); }); }
+          if(['icywind','electroweb','bulldoze','snarl','breakingswipe'].includes(d.id)) s+=12; add(null,(s+kos*45)*slow*acc); }
+        else { foes.forEach((f,k)=>{ if(!f) return;
+            if(foes.some((g,q)=>g&&q!==k&&((d.type==='Electric'&&g.ability==='Lightning Rod')||(d.type==='Water'&&g.ability==='Storm Drain')))) return;
+            const dm=aiDmg(d,me,f); let s=Math.min(dm,f.hpPct); if(dm>=f.hpPct) s+=50+(pr?20:0);
+            if(P.spd) s+=Math.max(aiThreat(f,mine[0]||me),aiThreat(f,mine[1]||me))*.12;
+            if(d.id==='fakeout'){ if(B.aiFresh&&B.aiFresh[myPos[i]]===B.turn&&!f.types.includes('Ghost')&&f.ability!=='Inner Focus') s+=48+aiThreat(f,ally||me)*.2+(L>=7&&(f.moves||[]).some(x=>['trickroom','tailwind','spore'].includes(x.id))?20:0); else s=-50; }
+            s*=(1-pProt[k]); add(String(k+1),s*slow*acc); }); }
       } else {
         const id=d.id; let s=0;
-        if(PROTECTS_ID.has(id)) s=(B.aiProt[myPos[i]]===B.turn-1)?-40:(danger>=me.hpPct?42:single>=me.hpPct*.7?22:4)+(ally&&foes.some(f=>f&&aiThreat(ally,f)>=f.hpPct)?10:0);
+        if(PROTECTS_ID.has(id)) s=((B.aiProt||{})[myPos[i]]===B.turn-1)?-40:(danger>=me.hpPct?42:single>=me.hpPct*.7?22:4)+(ally&&foes.some(f=>f&&aiThreat(ally,f)>=f.hpPct)?10:0)+(deadFirst?10:0);
         else if(id==='tailwind') s=tailOn?-30:(slower?46:18);
         else if(id==='trickroom') s=trOn?-40:(slower?50:-20);
         else if(id==='followme'||id==='ragepowder') s=ally&&ally.hpPct>40&&foes.some(f=>f&&aiThreat(f,ally)>=ally.hpPct*.6)?36:6;
         else if(id==='helpinghand') s=ally?14+Math.min(40,foes.reduce((t,f)=>t+(f?aiThreat(ally,f):0),0)*.2):-20;
-        else if(id==='wideguard') s=foes.some(f=>f&&f.moves&&f.moves.some(m=>AI_SPREAD.includes(m.target)&&m.category!=='Status'))?34:(level>=4?0:8);
-        else if(id==='spore'||id==='sleeppowder'||id==='hypnosis'||id==='yawn'){ const tgt=foes.map((f,k)=>({f,k})).filter(x=>x.f&&!x.f.st&&!(id!=='yawn'&&x.f.types.includes('Grass'))).sort((x,y)=>aiThreat(y.f,me)-aiThreat(x.f,me))[0]; if(tgt) opts.push({j,tgt:String(tgt.k+1),s:id==='spore'?48:36,d}); return; }
-        else if(id==='thunderwave'||id==='glare'||id==='willowisp'||id==='taunt'||id==='encore'){ const tgt=foes.map((f,k)=>({f,k})).filter(x=>x.f&&!x.f.st&&!(id==='thunderwave'&&(x.f.types.includes('Ground')||x.f.types.includes('Electric')))&&!(id==='willowisp'&&x.f.types.includes('Fire'))).sort((x,y)=>aiThreat(y.f,me)-aiThreat(x.f,me))[0];
-          if(tgt) opts.push({j,tgt:String(tgt.k+1),s:id==='willowisp'&&tgt.f.atk>tgt.f.spa?34:id==='taunt'?18:22,d}); return; }
+        else if(id==='wideguard') s=foes.some(f=>f&&(f.moves||[]).some(m=>AI_SPREAD.includes(m.target)&&m.category!=='Status'))?34:(P.know?0:8);
+        else if(AI_STATUS[id]||id==='taunt'||id==='encore'){ const tgt=foes.map((f,k)=>({f,k})).filter(x=>x.f&&!(AI_STATUS[id]&&x.f.st)&&!(id==='thunderwave'&&(x.f.types.includes('Ground')||x.f.types.includes('Electric')))&&!(id==='willowisp'&&x.f.types.includes('Fire'))&&!((id==='spore'||id==='sleeppowder')&&x.f.types.includes('Grass'))).sort((x,y)=>aiThreat(y.f,me)-aiThreat(x.f,me))[0];
+          if(tgt){ const st=AI_STATUS[id]; opts.push({j,tgt:String(tgt.k+1),s:(st==='slp'?(id==='spore'?48:36):id==='willowisp'&&tgt.f.atk>tgt.f.spa?34:id==='taunt'?18:22)*(1-pProt[tgt.k]),d}); } return; }
         else if(AI_SETUP[id]) s=danger<me.hpPct*.5?30*AI_SETUP[id]:0;
         else if(AI_HEAL[id]) s=me.hpPct<45?40:me.hpPct<65?12:0;
         else if(id==='partingshot') s=danger>=me.hpPct&&bench.length?30:10;
@@ -1261,25 +1434,53 @@ function cpuDblSmart(r,level){
         else add(null,s); }
     });
     if(!opts.length){ plans[i]='move 1'; continue; }
-    // attacco concentrato: se il compagno ha già scelto un bersaglio e insieme lo mandate KO, bonus
-    if(i===1&&plans[0]&&plans[0].tgt){ const k=+plans[0].tgt-1, f=foes[k]; if(f){ const left=f.hpPct-plans[0].dmg; for(const o of opts) if(o.tgt===plans[0].tgt&&o.d.category!=='Status'){ const dm=aiDmg(o.d,me,f); if(plans[0].dmg<f.hpPct&&plans[0].dmg+dm>=f.hpPct) o.s+=40; } } }
-    const noise=level<=1?25:level===2?10:level===3?3:1;
-    for(const o of opts) o.s+=Math.random()*noise;
+    if(i===1&&plans[0]&&plans[0].tgt){ const f=foes[+plans[0].tgt-1]; if(f) for(const o of opts) if(o.tgt===plans[0].tgt&&o.d.category!=='Status'){ const dm=aiDmg(o.d,me,f); if(plans[0].dmg<f.hpPct&&plans[0].dmg+dm>=f.hpPct) o.s+=40; else if(plans[0].dmg>=f.hpPct&&L>=5) o.s*=.3; } }
+    for(const o of opts) o.s+=aiNoise(L);
     opts.sort((x,y)=>y.s-x.s); const best=opts[0];
-    // cambio se in grave pericolo e la panchina regge meglio
-    if(level>=2&&bench.length&&!a.trapped&&!a.maybeTrapped&&danger>=me.hpPct*1.1&&best.s<45){ const c=bench.filter(x=>!used.includes(x.j)).map(x=>({x,s:benchScore(x)})).sort((p,q)=>q.s-p.s)[0];
-      if(c&&c.s>-danger*.6&&(level>=3||Math.random()<.6)){ used.push(c.x.j); plans[i]={sw:c.x.j}; continue; } }
-    plans[i]={j:best.j,tgt:best.tgt,d:best.d,s:best.s,dmg:best.tgt&&foes[+best.tgt-1]?aiDmg(best.d,me,foes[+best.tgt-1]):0,canMega:a.canMegaEvo,canTera:a.canTerastallize};
+    if(L>=2&&bench.length&&!a.trapped&&!a.maybeTrapped&&danger>=me.hpPct*1.1&&best.s<45&&Math.random()<P.sw){ const c=bench.filter(x=>!used.includes(x.idx)).map(x=>({x,s:benchScore(x)})).sort((p,q)=>q.s-p.s)[0];
+      if(c&&c.s>-danger*.6){ used.push(c.x.idx); plans[i]={sw:c.x.idx}; continue; } }
+    plans[i]={j:best.j,tgt:best.tgt,d:best.d,s:best.s,dmg:best.tgt&&foes[+best.tgt-1]?aiDmg(best.d,me,foes[+best.tgt-1]):0,canMega:a.canMegaEvo,canTera:a.canTerastallize,me,danger};
   }
+  B.aiProt=B.aiProt||{};
   return plans.map((p,i)=>{ if(p==='pass'||typeof p==='string') return p; if(p.sw!=null) return 'switch '+(p.sw+1);
     let ch='move '+(p.j+1)+(p.tgt?' '+p.tgt:'');
     if(PROTECTS_ID.has(p.d.id)) B.aiProt[myPos[i]]=B.turn;
     if(p.canMega&&!megaUsed){ ch+=' mega'; megaUsed=true; }
-    else if(p.canTera&&!teraUsed&&level>=2&&p.d.category!=='Status'&&(p.d.type===p.canTera)&&p.s>=50){ ch+=' terastallize'; teraUsed=true; }
+    else if(p.canTera&&!teraUsed&&P.tera){ const tt=p.canTera, off=p.d.category!=='Status'&&p.d.type===tt; const m2=Object.assign({},p.me,{types:[tt],tera:tt});
+      const saves=P.tera>=2&&p.danger>=p.me.hpPct&&foes.reduce((t,f)=>t+(f?aiThreat(f,m2):0),0)<p.me.hpPct*.7;
+      if((off&&p.s>=(P.tera>=3?70:50))||saves){ ch+=' terastallize'; teraUsed=true; } }
     return ch; }).join(', '); }
-const PROTECTS_ID=new Set(['protect','detect','kingsshield','spikyshield','banefulbunker','silktrap','burningbulwark','obstruct','maxguard']);
+// probabilità che un avversario usi Protect: niente se non ce l'ha, poca se l'ha appena usato, di più se è in pericolo; corretta dalla memoria
+function aiPProtect(f,mine,P,M){ if(!f||!P.pred) return 0; const fm=f.moves||[]; if(fm.length&&!fm.some(m=>PROTECTS_ID.has(m.id))&&(!f.partial||fm.length>=4)) return 0;
+  if(M.lastProt&&M.lastProt[f.nick]===B.turn-1) return .05*P.pred;
+  const thr=mine.some(me=>me&&aiThreat(me,f)>=f.hpPct*.7), prior=thr?.3:.1, k=M[thr?'pThr':'pCalm'];
+  let p=prior; if(k&&P.mem) p=prior+P.mem*((k.u+prior*3)/(k.n+3)-prior); if(f.partial&&!fm.some(m=>PROTECTS_ID.has(m.id))) p*=.6; return Math.min(.8,p)*P.pred; }
 
-function cpuChoice(r){ if(isDbl()){ if(O.ai>0){ try{ return cpuDblSmart(r,O.ai); }catch(e){ console.warn('IA doppio',e); } } return cpuDbl(r); } if(O.ai>0){ try{ return cpuSmart(r,O.ai); }catch(e){ console.warn('IA',e); } } return cpuSingle(r); }
+// ---------- memoria: come gioca l'avversario (per i BO3, dal livello 8) ----------
+// Si registrano solo le scelte del giocatore 1 contro il computer: con chi inizia, chi porta, se cambia quando è in pericolo e
+// verso chi, quanto usa Protect, se concentra gli attacchi, le mosse preferite di ogni Pokémon, quando usa la Tera.
+function aiObserve(sid,choice){ try{ if(!O||O.mode!=='cpu'||sid!=='p1'||!B||!B.req[sid]) return; const M=aiMem(), r=B.req[sid], S='p2';
+  if(r.teamPreview){ const ord=String(choice).replace(/^team\s*/,'').split('').map(n=>r.side.pokemon[+n-1]).filter(Boolean).map(x=>baseSp(x.details.split(',')[0]));
+    (M.leads=M.leads||[]).push(ord.slice(0,isDbl()?2:1)); (M.brought=M.brought||[]).push(ord.slice(0,pickN(r)||ord.length)); return; }
+  if(r.forceSwitch||!r.active) return;
+  const mineAI=((B.req[S]&&B.req[S].side&&B.req[S].side.pokemon)||[]).filter(x=>x.active&&!x.condition.endsWith(' fnt')).map(x=>aiOwn(x,S));
+  const parts=String(choice).split(',').map(s=>s.trim());
+  parts.forEach((ch,i)=>{ const a=r.active[i], x=r.side.pokemon[i]; if(!a||!x||x.condition.endsWith(' fnt')) return;
+    const me=aiOwn(x,'p1'), sp=baseSp(me.sp), thr=Math.max(0,...mineAI.map(o=>aiThreat(o,me)))>=me.hpPct*.8, k=thr?'thr':'calm';
+    M[k]=M[k]||{n:0,sw:0}; M[k].n++;
+    if(ch.startsWith('switch')){ M[k].sw++; const to=r.side.pokemon[+ch.split(' ')[1]-1]; if(to) for(const o of mineAI){ const key=baseSp(o.sp); const t=(M.swTo=M.swTo||{})[key]=M.swTo[key]||{}; const ts=baseSp(to.details.split(',')[0]); t[ts]=(t[ts]||0)+1; } return; }
+    if(!ch.startsWith('move')) return; const mv=a.moves[+ch.split(' ')[1]-1]; if(!mv) return;
+    const mm=(M.mv=M.mv||{})[sp]=M.mv[sp]||{}; mm[mv.id]=(mm[mv.id]||0)+1; (M.last=M.last||{})[me.nick]=mv.id;
+    if(a.moves.some(m=>PROTECTS_ID.has(m.id))){ const pk=thr?'pThr':'pCalm'; M[pk]=M[pk]||{n:0,u:0}; M[pk].n++; if(PROTECTS_ID.has(mv.id)){ M[pk].u++; (M.lastProt=M.lastProt||{})[me.nick]=B.turn; } }
+    if(/terastallize/.test(ch)) (M.tera=M.tera||[]).push({sp,turn:B.turn}); });
+  if(isDbl()&&parts.length===2){ const t=parts.map(c=>c.startsWith('move')?+(c.split(' ')[2]||0):0); if(t[0]>0&&t[1]>0){ M.foc=M.foc||{n:0,same:0}; M.foc.n++; if(t[0]===t[1]) M.foc.same++; } }
+}catch(e){ console.warn('memoria IA',e); } }
+
+function cpuChoice(r){ const S=r&&r.side&&r.side.id||'p2', L=O&&O.level||0;
+  if(S==='p2'&&L>0){ try{ return isDbl()?aiDouble(r,L,S):aiSingle(r,L,S); }catch(e){ console.warn('IA',e); } }
+  return isDbl()?cpuDbl(r):cpuSingle(r); }
+// solo per le prove automatiche: l'IA di livello L sceglie per il lato sid
+function aiChoiceFor(sid,L){ const r=B.req[sid]; try{ return isDbl()?aiDouble(r,L,sid):aiSingle(r,L,sid); }catch(e){ console.warn('IA',e); return isDbl()?cpuDbl(r):cpuSingle(r); } }
 function cpuSingle(r){
   if(r.teamPreview) return pickN(r)?'team '+shuffleArr([1,2,3,4,5,6].slice(0,r.side.pokemon.length)).slice(0,pickN(r)).join(''):'team 1';
   const sw=r.side.pokemon.map((m,i)=>({m,i})).filter(x=>!x.m.active&&!x.m.condition.endsWith(' fnt'));
@@ -1712,6 +1913,8 @@ function open(opts){
   if(root) close(true);
   O=Object.assign({mode:'two',showOpp:true,names:{p1:'Giocatore 1',p2:'Giocatore 2'},formatid:'gen9nationaldexag'},opts);
   O.dbl=/doubles|vgc/.test(O.formatid);
+  // livello dell'IA 1-10 (level); i vecchi valori ai 0-4 si convertono. aiMem: memoria che passa da una lotta all'altra di un BO3
+  O.level=O.mode==='cpu'?Math.max(0,Math.min(10,Math.round(+O.level)||({1:2,2:4,3:6,4:8})[O.ai]||0)):0; if(O.aiMem) O.aiMem.games=(O.aiMem.games||0)+1;
   O.avatars=Object.assign({},O.avatars);
   try{ const pa=typeof profAvatar==='function'&&profAvatar(); if(pa){ if(O.mode!=='two'){ if(!O.avatars.p1) O.avatars.p1=pa; }
       else { const me=typeof profMe==='function'&&profMe(); for(const sd of ['p1','p2']) if(me&&me.nick&&O.names[sd]===me.nick&&!O.avatars[sd]) O.avatars[sd]=pa; } } }catch(e){}
@@ -1769,5 +1972,5 @@ function demo(o){ if(!B) return; if('weather' in o) B.weather=o.weather||null; i
   draw(); }
 // Solo anteprima: prova un'animazione di mossa
 async function demoMove(name,from,dry){ await loadPS(); return psRun('move',name,from||'p1',(from||'p1')==='p1'?'p2':'p1',false,dry); }
-window.Lotta={net,isOpen:()=>!!(root&&B),_ai:()=>B&&B.aiLog,_audio:()=>({ctx:SND.ctx&&SND.ctx.state,music:!!SND.mus,track:SND.mus&&SND.mus.m.file,playing:!!(SND.mus&&!SND.mus.el.paused),sfx:SND.sfx,sil:!!SIL}),open,close,demo,demoMove,SCENES,SCENE_NAMES,_B:()=>B};
+window.Lotta={net,isOpen:()=>!!(root&&B),_ai:()=>B&&B.aiLog,_play:(sid,L,fn)=>{ if(B&&need(sid)) send(sid,fn?fn(B.req[sid],()=>aiChoiceFor(sid,L)):aiChoiceFor(sid,L)); },_mem:()=>O&&O.aiMem,_audio:()=>({ctx:SND.ctx&&SND.ctx.state,music:!!SND.mus,track:SND.mus&&SND.mus.m.file,playing:!!(SND.mus&&!SND.mus.el.paused),sfx:SND.sfx,sil:!!SIL}),open,close,demo,demoMove,SCENES,SCENE_NAMES,_B:()=>B};
 })();
