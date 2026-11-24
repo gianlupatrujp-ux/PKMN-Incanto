@@ -1577,7 +1577,8 @@ const TW_CLASS={it:['Escursionista','Pescatore','Karateka','Scienziata','Ragazza
 const TW_LINES={it:['Vediamo se arrivi in cima!','Non sarà una passeggiata.','Ho allenato la mia squadra per questo momento.','La Torre non perdona gli errori.','Fammi vedere di cosa sei capace!','Da qui non passa nessuno.'],
   en:['Let\'s see if you reach the top!','This won\'t be a walk in the park.','I trained my team for this moment.','The Tower forgives no mistakes.','Show me what you\'ve got!','Nobody gets past me.']};
 // Modalità della Torre: formato (singolo/doppio) × gruppo di Pokémon. Ogni combinazione ha la sua scalata, record e statistiche.
-const TW_FORMATS=['singolo','doppio'], TW_GROUPS=['tutti','ou','megaou','uu','champions'];
+// "Nat Dex Uber" (uber) ha preso il posto di "Nat Dex OU (Mega)": compare solo quando il gioco conosce il gruppo (POOL_TIERS.uber)
+const TW_FORMATS=['singolo','doppio'], TW_GROUPS=['tutti','ou'].concat(POOL_TIERS.uber?['uber']:[],['uu','champions']);
 const TW_KEYS=TW_FORMATS.flatMap(f=>TW_GROUPS.map(g=>f+'-'+g));
 function twMode(key){ key=TW_KEYS.includes(key)?key:'singolo-tutti'; const [format,tier]=key.split('-'); return {key,format,tier}; }
 function twCur(){ return twMode(ui.twMode||(profMe()&&profMe().twMode)||'singolo-tutti'); }
@@ -1587,9 +1588,14 @@ function twTiers(f){ if(f%10===0) return ['Uber','AG','OU']; if(f<=3) return ['R
 function twAI(f){ if(f%10===0) return 4; return f<=3?0:f===4?2:f<=6?3:4; }
 // dal 4° piano gli allenatori usano i Pokémon più forti del gruppo (in base al tier National Dex)
 const TIER_RANK={AG:9,Uber:8,OU:7,UUBL:6,UU:5,RUBL:4,RU:3,NFE:2,LC:1};
-const bst=m=>(TIER_RANK[m.tier]||3)+Math.random()*0.9;
-function twStrong(pool,f){ if(f<=3||pool.length<14) return pool; const q=f<=6?.5:.3; const sorted=pool.slice().sort((a,b)=>bst(b)-bst(a)); return sorted.slice(0,Math.max(12,Math.round(pool.length*q))); }
-function twPick(pool,n,M){ const out=[], dex=new Set(); for(const m of shuffle(pool)){ if(out.length>=n) break; if(dex.has(m.dex)||!setsFor(m,M.format,M.tier).length) continue; dex.add(m.dex); out.push(m.name); } return out; }
+// nel gruppo Uber conta anche la Mega: Kangaskhan (RU) con la sua Mega vale come un Uber/OU
+const megaRank=m=>{ const L=typeof MEGA_UBER!=='undefined'&&MEGA_UBER[m.name]; return Array.isArray(L)?Math.max(0,...L.map(x=>TIER_RANK[x&&x.tier]||0)):0; };
+const bst=(m,M)=>Math.max(TIER_RANK[m.tier]||3,M&&M.tier==='uber'?megaRank(m):0)+Math.random()*0.9;
+function twStrong(pool,f,M){ if(f<=3||pool.length<14) return pool; const q=f<=6?.5:.3; const sorted=pool.slice().sort((a,b)=>bst(b,M)-bst(a,M)); return sorted.slice(0,Math.max(12,Math.round(pool.length*q))); }
+// nel gruppo Uber al massimo 2 leggendari e 2 mitici per squadra (come nell'asta)
+function twPick(pool,n,M){ const out=[], dex=new Set(), cap={legendary:0,mythical:0}, lim=M.tier==='uber'?2:99;
+  for(const m of shuffle(pool)){ if(out.length>=n) break; if(dex.has(m.dex)||!setsFor(m,M.format,M.tier).length) continue;
+    const k=m.legendary?'legendary':m.mythical?'mythical':null; if(k&&cap[k]>=lim) continue; if(k) cap[k]++; dex.add(m.dex); out.push(m.name); } return out; }
 // Champions: in ogni squadra almeno un Pokémon che può megaevolversi
 function twMegaOk(names,M,pool){ if(M.tier!=='champions') return names; const canMega=n=>setsFor(MON_BY_NAME.get(n),M.format,M.tier).some(s=>s.mega);
   if(names.some(canMega)) return names; const dex=new Set(names.map(n=>MON_BY_NAME.get(n).dex)); const c=shuffle(pool).find(m=>!dex.has(m.dex)&&setsFor(m,M.format,M.tier).some(s=>s.mega));
@@ -1605,7 +1611,7 @@ function twAvatar(boss,ci,gen){ if(typeof Avatar==='undefined') return undefined
 function twTrainer(f,M){ const boss=f%10===0, legends=f>=15||boss;
   let pool=M.tier==='tutti'?POOL.filter(m=>twTiers(f).includes(m.tier)&&(legends||!(m.legendary||m.mythical))):filterPool(POOL,{tier:M.tier,legends:M.tier==='champions'?false:(f>=8||boss)});
   if(pool.length<6) pool=filterPool(POOL,{tier:M.tier,legends:true});
-  pool=twStrong(pool,f);
+  pool=twStrong(pool,f,M);
   const team=twMegaOk(twPick(pool,6,M),M,pool), lang=ui.lang==='en'?'en':'it';
   const ci=Math.random()*TW_CLASS.it.length|0, gen=boss?(Math.random()<.5?'m':'f'):(TW_GEN[ci]==='x'?(Math.random()<.5?'m':'f'):TW_GEN[ci]), nl=TW_NAMES[gen];
   return {name:nl[Math.random()*nl.length|0], cls:boss?(lang==='en'?'Tower Ace':'Asso della Torre'):TW_CLASS[lang][ci],
@@ -1615,6 +1621,11 @@ function twTrainer(f,M){ const boss=f%10===0, legends=f>=15||boss;
 // estrarre fino a 3 squadre e sceglierne una; dopo la prima lotta la squadra non si cambia più.
 function twDraw(M){ const pool=filterPool(POOL,{tier:M.tier,legends:true}); const team=twMegaOk(twPick(pool,6,M),M,pool); return {team,choice:twChoice(team,M)}; }
 function twCheck(o){ return o&&Array.isArray(o.draws)&&o.draws.length>=1&&o.draws.length<=3&&o.draws.every(d=>d&&Array.isArray(d.team)&&d.team.length===6&&d.team.every(n=>MON_BY_NAME.has(n)))&&o.trainer&&Array.isArray(o.trainer.team)&&o.trainer.team.every(n=>MON_BY_NAME.has(n)); }
+// Il gruppo "Nat Dex OU (Mega)" non c'è più: scalate, record e statistiche *-megaou vengono cancellati da tutti i profili (scelta dell'utente, 24/11/2026)
+function twPurgeOld(){ const all=profAll(); let ch=false; for(const k in all){ const p=all[k]; if(!p||typeof p!=='object') continue;
+    for(const o of [p.runs,p.stats&&p.stats.torre]) if(o&&typeof o==='object') for(const x of Object.keys(o)) if(/-megaou$/.test(x)){ delete o[x]; ch=true; }
+    if(typeof p.twMode==='string'&&/-megaou$/.test(p.twMode)){ delete p.twMode; ch=true; } }
+  if(ch) profSaveAll(all); }
 function twRuns(p){ const r=p&&p.runs&&typeof p.runs==='object'?p.runs:{}; if(p&&p.run&&!r['singolo-tutti']) r['singolo-tutti']=p.run; return r; } // vecchi profili: una sola scalata
 function twLoad(key){ const p=profMe(); if(!p) return null; const M=twMode(key||twCur().key), o=twRuns(p)[M.key]; if(!twCheck(o)) return null;
   o.pick=Math.min(Math.max(0,o.pick|0),o.draws.length-1);
@@ -2185,6 +2196,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Enter'&&e.target.id==='ppass'){e.preventDefault();act('plogin',{});}
   if(e.key==='Enter'&&e.target.id==='joincode'){e.preventDefault();act('onlinejoin',{});}});
 
+twPurgeOld();
 render();
 // All'apertura, se c'è internet, controlla su Showdown qual è il regolamento VGC di Champions attuale
 // (legge il testo dei formati, senza eseguire niente). Senza internet resta il valore salvato.
