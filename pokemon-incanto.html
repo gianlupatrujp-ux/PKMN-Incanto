@@ -1695,10 +1695,14 @@ function twMegaOk(names,M,pool){ if(M.tier!=='champions') return names; const ca
   if(c) names=names.slice(0,5).concat(c.name); return names; }
 function twChoice(names,M){ const c={}; for(const n of names){ const k=setsFor(MON_BY_NAME.get(n),M.format,M.tier).length; c[n]=Math.floor(Math.random()*k); } return c; }
 // avatar dell'allenatore (disegni originali di avatar.js): l'Asso ha il Campione, alcune classi il loro disegno, gli altri uno a caso del suo genere
-const TW_AV_CLS={3:'a08',8:'a16',1:'a18',13:'a11'}, TW_AV_BOSS='a20';
-function twAvatar(boss,ci,gen){ if(typeof Avatar==='undefined') return undefined; gen=gen==='f'?'f':'m';
-  let id=boss?TW_AV_BOSS:TW_AV_CLS[ci]; if(id&&!boss&&Avatar.gender(id)!==gen) id=null;
-  if(!id){ const l=Avatar.trainers.filter(x=>Avatar.gender(x)===gen&&x!==TW_AV_BOSS); id=l.length?l[Math.random()*l.length|0]:Avatar.random('trainers',gen); }
+// immagini degli allenatori dei giochi (avatar.js, sprite di Showdown): per classe (con il genere giusto), Asso = un campione, Mini Boss = un rivale
+const TW_AV_CLS={0:'backpacker',1:'fisherman',2:{m:'blackbelt',f:'battlegirl'},5:{m:'acetrainer',f:'acetrainerf'},8:'swimmerf',13:{f:'psychicf'},16:'hiker',12:{f:'kimonogirl'}};
+const twAvGroup=k=>{ const g=Avatar.groups&&Avatar.groups.find(x=>x.key===k); return g?g.ids:[]; };
+function twAvatar(boss,ci,gen,mini){ if(typeof Avatar==='undefined') return undefined; gen=gen==='f'?'f':'m';
+  const pickG=l=>{ l=l.filter(x=>Avatar.gender(x)===gen); return l.length?l[Math.random()*l.length|0]:null; };
+  let id=boss?pickG(twAvGroup('champ')):mini?pickG(twAvGroup('rival')):null;
+  if(!id&&!boss&&!mini){ const c=TW_AV_CLS[ci]; const x=typeof c==='string'?c:c&&c[gen]; if(x&&Avatar.gender(x)===gen) id=x; }
+  if(!id) id=pickG(twAvGroup('class').concat(twAvGroup('prot'))) || Avatar.random('trainers',gen);
   return Avatar.fix(id); }
 // avversari: nel gruppo "Tutti" i Pokémon diventano più forti salendo; negli altri gruppi si resta nel gruppo e cresce l'IA
 function twTrainer(f,M){ const boss=twBO3(f), mini=twMini(f), legends=f>=15||boss;
@@ -1708,7 +1712,7 @@ function twTrainer(f,M){ const boss=twBO3(f), mini=twMini(f), legends=f>=15||bos
   const team=twMegaOk(twPick(pool,6,M),M,pool), lang=ui.lang==='en'?'en':'it';
   const ci=Math.random()*TW_CLASS.it.length|0, gen=boss?(Math.random()<.5?'m':'f'):(TW_GEN[ci]==='x'?(Math.random()<.5?'m':'f'):TW_GEN[ci]), nl=TW_NAMES[gen];
   return {name:nl[Math.random()*nl.length|0], cls:boss?(f>=20?(lang==='en'?'Tower Master':'Maestro della Torre'):(lang==='en'?'Tower Ace':'Asso della Torre')):mini?'Mini Boss':TW_CLASS[lang][ci],
-    line:TW_LINES[lang][Math.random()*TW_LINES[lang].length|0], team, choice:f>=4?Object.fromEntries(team.map(n=>[n,0])):twChoice(team,M), ai:twAI(f), boss, mini, bo3:boss, avatar:twAvatar(boss,ci,gen)}; }
+    line:TW_LINES[lang][Math.random()*TW_LINES[lang].length|0], team, choice:f>=4?Object.fromEntries(team.map(n=>[n,0])):twChoice(team,M), ai:twAI(f), boss, mini, bo3:boss, avatar:twAvatar(boss,ci,gen,mini)}; }
 // La scalata è legata al profilo (salvata dentro il profilo, quindi va anche con "Esporta"), una per modalità. Si salva solo
 // tra una lotta e l'altra: una lotta lasciata a metà (uscita o pagina chiusa) conta come sconfitta. A ogni tentativo si possono
 // estrarre fino a 3 squadre e sceglierne una; dopo la prima lotta la squadra non si cambia più.
@@ -1723,7 +1727,7 @@ function twRuns(p){ const r=p&&p.runs&&typeof p.runs==='object'?p.runs:{}; if(p&
 function twLoad(key){ const p=profMe(); if(!p) return null; const M=twMode(key||twCur().key), o=twRuns(p)[M.key]; if(!twCheck(o)) return null;
   o.pick=Math.min(Math.max(0,o.pick|0),o.draws.length-1);
   o.team=o.draws[o.pick].team; o.choice=o.draws[o.pick].choice; o.mode=M.key; o.trainer.ai=twAI(o.floor); o.trainer.bo3=twBO3(o.floor); o.trainer.mini=twMini(o.floor);
-  if(!o.trainer.avatar&&typeof Avatar!=='undefined'){ o.trainer.avatar=twAvatar(o.trainer.boss,-1,TW_NAMES.f.includes(o.trainer.name)?'f':'m'); twSave(o); } // scalate salvate prima degli avatar
+  if(typeof Avatar!=='undefined'&&(!o.trainer.avatar||!Avatar.valid(o.trainer.avatar))){ o.trainer.avatar=twAvatar(o.trainer.boss,-1,TW_NAMES.f.includes(o.trainer.name)?'f':'m',o.trainer.mini); twSave(o); } // scalate salvate prima degli avatar (o con i vecchi disegni)
   return o; }
 function twSave(o){ const all=profAll(), k=localStorage.getItem(PROF_ME); if(!k||!all[k]) return; const M=twMode(o.mode); const c=Object.assign({},o); delete c.team; delete c.choice; delete c.mode;
   all[k].runs=twRuns(all[k]); delete all[k].run; all[k].runs[M.key]=c; profSaveAll(all); }
