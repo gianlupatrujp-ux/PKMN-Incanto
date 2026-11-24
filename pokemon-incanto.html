@@ -1399,6 +1399,7 @@ function fightOk(g){ return true; }
 // Formato per il motore della lotta: Champions non esiste nel motore, quindi si gioca come partita libera
 // (National Dex AG in singolo, Doubles Custom Game in doppio) con i "Stat Points" convertiti in EV (1 punto ≈ 8 EV, max 252).
 function fightFormat(g){ if(g.tier==='champions') return g.format==='doppio'?'gen9doublescustomgame@@@Terastal Clause,Picked Team Size = 4':'gen9nationaldexag@@@Terastal Clause,Picked Team Size = 3';
+  if(g.tier==='uber') return g.format==='doppio'?'gen9doublescustomgame@@@Terastal Clause':'gen9nationaldexubers';   // Nat Dex Uber: Mega sì, Tera no
   return showdownFormat(g.format,g.tier).toLowerCase().replace(/[^a-z0-9]/g,''); }
 function fightTeam(g,i,choice,edits){ let tx=exportText(g.teams[i],g.format,choice,g.tier,edits);
   if(g.tier==='champions') tx=tx.replace(/^EVs: (.+)$/gm,(m,l)=>{ const ev=l.split(' / ').map(p=>{ const [n,s]=p.split(' '); return [Math.min(252,(+n||0)*8),s]; });
