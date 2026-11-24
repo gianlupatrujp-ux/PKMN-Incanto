@@ -100,7 +100,7 @@ const CSS=`#lotta{position:fixed;inset:0;z-index:60;overflow:auto;background:#F6
 #lotta .mv{font:inherit;text-align:left;cursor:pointer;border:3px solid var(--line);border-radius:12px;padding:7px 12px 8px;box-shadow:0 4px 0 var(--line);color:#fff;display:flex;flex-direction:column;gap:1px;text-shadow:0 1px 0 rgba(0,0,0,.35);position:relative}
 #lotta .mv b{font-size:16px;padding-right:86px} #lotta .mv span{font-size:12px;opacity:.95}
 #lotta .mv:active{transform:translateY(3px);box-shadow:0 1px 0 var(--line)}
-#lotta .mv:disabled{filter:grayscale(1);opacity:.5;cursor:not-allowed}
+#lotta .lock{margin:2px 0 6px;font:700 12px 'Inter',sans-serif;color:#8A5A00;background:#FFF3D1;border:1.5px solid #E9C46A;border-radius:8px;padding:3px 8px}#lotta .mv:disabled{filter:grayscale(1);opacity:.5;cursor:not-allowed}
 #lotta .eff{position:absolute;right:6px;top:6px;font:900 10px 'Inter',sans-serif;text-shadow:none;border-radius:6px;padding:2px 6px;border:2px solid var(--line);background:#fff;color:var(--ink);letter-spacing:.02em}
 #lotta .eff.x4{background:#C21F1F;color:#fff}#lotta .eff.x2{background:#2E8B3E;color:#fff}#lotta .eff.x05{background:#F2C21B}#lotta .eff.x025{background:#E8A317}#lotta .eff.x0{background:#45505F;color:#fff}
 #lotta .lt-team{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
@@ -607,14 +607,15 @@ function volLabel(n,extra){ const id=toID(n); if(/^perish(\d)$/.test(id)) return
 function volChips(m){ const out=[]; if(m.tchange&&m.tchange.length) out.push(`<span class="st vol">${m.tchange.map(x=>(TIPI[x]||x)).join('/')}</span>`);
   for(const v of Object.values(m.vol||{})) if(v!=='Substitute') out.push(`<span class="st vol">${esc(v)}</span>`); return out.join(''); }
 const VOLMSG={confusion:a=>`${a} è confuso!`,leechseed:a=>`${a} è stato colpito da Leech Seed!`,taunt:a=>`${a} cade nella provocazione!`,encore:a=>`${a} è costretto da Encore!`,yawn:a=>`${a} diventa sonnolento!`,focusenergy:a=>`${a} si concentra al massimo!`,attract:a=>`${a} si è infatuato!`,curse:a=>`${a} è maledetto!`,disable:(a,x)=>`La mossa ${esc(x||'')} di ${a} è bloccata!`,
-  healblock:a=>`${a} non può curarsi!`,magnetrise:a=>`${a} levita grazie al magnetismo!`,aquaring:a=>`${a} si circonda di un velo d'acqua!`,ingrain:a=>`${a} mette radici!`,flashfire:a=>`La potenza delle mosse Fuoco di ${a} aumenta!`,slowstart:a=>`${a} non riesce a carburare!`,protosynthesis:(a,x)=>`Protosynthesis potenzia ${a}!`,quarkdrive:(a,x)=>`Quark Drive potenzia ${a}!`,charge:a=>`${a} si carica di elettricità!`,torment:a=>`${a} è tormentato!`,smackdown:a=>`${a} cade a terra!`,saltcure:a=>`${a} è colpito da Salt Cure!`,tarshot:a=>`${a} diventa più debole al fuoco!`,noretreat:a=>`${a} non può più fuggire!`,partiallytrapped:a=>`${a} è intrappolato!`,futuresight:a=>`${a} prevede un attacco!`,doomdesire:a=>`${a} sceglie Doom Desire come destino!`,gastroacid:a=>`L'abilità di ${a} viene annullata!`,laserfocus:a=>`${a} si concentra intensamente!`,minimize:a=>`${a} si rimpicciolisce!`};
+  healblock:a=>`${a} non può curarsi!`,magnetrise:a=>`${a} levita grazie al magnetismo!`,aquaring:a=>`${a} si circonda di un velo d'acqua!`,ingrain:a=>`${a} mette radici!`,flashfire:a=>`La potenza delle mosse Fuoco di ${a} aumenta!`,slowstart:a=>`${a} non riesce a carburare!`,protosynthesis:(a,x)=>`Protosynthesis potenzia ${a}${STAT[x]?' ('+STAT[x]+')':''}!`,quarkdrive:(a,x)=>`Quark Drive potenzia ${a}${STAT[x]?' ('+STAT[x]+')':''}!`,charge:a=>`${a} si carica di elettricità!`,torment:a=>`${a} è tormentato!`,smackdown:a=>`${a} cade a terra!`,saltcure:a=>`${a} è colpito da Salt Cure!`,tarshot:a=>`${a} diventa più debole al fuoco!`,noretreat:a=>`${a} non può più fuggire!`,partiallytrapped:a=>`${a} è intrappolato!`,futuresight:a=>`${a} prevede un attacco!`,doomdesire:a=>`${a} sceglie Doom Desire come destino!`,gastroacid:a=>`L'abilità di ${a} viene annullata!`,laserfocus:a=>`${a} si concentra intensamente!`,minimize:a=>`${a} si rimpicciolisce!`};
+const TEAM_GUARDS=['Wide Guard','Quick Guard','Crafty Shield','Mat Block'];
 const PROTECTS=['Protect','Detect',"King's Shield",'Spiky Shield','Baneful Bunker','Silk Trap','Burning Bulwark','Obstruct','Max Guard'];
 // scudo trasparente intorno al Pokémon protetto (fino alla fine del turno)
 function shieldOn(pos){ const el=$('mon'+pos); if(!el||el.querySelector('.shield')) return; const s=document.createElement('div'); s.className='shield'; el.appendChild(s); }
 function shieldsOff(){ if(root) root.querySelectorAll('#lotta .shield').forEach(x=>x.remove()); }
 function drawPos(sid){ const side=sideOfPos(sid);
   const s=B.side[side], m=actMon(sid), hud=$('hud'+sid), el=$('mon'+sid); if(!hud||!el) return;
-  if(!m){ hud.hidden=true; if(sid!==side){ el.innerHTML=''; el.dataset.sp=''; } return; }
+  if(!m||m.st==='fnt'){ hud.hidden=true; if(!m&&sid!==side){ el.innerHTML=''; el.dataset.sp=''; } if(m){ el.classList.add('faint'); setTimeout(stackDbl,0); } return; }
   hud.hidden=false;
   const seeItem=setVisible(side)||m.itemSeen;
   hud.innerHTML=`<div class="sb" data-tip="act:${sid}"><div class="sbn"><b>${esc(m.species)}</b>${m.shiny?'<i class="shy">✨</i>':''}<small>L100</small></div>
@@ -1004,13 +1005,18 @@ async function handle(line){
   switch(k){
     case 'switch': case 'drag': case 'replace': {
       const id=parseId(p[2]); const species=p[3].split(',')[0]; const m=mon(id.side,id.nick); m.species=species; m.shiny=p[3].includes('shiny');
-      const h=parseHP(p[4]); if(h){ m.hp=h.hp; m.max=h.max||m.max; m.shown=h.hp; m.st=h.st; } m.boosts={}; m.sub=false; m.vol={}; m.tchange=null;
+      const h=parseHP(p[4]); if(h){ m.hp=h.hp; m.max=h.max||m.max; m.shown=h.hp; m.st=h.st; } const keep=k==='switch'&&['batonpass','shedtail'].includes((B.lastMv||{})[id.pos]); if(!keep){ m.boosts={}; m.sub=false; m.vol={}; } m.tchange=null; m.fadedAt0=false;
       const s=B.side[id.side], sk=slotK(id.pos); const el=$('mon'+id.pos);
-      if(s[sk]&&s[sk]!==id.nick){ el.classList.add('out'); await sleep(350); }
+      { const prev=s[sk]&&s[sk]!==id.nick?s.team[s[sk]]:null, lm=(B.lastMv||{})[id.pos];
+        if(prev&&k==='switch'&&lm==='batonpass'){ m.boosts=Object.assign({},prev.boosts); m.vol=Object.assign({},prev.vol); for(const x of ['typechange','yawn','disable','encore','taunt','torment','attract','stockpile','protosynthesis','quarkdrive']) delete m.vol[x]; m.sub=!!prev.sub; }
+        if(prev&&k==='switch'&&lm==='shedtail') m.sub=true;
+        if(prev){ prev.boosts={}; prev.vol={}; prev.sub=false; prev.tchange=null; }
+        if(B.lastMv) delete B.lastMv[id.pos]; }
+      if(s[sk]&&s[sk]!==id.nick&&s.team[s[sk]]&&s.team[s[sk]].st!=='fnt'){ el.classList.add('out'); await sleep(350); }
       s[sk]=id.nick; cry(species); el.classList.remove('faint'); el.dataset.sp=''; draw(); el.classList.add('out'); void el.offsetWidth; el.classList.remove('out');
       say(`${PN(id.side)} manda in campo <b>${esc(species)}</b>!`); return 900; }
-    case 'detailschange': case '-formechange': { const id=parseId(p[2]); const m=mon(id.side,id.nick); m.species=p[3].split(',')[0]; $('mon'+id.pos).dataset.sp=''; draw(); if(/-Mega/.test(p[3])&&k==='detailschange') return 300; say(`${label(p[2])} cambia forma!`); return 900; }
-    case 'move': { const posOf=x=>(parseId(x)||{}).pos; const a=posOf(p[2]), tg=posOf(p[4])||a; const mv=Dex.moves.get(p[3]); B.eff=null; 
+    case 'detailschange': case '-formechange': { const id=parseId(p[2]); const m=mon(id.side,id.nick); m.species=p[3].split(',')[0]; if(m.st==='fnt'||p.includes('[silent]')){ if(m.st!=='fnt'){ $('mon'+id.pos).dataset.sp=''; draw(); } return 0; } $('mon'+id.pos).dataset.sp=''; draw(); if(/-Mega/.test(p[3])&&k==='detailschange') return 300; say(`${label(p[2])} cambia forma!`); return 900; }
+    case 'move': { const posOf=x=>(parseId(x)||{}).pos; const a=posOf(p[2]), tg=posOf(p[4])||a; const mv=Dex.moves.get(p[3]); B.eff=null; B.effT={}; B.spread=p.some(x=>x&&x.startsWith('[spread]')); (B.lastMv=B.lastMv||{})[a]=mv.id; 
       { const id=parseId(p[2]); if(id&&!p.some(x=>x&&x.startsWith('[from]'))){ const um=mon(id.side,id.nick); um.movesSeen=um.movesSeen||[]; if(!um.movesSeen.includes(p[3])) um.movesSeen.push(p[3]); } }
       say(`${label(p[2])} usa <b>${esc(p[3])}</b>!`);
       if(p.includes('[still]')) return 700;
@@ -1021,25 +1027,27 @@ async function handle(line){
       const id=parseId(p[2]); const m=mon(id.side,id.nick); const h=parseHP(p[3]); if(!h) return 0;
       const to=h.hp; if(h.max) m.max=h.max; const was=m.shown; if(h.st!=='fnt') m.st=h.st;
       const f=fromOf(p); const fi=f&&Dex.items.get(f); if(fi&&fi.exists){ m.item=fi.name; m.itemSeen=true; } const fr=p.find(x=>x&&x.startsWith('[from] ability: ')); if(fr) m.abilitySeen=fr.slice(16);
-      if(k==='-damage'&&to<was){ cls(id.pos,'hit',500); if(f!=='Life Orb') sfx(f?'weak':(B.eff||'hit')); B.eff=null; }
+      if(k==='-damage'&&to<was){ cls(id.pos,'hit',500); const ef=f?'weak':((B.effT&&B.effT[id.pos])||((!B.effT||!Object.keys(B.effT).length)&&B.eff)||'hit'); if(f!=='Life Orb') sfx(ef); if(B.effT) delete B.effT[id.pos]; if(!B.effT||!Object.keys(B.effT).length) B.eff=null; }
       if(k==='-heal'&&to>was) sfx('heal');
       if(k==='-heal'&&to>was) pop(id.pos,'+'+Math.round(exactHP(id.side)?to-was:(to-was)/m.max*100)+(exactHP(id.side)?' PS':'%'),'heal');
-      const pctDiff=m.max?Math.round(Math.abs(to-was)/m.max*100):0; const anim=animHP(id.side,m,to); m.hp=to;
+      let pctDiff=m.max?Math.round(Math.abs(to-was)/m.max*100):0; if(pctDiff===100&&to>0) pctDiff=99; if(!pctDiff&&to!==was) pctDiff=1; const anim=animHP(id.side,m,to); m.hp=to;
       if(k==='-heal') say(`${label(p[2])} recupera PS${f?' ('+esc(f)+')':''}.`);
       else if(f) say(`${label(p[2])} subisce danni per ${esc(CAUSE[f]||f)}.`);
       if(pctDiff&&k==='-damage'&&to<was) logLine(`(${label(p[2])} perde il ${pctDiff}% dei PS!)`,'hp');
       else if(pctDiff&&k==='-heal'&&to>was) logLine(`(${label(p[2])} recupera il ${pctDiff}% dei PS!)`,'hp');
-      await anim; return k==='-damage'&&!f?150:500; }
-    case 'faint': { sfx('faint'); const id=parseId(p[2]); const m=mon(id.side,id.nick); m.hp=0; m.st='fnt'; $('mon'+id.pos).classList.add('faint'); say(`${label(p[2])} è esausto!`); await sleep(900); drawSide(id.side); return 300; }
-    case '-supereffective': B.eff='super'; say('È superefficace!'); return 750;
-    case '-resisted': B.eff='weak'; say('Non è molto efficace…'); return 750;
+      await anim;
+      if(to===0&&h.st==='fnt'&&!m.fadedAt0&&actMon(id.pos)===m){ m.fadedAt0=true; sfx('faint'); $('mon'+id.pos).classList.add('faint'); }
+      const ps=B.pendItem&&B.pendItem[id.pos]; if(ps&&k==='-damage'){ delete B.pendItem[id.pos]; if(to>0){ say(ps); return 800; } }
+      return k==='-damage'&&!f?150:500; }
+    case 'faint': { const id=parseId(p[2]); const m=mon(id.side,id.nick); if(!m.fadedAt0) sfx('faint'); m.fadedAt0=true; m.hp=0; m.shown=0; m.st='fnt'; m.boosts={}; m.vol={}; m.sub=false; m.tchange=null; $('mon'+id.pos).classList.add('faint'); drawSide(id.side); say(`${label(p[2])} è esausto!`); await sleep(900); return 300; }
+    case '-supereffective': case '-resisted': { const e=k==='-supereffective'?'super':'weak', id=parseId(p[2]); B.eff=e; if(id) (B.effT=B.effT||{})[id.pos]=e; const sp=B.spread||(B.effT&&Object.keys(B.effT).length>1); say(e==='super'?(sp&&id?`È superefficace su ${label(p[2])}!`:'È superefficace!'):(sp&&id?`Non è molto efficace su ${label(p[2])}…`:'Non è molto efficace…')); return 750; }
     case '-immune': { const id=parseId(p[2]); if(id) pop(id.pos,'Immune','miss'); say(`Non ha effetto su ${label(p[2])}…`); return 800; }
     case '-crit': say('Brutto colpo!'); return 700;
     case '-miss': { const tg=parseId(p[3]); if(tg) pop(tg.pos,'Miss','miss'); say(`${label(p[2])} manca il bersaglio!`); return 800; }
     case '-fail': { const id=parseId(p[2]); if(id) pop(id.pos,'Fail','miss'); say('Ma non ha effetto!'); return 700; }
     case '-status': { const id=parseId(p[2]); mon(id.side,id.nick).st=p[3]; drawSide(id.side); if(window.PSAnimData&&window.PSAnimData.BattleStatusAnims[p[3]]) psRun('status',p[3],id.pos,null); say(`${label(p[2])} ${STATUS[p[3]]||esc(p[3])}!`); return 900; }
-    case '-curestatus': { const id=parseId(p[2]); if(id){ mon(id.side,id.nick).st=''; drawSide(id.side); say(`${label(p[2])} è guarito.`); return 700; } return 0; }
-    case 'cant': { const r={par:'è paralizzato! Non riesce a muoversi!',slp:'dorme profondamente.',frz:'è congelato!',flinch:'tentenna e non attacca!',recharge:'deve riprendersi.'}[p[3]]||'non può muoversi.'; say(`${label(p[2])} ${r}`); return 900; }
+    case '-curestatus': { const id=parseId(p[2]); if(id){ const was=p[3]; mon(id.side,id.nick).st=''; drawSide(id.side); drawTrainers(); say(`${label(p[2])} ${({slp:'si sveglia!',par:'non è più paralizzato!',brn:'guarisce dalla scottatura!',psn:'non è più avvelenato!',tox:'non è più avvelenato!',frz:'si scongela!'})[was]||'è guarito.'}`); return 700; } return 0; }
+    case 'cant': { const r={par:'è paralizzato! Non riesce a muoversi!',slp:'dorme profondamente.',frz:'è congelato!',flinch:'tentenna e non attacca!',recharge:'deve riprendersi.',attract:'è infatuato e non attacca!',truant:'sta oziando.','ability: Truant':'sta oziando.',focuspunch:'perde la concentrazione e non attacca!','Focus Punch':'perde la concentrazione e non attacca!','move: Taunt':'non può usare la mossa per la provocazione!',Taunt:'non può usare la mossa per la provocazione!','move: Disable':'non può usare la mossa bloccata!','move: Imprison':'non può usare la mossa sigillata!','move: Heal Block':'non può curarsi!','move: Throat Chop':'non può usare mosse sonore!','move: Gravity':'non può usare la mossa per la gravità!',nopp:'non ha più PP per questa mossa!',Dynamax:'non può usare la mossa.'}[p[3]]||'non può muoversi.'; say(`${label(p[2])} ${r}`); return 900; }
     case '-boost': case '-unboost': { const id=parseId(p[2]); const m=mon(id.side,id.nick); const n=+p[4]*(k==='-boost'?1:-1); if(n) sfx(n>0?'up':'down');
       m.boosts[p[3]]=Math.max(-6,Math.min(6,(m.boosts[p[3]]||0)+n)); drawSide(id.side);
       if(n) pop(id.pos,`${STAT[p[3]]||p[3]} ${n>0?'↑'.repeat(Math.min(3,n)):'↓'.repeat(Math.min(3,-n))}`,n>0?'up':'down');
@@ -1058,18 +1066,55 @@ async function handle(line){
     case '-ability': { const id=parseId(p[2]); if(id){ mon(id.side,id.nick).abilitySeen=p[3]; abilBar(id.pos,p[3]); } }
       say(`[Abilità di ${label(p[2])}: ${esc(p[3])}]`); return 800;
     case '-item': { const id=parseId(p[2]); const m=mon(id.side,id.nick); m.item=p[3]; m.itemSeen=true; drawSide(id.side); const fr=p.find(x=>x&&x.startsWith('[from] ability: ')); if(fr){ say(`${label(p[2])} tiene ${esc(p[3])} (rivelato da ${esc(fr.slice(16))}).`); return 800; } say(`${label(p[2])} ottiene ${esc(p[3])}.`); return 800; }
-    case '-enditem': { const id=parseId(p[2]); const m=mon(id.side,id.nick); m.item=null; m.itemSeen=true; drawSide(id.side); say(p.some(x=>x&&x.startsWith('[eat]'))?`${label(p[2])} mangia ${esc(p[3])}!`:`${label(p[2])} perde ${esc(p[3])}.`); return 800; }
-    case '-start': { const id=parseId(p[2]); const n=p[3].replace(/^(move|ability|item): /,''); const mm=mon(id.side,id.nick);
+    case '-enditem': { const id=parseId(p[2]); const m=mon(id.side,id.nick); m.item=null; m.itemSeen=true; drawSide(id.side); const it=esc(p[3]), fr=fromOf(p)||'', L=label(p[2]);
+      if(p.some(x=>x&&x.startsWith('[eat]'))){ say(`${L} mangia ${it}!`); return 800; }
+      if(/Knock Off/i.test(fr)){ pop(id.pos,'Knock Off','miss'); say(`Lo strumento ${it} di ${L} è stato tolto!`); return 800; }
+      if(/Incinerate/i.test(fr)){ say(`Lo strumento ${it} di ${L} è bruciato!`); return 800; }
+      if(/Bug Bite|Pluck/i.test(fr)){ say(`Lo strumento ${it} di ${L} è stato rubato e mangiato!`); return 800; }
+      if(/Fling/i.test(fr)){ say(`${L} lancia ${it}!`); return 600; }
+      if(!fr&&/^(Focus Sash|Focus Band)$/.test(p[3])){ (B.pendItem=B.pendItem||{})[id.pos]=`${L} resiste grazie a ${it}!`; return 0; }   // il messaggio arriva dopo il danno (resta a 1 PS)
+      if(!fr&&p[3]==='Air Balloon'){ say(`Il palloncino di ${L} scoppia!`); return 800; }
+      if(!fr&&!/^(Booster Energy)$/.test(p[3])){ say(`${L} usa ${it}!`); return 800; }
+      if(p[3]==='Booster Energy') return 0;
+      say(`${L} perde ${it}.`); return 800; }
+    case '-start': { const id=parseId(p[2]); let n=p[3].replace(/^(move|ability|item): /,''); const mm=mon(id.side,id.nick); { const pq=/^(protosynthesis|quarkdrive)(atk|def|spa|spd|spe)$/i.exec(toID(n)); if(pq){ n=pq[1]==='protosynthesis'?'Protosynthesis':'Quark Drive'; p[4]=pq[2]; } }
       if(n==='typechange'){ mm.tchange=String(p[4]||'').split('/').filter(Boolean); drawSide(id.side); say(`${label(p[2])} diventa di tipo ${mm.tchange.map(x=>TIPI[x]||esc(x)).join('/')}!`); return 900; }
       if(VOL[toID(n)]||/^perish\d$/.test(toID(n))||/^stockpile\d$/.test(toID(n))){ (mm.vol=mm.vol||{})[/^perish/.test(toID(n))?'perish':/^stockpile/.test(toID(n))?'stockpile':toID(n)]=volLabel(n,p[4]); drawSide(id.side); }
       if(VOLMSG[toID(n)]){ say(VOLMSG[toID(n)](label(p[2]),p[4])); return 800; }
       if(n==='Substitute'){ mon(id.side,id.nick).sub=true; drawSide(id.side); say(`${label(p[2])} crea un sostituto!`); return 900; }
       if(n==='confusion'){ say(`${label(p[2])} è confuso!`); return 800; }
       say(`${label(p[2])}: ${esc(n)}.`); return 700; }
-    case '-end': { const id=parseId(p[2]); const n=p[3].replace(/^(move|ability|item): /,''); { const mm=mon(id.side,id.nick); if(mm.vol&&p.includes('[partiallytrapped]')&&mm.vol.partiallytrapped){ delete mm.vol.partiallytrapped; drawSide(id.side); } if(mm.vol){ const kk=/^stockpile/.test(toID(n))?'stockpile':toID(n); if(mm.vol[kk]){ delete mm.vol[kk]; drawSide(id.side); } } if(toID(n)==='typechange'){ mm.tchange=null; drawSide(id.side); } } if(n==='Substitute'){ mon(id.side,id.nick).sub=false; drawSide(id.side); say(`Il sostituto di ${label(p[2])} svanisce!`); return 800; } return 0; }
+    case '-end': { const id=parseId(p[2]); const n=p[3].replace(/^(move|ability|item): /,''); { const mm=mon(id.side,id.nick); if(mm.vol&&p.includes('[partiallytrapped]')&&mm.vol.partiallytrapped){ delete mm.vol.partiallytrapped; drawSide(id.side); } if(mm.vol){ const kk=/^stockpile/.test(toID(n))?'stockpile':/^(protosynthesis|quarkdrive)/.test(toID(n))?toID(n).replace(/(atk|def|spa|spd|spe)$/,''):toID(n); if(mm.vol[kk]){ delete mm.vol[kk]; drawSide(id.side); } } if(toID(n)==='typechange'){ mm.tchange=null; drawSide(id.side); } } if(n==='Substitute'){ mon(id.side,id.nick).sub=false; drawSide(id.side); say(`Il sostituto di ${label(p[2])} svanisce!`); return 800; } return 0; }
     case '-activate': { const n=(p[3]||'').replace('move: ','');
-      if(['Bind','Wrap','Fire Spin','Whirlpool','Sand Tomb','Magma Storm','Infestation','Clamp','Snap Trap','Thunder Cage'].includes(n)){ const id=parseId(p[2]); if(id){ const mm=mon(id.side,id.nick); (mm.vol=mm.vol||{}).partiallytrapped='Intrappolato'; drawSide(id.side); say(`${label(p[2])} è intrappolato da ${esc(n)}!`); return 800; } } if(PROTECTS.includes(n)){ const id=parseId(p[2]); if(id){ shieldOn(id.pos); pop(id.pos,n,'miss'); } say(`${label(p[2])} si protegge!`); return 800; } if(n==='Substitute'){ say('Il sostituto incassa il colpo!'); return 800; } return 0; }
-    case '-singleturn': { const n=(p[3]||'').replace('move: ',''); if(PROTECTS.includes(n)){ const id=parseId(p[2]); if(id) shieldOn(id.pos); say(`${label(p[2])} si protegge!`); return 800; } return 0; }
+      if(['Bind','Wrap','Fire Spin','Whirlpool','Sand Tomb','Magma Storm','Infestation','Clamp','Snap Trap','Thunder Cage'].includes(n)){ const id=parseId(p[2]); if(id){ const mm=mon(id.side,id.nick); (mm.vol=mm.vol||{}).partiallytrapped='Intrappolato'; drawSide(id.side); say(`${label(p[2])} è intrappolato da ${esc(n)}!`); return 800; } } if(PROTECTS.includes(n)){ const id=parseId(p[2]); if(id){ shieldOn(id.pos); pop(id.pos,n,'miss'); } say(`${label(p[2])} si protegge!`); return 800; } if(TEAM_GUARDS.includes(n)){ const id=parseId(p[2]); if(id){ shieldOn(id.pos); pop(id.pos,n,'miss'); } say(`${label(p[2])} è protetto da ${esc(n)}!`); return 800; }
+      if(/^ability: /.test(p[3]||'')){ const id=parseId(p[2]); if(id){ const ab=p[3].slice(9); mon(id.side,id.nick).abilitySeen=ab; abilBar(id.pos,ab); if(p.includes('[fromitem]')) say(`${label(p[2])} usa Booster Energy!`); } return 700; } if(n==='Substitute'){ say('Il sostituto incassa il colpo!'); return 800; }
+      if(['Feint','Shadow Force','Phantom Force','Hyperspace Fury','Hyperspace Hole'].includes(n)||p.includes('[broken]')){ shieldsOff(); say(`La protezione di ${label(p[2])} è stata spezzata!`); return 800; }
+      if(n==='Brick Break'||n==='Psychic Fangs'||n==='Raging Bull'){ const sd=(parseId(p[2])||{}).side; if(sd){ delete B.cond[sd].reflect; delete B.cond[sd].lightscreen; delete B.cond[sd].auroraveil; drawField(); say(`Gli schermi della squadra di ${PN(sd)} vanno in frantumi!`); return 800; } }
+      return 0; }
+    case '-singleturn': { const n=(p[3]||'').replace('move: ',''); if(TEAM_GUARDS.includes(n)){ const id=parseId(p[2]); if(id){ for(const q of [id.side,id.side+'b']) if(actMon(q)&&actMon(q).st!=='fnt') shieldOn(q); say(`${esc(n)} protegge la squadra di ${PN(id.side)}!`); return 800; } return 0; } if(PROTECTS.includes(n)){ const id=parseId(p[2]); if(id) shieldOn(id.pos); say(`${label(p[2])} si protegge!`); return 800; } return 0; }
+    case '-block': { const id=parseId(p[2]); const n=(p[3]||'').replace(/^(move|ability|item): /,''); if(id) pop(id.pos,n,'miss'); say(`${label(p[2])} è protetto da ${esc(n)}!`); return 800; }
+    case '-clearpositiveboost': { const id=parseId(p[2]); if(id){ const m=mon(id.side,id.nick); for(const k2 in m.boosts) if(m.boosts[k2]>0) m.boosts[k2]=0; drawSide(id.side); say(`Gli aumenti delle statistiche di ${label(p[2])} spariscono!`); return 800; } return 0; }
+    case '-swapboost': { const a=parseId(p[2]), b=parseId(p[3]); if(a&&b){ const ma=mon(a.side,a.nick), mb=mon(b.side,b.nick); const st=(p[4]&&!p[4].startsWith('[')?p[4].split(', '):['atk','def','spa','spd','spe','accuracy','evasion']); for(const x of st){ const t=ma.boosts[x]; ma.boosts[x]=mb.boosts[x]; mb.boosts[x]=t; if(!ma.boosts[x]) delete ma.boosts[x]; if(!mb.boosts[x]) delete mb.boosts[x]; } draw(); say(`${label(p[2])} scambia le modifiche alle statistiche con ${label(p[3])}!`); return 800; } return 0; }
+    case '-invertboost': { const id=parseId(p[2]); if(id){ const m=mon(id.side,id.nick); for(const k2 in m.boosts) m.boosts[k2]=-m.boosts[k2]; drawSide(id.side); say(`Le modifiche alle statistiche di ${label(p[2])} si invertono!`); return 800; } return 0; }
+    case '-copyboost': { const a=parseId(p[2]), b=parseId(p[3]); if(a&&b){ mon(a.side,a.nick).boosts=Object.assign({},mon(b.side,b.nick).boosts); drawSide(a.side); say(`${label(p[2])} copia le modifiche alle statistiche di ${label(p[3])}!`); return 800; } return 0; }
+    case '-cureteam': { const sd=(parseId(p[2])||{}).side; if(sd){ for(const m of Object.values(B.side[sd].team)) if(m.st!=='fnt') m.st=''; drawSide(sd); drawTrainers(); say(`La squadra di ${PN(sd)} guarisce da tutti i problemi di stato!`); return 900; } return 0; }
+    case '-transform': { const a=parseId(p[2]), b=parseId(p[3]); if(a&&b){ const ma=mon(a.side,a.nick), mb=mon(b.side,b.nick); ma.boosts=Object.assign({},mb.boosts); ma.transformed=mb.species; const el=$('mon'+a.pos); el.innerHTML=spriteImg(mb.species,a.side==='p1',mb.shiny); el.dataset.sp='T'+mb.species; drawSide(a.side); say(`${label(p[2])} si trasforma in ${esc(mb.species)}!`); return 1000; } return 0; }
+    case '-prepare': { say(`${label(p[2])} si prepara a usare ${esc(p[3])}!`); return 800; }
+    case '-mustrecharge': return 0;
+    case '-hitcount': { const n=parseInt(p[3],10)||1; say(n===1?'Colpito 1 volta!':`Colpito ${n} volte!`); return 800; }
+    case '-ohko': say('È un colpo KO!'); return 800;
+    case '-notarget': say('Ma non c\'è nessun bersaglio…'); return 700;
+    case '-nothing': say('Ma non succede niente!'); return 700;
+    case '-center': return 0;
+    case '-combine': say('Le mosse si uniscono!'); return 700;
+    case '-waiting': say(`${label(p[2])} aspetta la mossa del compagno…`); return 700;
+    case '-singlemove': { const n=(p[3]||'').replace('move: ',''); if(n==='Destiny Bond'){ say(`${label(p[2])} vuole trascinare con sé l'avversario!`); return 800; } if(n==='Grudge'){ say(`${label(p[2])} vuole vendicarsi!`); return 800; } return 0; }
+    case '-fieldactivate': { const n=(p[2]||'').replace('move: ',''); if(n==='Perish Song'){ say('Tutti i Pokémon che sentono il canto andranno KO tra 3 turni!'); return 900; } return 0; }
+    case '-swapsideconditions': { const t=B.cond.p1; B.cond.p1=B.cond.p2; B.cond.p2=t; drawField(); say('Gli effetti dei due lati del campo si scambiano!'); return 900; }
+    case '-primal': say(`${label(p[2])} torna alla sua forma archeologica!`); return 1000;
+    case '-message': say(esc(p[2]||'')); return 800;
+    case '-hint': return 0;
+    case 'swap': { const id=parseId(p[2]); if(id&&isDbl()){ const sd=B.side[id.side]; const a=slotK(id.side), b=slotK(id.side+'b'); const t=sd[a]; sd[a]=sd[b]; sd[b]=t; for(const q of [id.side,id.side+'b']){ const el=$('mon'+q); el.dataset.sp=''; el.classList.remove('faint'); } draw(); say(`${label(p[2])} cambia posto con il compagno!`); return 900; } return 0; }
     case '-mega': say(`${label(p[2])} megaevolve!`); return 1000;
     case 'turn': { shieldsOff(); B.turn=+p[2]||0; const tb=$('turn'); tb.hidden=false; tb.textContent='Turno '+p[2]; say(`Turno ${esc(p[2])}`,'turn'); return 350; }
     case 'win': B.over=true; timerClear(); musicStop(); say(`Vince ${esc(p[2])}!`,'win'); seriesEnd(String(p[2]||'')); try{ if(O.onStats) O.onStats({winner:String(p[2]||''),names:Object.assign({},O.names),stats:B.stats||null,turns:B.turn||0}); }catch(e){} return 0;
@@ -1160,7 +1205,7 @@ function cpuSmart(r,level){
       else if(AI_HEAL[id]){ s=myHp<45?55*AI_HEAL[id]:myHp<70?18*AI_HEAL[id]:0; if(id==='rest'&&mine.st) s+=15; }
       else if(AI_HAZ[id]){ const c=sideFoe[AI_HAZ[id]]||0; s=(id==='spikes'?c<3:id==='toxicspikes'?c<2:!c)?30-(B.turn>8?15:0):0; if(danger>=myHp) s-=20; }
       else if(AI_STATUS[id]){ const t=AI_STATUS[id]; s=foe.st?0:22; if(t==='brn'&&foe.atk>foe.spa) s+=15; if(t==='brn'&&foe.types.includes('Fire')) s=0; if(t==='par'&&(foe.types.includes('Electric')||(id==='thunderwave'&&foe.types.includes('Ground')))) s=0; if(t==='tox'&&(foe.types.includes('Steel')||foe.types.includes('Poison'))) s=0; if(t==='slp'&&(id==='sleeppowder'||id==='spore')&&foe.types.includes('Grass')) s=0; if(t==='slp') s+=10; }
-      else if(id==='protect'||id==='detect'||id==='kingsshield'||id==='spikyshield'||id==='banefulbunker'||id==='silktrap') s=(B.lastProtect?0:(mine.st==='tox'||danger>=myHp)?12:4);
+      else if(PROTECTS_ID.has(id)) s=aiProtOk('p2',foe)?((mine.st==='tox'||danger>=myHp)?12:4)+(aiStall(foe)?14:0):-40;
       else if(id==='substitute') s=myHp>60&&danger<30?20:0;
       else if(id==='defog'||id==='rapidspin'||id==='mortalspin'||id==='courtchange'){ const mc=B.cond.p2||{}; s=(mc.stealthrock||mc.spikes||mc.toxicspikes||mc.stickyweb)?32:0; }
       else if(id==='taunt'||id==='encore') s=10; else if(id==='trick'||id==='switcheroo') s=12; else if(id==='destinybond') s=myHp<30&&!faster?40:0;
@@ -1176,7 +1221,7 @@ function cpuSmart(r,level){
     // bloccato su una mossa inutile (es. strumento Scelta): meglio cambiare
     if(opts.length===1&&best.s<15&&b.sc>stay) return 'switch '+(b.i+1); }
   let ch='move '+(best.i+1);
-  if(best.d&&best.d.id==='protect') B.lastProtect=true; else B.lastProtect=false;
+  aiProtMark('p2',best.d&&PROTECTS_ID.has(best.d.id));
   if(a.canMegaEvo) ch+=' mega';
   else if(a.canTerastallize&&level>=2){ const tt=a.canTerastallize; const useT=best.d&&best.d.category!=='Status'&&(best.d.type===tt||best.d.id==='terablast');
     const defensive=level>=3&&danger>=myHp&&threat(Object.assign({},mine,{types:[tt]}))<danger*.5; if(useT&&(best.s>=60||myHp<60)||defensive) ch+=' terastallize'; }
@@ -1241,7 +1286,7 @@ function cpuDblSmart(r,level){
             add(String(k+1),s); }); }
       } else {
         const id=d.id; let s=0;
-        if(PROTECTS_ID.has(id)) s=(B.aiProt[myPos[i]]===B.turn-1)?-40:(danger>=me.hpPct?42:single>=me.hpPct*.7?22:4)+(ally&&foes.some(f=>f&&aiThreat(ally,f)>=f.hpPct)?10:0);
+        if(PROTECTS_ID.has(id)) s=!aiProtOk(myPos[i],foes.find(f=>f&&aiStall(f)))?-40:(B.aiProt[myPos[i]]===B.turn-1)?6:(danger>=me.hpPct?42:single>=me.hpPct*.7?22:4)+(ally&&foes.some(f=>f&&aiThreat(ally,f)>=f.hpPct)?10:0);
         else if(id==='tailwind') s=tailOn?-30:(slower?46:18);
         else if(id==='trickroom') s=trOn?-40:(slower?50:-20);
         else if(id==='followme'||id==='ragepowder') s=ally&&ally.hpPct>40&&foes.some(f=>f&&aiThreat(f,ally)>=ally.hpPct*.6)?36:6;
@@ -1273,10 +1318,15 @@ function cpuDblSmart(r,level){
   }
   return plans.map((p,i)=>{ if(p==='pass'||typeof p==='string') return p; if(p.sw!=null) return 'switch '+(p.sw+1);
     let ch='move '+(p.j+1)+(p.tgt?' '+p.tgt:'');
-    if(PROTECTS_ID.has(p.d.id)) B.aiProt[myPos[i]]=B.turn;
+    aiProtMark(myPos[i],PROTECTS_ID.has(p.d.id));
     if(p.canMega&&!megaUsed){ ch+=' mega'; megaUsed=true; }
     else if(p.canTera&&!teraUsed&&level>=2&&p.d.category!=='Status'&&(p.d.type===p.canTera)&&p.s>=50){ ch+=' terastallize'; teraUsed=true; }
     return ch; }).join(', '); }
+// due Protect di fila hanno senso solo se l'avversario sta perdendo PS da solo (veleno, scottatura, Leech Seed, Perish Song…)
+function aiStall(f){ if(!f) return false; const lm=actMon(f.pos||'p1')||{}; const st=f.st||lm.st, v=lm.vol||{}; return st==='tox'||st==='psn'||st==='brn'||!!v.leechseed||!!v.perish||!!v.partiallytrapped||!!v.saltcure; }
+// Protect: mai due volte di fila, tranne quando l'avversario perde PS da solo (allora al massimo 2 di fila: il secondo riesce solo 1 volta su 3)
+function aiProtOk(pos,foe){ const P=B.aiProt||{}, R=B.aiProtRun||{}; if(P[pos]!==B.turn-1) return true; return !!(foe&&aiStall(foe))&&(R[pos]||0)<2; }
+function aiProtMark(pos,used){ B.aiProt=B.aiProt||{}; B.aiProtRun=B.aiProtRun||{}; if(used){ B.aiProtRun[pos]=B.aiProt[pos]===B.turn-1?(B.aiProtRun[pos]||1)+1:1; B.aiProt[pos]=B.turn; } else B.aiProtRun[pos]=0; }
 const PROTECTS_ID=new Set(['protect','detect','kingsshield','spikyshield','banefulbunker','silktrap','burningbulwark','obstruct','maxguard']);
 
 function cpuChoice(r){ if(isDbl()){ if(O.ai>0){ try{ return cpuDblSmart(r,O.ai); }catch(e){ console.warn('IA doppio',e); } } return cpuDbl(r); } if(O.ai>0){ try{ return cpuSmart(r,O.ai); }catch(e){ console.warn('IA',e); } } return cpuSingle(r); }
@@ -1303,6 +1353,8 @@ function prompt(){
 const pickN=r=>r&&r.teamPreview&&r.maxChosenTeamSize&&r.maxChosenTeamSize<r.side.pokemon.length?r.maxChosenTeamSize:0;
 function shuffleArr(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.random()*(i+1)|0; [a[i],a[j]]=[a[j],a[i]]; } return a; }
 function ui(sid){ if(isDbl()||pickN(B.req[sid])) return uiDbl(sid); return uiSingle(sid); }
+// perché alcune mosse sono bloccate (strumenti Scelta, Encore, Taunt...): come Showdown le mostra grigie, qui c'è anche una riga che lo spiega
+function lockNote(sid,a,rq){ if(!a||!a.moves||!a.moves.some(m=>m.disabled)) return ''; const free=a.moves.filter(m=>!m.disabled); const rp=rq||B.req[sid]&&B.req[sid].side&&B.req[sid].side.pokemon.find(x=>x.active&&!/fnt/.test(x.condition||'')&&(!a.pos||true)); const it=rp&&rp.item?Dex.items.get(rp.item).name:''; if(free.length===1&&/^Choice /.test(it)) return '<p class="lock">Bloccato su <b>'+esc(free[0].move)+'</b> da '+esc(it)+'</p>'; return '<p class="lock">Alcune mosse non si possono usare in questo turno.</p>'; }
 function uiSingle(sid){
   const r=B.req[sid], c=$('ctrl'); if(O.mode==='two') { B.passTo=sid; draw(); }
   const team=r.side.pokemon;
@@ -1317,7 +1369,7 @@ function uiSingle(sid){
   } else {
     const a=r.active[0], me=team.find(x=>x.active), hp=me?parseHP(me.condition):null;
     h+=`<div class="cq"><span class="who ${sid}">${PN(sid)}</span> <span>${O.lang==='en'?'What will':'Cosa farà'} <b>${esc(me?me.details.split(',')[0]:'')}</b>${O.lang==='en'?' do':''}?</span> ${hp?`<span class="hpchip">PS ${hp.hp}/${hp.max}</span>`:''}</div>
-     <div class="sec">Attacca</div><div class="moves">${a.moves.map((m,i)=>{ const d=Dex.moves.get(m.id); const col=TYPE_COLORS[d.type]||'#666'; const e=effOf(m.id,sid);
+     <div class="sec">Attacca</div>${lockNote(sid,a)}<div class="moves">${a.moves.map((m,i)=>{ const d=Dex.moves.get(m.id); const col=TYPE_COLORS[d.type]||'#666'; const e=effOf(m.id,sid);
       return `<button class="mv" style="--tc:${col}" data-tip="move:${esc(m.id)}:${sid}" ${m.disabled||m.pp===0?'disabled':`data-lt="pick" data-c="move ${i+1}"`}>${e?effSpan(e):'<span class="effl none"></span>'}<b>${esc(m.move)}</b><span class="mt"><i class="tdot"></i>${TIPI[d.type]||d.type}</span><span class="pp">${m.pp??'–'}/${m.maxpp??'–'}</span></button>`; }).join('')}</div>`;
     if(a.canMegaEvo) h+=`<label class="tera mega"><input type="checkbox" id="lt-mega"> Megaevolvi <span class="st" style="background:linear-gradient(135deg,#F7A1D8,#7B3FC4)">MEGA</span></label>`;
     if(a.canTerastallize) h+=`<label class="tera"><input type="checkbox" id="lt-tera"> Teracristallizza <span class="st" style="background:${TYPE_COLORS[a.canTerastallize]||'#666'}">${(TIPI[a.canTerastallize]||esc(a.canTerastallize)).toUpperCase()}</span></label>`;
@@ -1389,7 +1441,7 @@ function uiDbl(sid){
     const a=r.active[idx], me=team[idx], hp=me?parseHP(me.condition):null, teraUsed=P.parts.some(x=>x.includes('terastallize')), megaUsed=P.parts.some(x=>x.endsWith(' mega'));
     const foes=[other(sid),other(sid)+'b'].filter(p=>{ const m=actMon(p); return m&&m.st!=='fnt'; });
     h+=`<div class="cq">${who} <span>${en?'What will':'Cosa farà'} <b>${esc(me?me.details.split(',')[0]:'')}</b>${en?' do':''}?</span> ${hp?`<span class="hpchip">PS ${hp.hp}/${hp.max}</span>`:''} <span class="slotn">${idx+1}/2</span> ${back}</div>
-     <div class="sec">Attacca</div><div class="moves">${a.moves.map((m,i)=>{ const d=Dex.moves.get(m.id); const col=TYPE_COLORS[d.type]||'#666';
+     <div class="sec">Attacca</div>${lockNote(sid,a,me)}<div class="moves">${a.moves.map((m,i)=>{ const d=Dex.moves.get(m.id); const col=TYPE_COLORS[d.type]||'#666';
       const effs=d.category==='Status'?[]:foes.map(p=>effOf(m.id,sid,p)); const ef=effs.some(Boolean)?effs.map(e=>e?effSpan(e):'<span class="effl">·</span>').join('<span class="effsep">|</span>'):'<span class="effl none"></span>';
       return `<button class="mv" style="--tc:${col}" data-tip="move:${esc(m.id)}:${sid}" ${m.disabled||m.pp===0?'disabled':`data-lt="pick" data-c="move ${i+1}"`}><span class="effrow">${ef}</span><b>${esc(m.move)}</b><span class="mt"><i class="tdot"></i>${TIPI[d.type]||d.type}</span><span class="pp">${m.pp??'–'}/${m.maxpp??'–'}</span></button>`; }).join('')}</div>`;
     if(a.canMegaEvo&&!megaUsed) h+=`<label class="tera mega"><input type="checkbox" id="lt-mega"> Megaevolvi <span class="st" style="background:linear-gradient(135deg,#F7A1D8,#7B3FC4)">MEGA</span></label>`;
@@ -1627,7 +1679,36 @@ for(const k in WEATHER_EN) EN_EXACT[k]=WEATHER_EN[k]; for(const k in COND_EN) EN
 const stRx='(Attacco|Difesa|Att\\. Sp\\.|Dif\\. Sp\\.|Velocità|Precisione|Elusione|PS)';
 const statsIn=s=>s.replace(new RegExp(stRx,'g'),m=>STAT_EN[m]||m);
 const lab=s=>{ const m=/^(.+) di (.+)$/.exec(s); return m?`${m[2]}'s ${m[1]}`:s; };
+const EN_STAT={Attacco:'Attack',Difesa:'Defense','Att. Sp.':'Sp. Atk','Dif. Sp.':'Sp. Def','Velocità':'Speed'};
+const CANT_EN={'è infatuato e non attacca!':'is immobilized by love!','sta oziando.':'is loafing around!','perde la concentrazione e non attacca!':'lost its focus and couldn\'t move!','non può usare la mossa per la provocazione!':'can\'t use that move after the taunt!','non può usare la mossa bloccata!':'can\'t use its disabled move!','non può usare la mossa sigillata!':'can\'t use its sealed move!','non può usare mosse sonore!':'can\'t use sound-based moves!','non può usare la mossa per la gravità!':'can\'t use that move because of gravity!','non ha più PP per questa mossa!':'has no PP left for this move!','non può usare la mossa.':'can\'t use the move.'};
+const CURE_EN={'si sveglia!':'woke up!','non è più paralizzato!':'was cured of paralysis!','guarisce dalla scottatura!':'was healed of its burn!','non è più avvelenato!':'was cured of its poisoning!','si scongela!':'thawed out!'};
 const EN_RX=[
+  [/^(.+?) (è infatuato e non attacca!|sta oziando\.|perde la concentrazione e non attacca!|non può usare la mossa per la provocazione!|non può usare la mossa bloccata!|non può usare la mossa sigillata!|non può usare mosse sonore!|non può usare la mossa per la gravità!|non ha più PP per questa mossa!|non può usare la mossa\.)$/,(m,a,b)=>`${lab(a)} ${CANT_EN[b]}`],
+  [/^(.+?) (si sveglia!|non è più paralizzato!|guarisce dalla scottatura!|non è più avvelenato!|si scongela!)$/,(m,a,b)=>`${lab(a)} ${CURE_EN[b]}`],
+  [/^Gli aumenti delle statistiche di (.+) spariscono!$/,(m,a)=>`${lab(a)}'s stat boosts were removed!`],
+  [/^(.+?) scambia le modifiche alle statistiche con (.+)!$/,(m,a,b)=>`${lab(a)} switched stat changes with ${lab(b)}!`],
+  [/^Le modifiche alle statistiche di (.+) si invertono!$/,(m,a)=>`${lab(a)}'s stat changes were inverted!`],
+  [/^(.+?) copia le modifiche alle statistiche di (.+)!$/,(m,a,b)=>`${lab(a)} copied ${lab(b)}'s stat changes!`],
+  [/^La squadra di (.+) guarisce da tutti i problemi di stato!$/,(m,a)=>`${a}'s team was cured of its status conditions!`],
+  [/^(.+?) si trasforma in (.+)!$/,(m,a,b)=>`${lab(a)} transformed into ${b}!`],
+  [/^(.+?) si prepara a usare (.+)!$/,(m,a,b)=>`${lab(a)} is preparing ${b}!`],
+  [/^Colpito 1 volta!$/,()=>'The Pokémon was hit 1 time!'],[/^Colpito (\d+) volte!$/,(m,a)=>`The Pokémon was hit ${a} times!`],
+  [/^È un colpo KO!$/,()=>"It's a one-hit KO!"],[/^Ma non c'è nessun bersaglio…$/,()=>'But there was no target…'],[/^Ma non succede niente!$/,()=>'But nothing happened!'],
+  [/^Le mosse si uniscono!$/,()=>'The two moves have become one!'],[/^(.+?) aspetta la mossa del compagno…$/,(m,a)=>`${lab(a)} is waiting for its ally's move…`],
+  [/^(.+?) vuole trascinare con sé l'avversario!$/,(m,a)=>`${lab(a)} is hoping to take its attacker down with it!`],[/^(.+?) vuole vendicarsi!$/,(m,a)=>`${lab(a)} wants its target to bear a grudge!`],
+  [/^Tutti i Pokémon che sentono il canto andranno KO tra 3 turni!$/,()=>'All Pokémon that heard the song will faint in three turns!'],
+  [/^Gli effetti dei due lati del campo si scambiano!$/,()=>'The effects on each side of the field were swapped!'],
+  [/^(.+?) torna alla sua forma archeologica!$/,(m,a)=>`${lab(a)}'s Primal Reversion! It reverted to its primal form!`],
+  [/^(.+?) cambia posto con il compagno!$/,(m,a)=>`${lab(a)} switched places with its ally!`],
+  [/^La protezione di (.+) è stata spezzata!$/,(m,a)=>`It broke through ${lab(a)}'s protection!`],
+  [/^Gli schermi della squadra di (.+) vanno in frantumi!$/,(m,a)=>`${a}'s team's screens shattered!`],
+  [/^Bloccato su (.+) da (.+)$/,(m,a,b)=>`Locked into ${a} by ${b}`],[/^Alcune mosse non si possono usare in questo turno\.$/,()=>"Some moves can't be used this turn."],
+  [/^(Protosynthesis|Quark Drive) potenzia (.+?) \((.+)\)!$/,(m,a,b,c)=>`${a} boosted ${lab(b)}'s ${EN_STAT[c]||c}!`],
+  [/^È superefficace su (.+)!$/,(m,a)=>`It's super effective on ${lab(a)}!`],[/^Non è molto efficace su (.+)…$/,(m,a)=>`It's not very effective on ${lab(a)}…`],
+  [/^Lo strumento (.+?) di (.+) è stato tolto!$/,(m,a,b)=>`${lab(b)}'s ${a} was knocked off!`],[/^Lo strumento (.+?) di (.+) è bruciato!$/,(m,a,b)=>`${lab(b)}'s ${a} was burned up!`],
+  [/^Lo strumento (.+?) di (.+) è stato rubato e mangiato!$/,(m,a,b)=>`${lab(b)}'s ${a} was stolen and eaten!`],[/^(.+?) lancia (.+)!$/,(m,a,b)=>`${lab(a)} flung its ${b}!`],
+  [/^(.+?) resiste grazie a (.+)!$/,(m,a,b)=>`${lab(a)} hung on using its ${b}!`],[/^Il palloncino di (.+) scoppia!$/,(m,a)=>`${lab(a)}'s Air Balloon popped!`],
+  [/^(Wide Guard|Quick Guard|Crafty Shield|Mat Block) protegge la squadra di (.+)!$/,(m,a,b)=>`${a} protected ${b}'s team!`],[/^(.+?) è protetto da (.+)!$/,(m,a,b)=>`${lab(a)} was protected by ${b}!`],
   [/^\((.+?) perde il (\d+)% dei PS!\)$/,(m,a,n)=>`(${lab(a)} lost ${n}% of its health!)`],[/^\((.+?) recupera il (\d+)% dei PS!\)$/,(m,a,n)=>`(${lab(a)} had its HP restored: ${n}%!)`],
   [/^(Protosynthesis|Quark Drive): (Att\.|Dif\.|Att\.Sp\.|Dif\.Sp\.|Vel\.)$/,(m,a,s)=>a+': '+({'Att.':'Atk','Dif.':'Def','Att.Sp.':'SpA','Dif.Sp.':'SpD','Vel.':'Spe'})[s]],
   [/^(.+?) diventa di tipo (.+)!$/,(m,a,t)=>`${lab(a)} transformed into the ${t.split('/').map(x=>TYPE_EN[x]||x).join('/')} type!`],
