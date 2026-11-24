@@ -200,7 +200,7 @@ details.remote ol{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:c
 .avmini{width:22px!important;height:22px!important;border-width:2px!important;margin:-4px 4px -4px -2px}
 @media (max-width:440px){.fixbar .avmini+.fbtxt{display:none}.fixbar .avmini{margin:-4px -3px}}
 @media (max-width:360px){.phead .avatar{width:60px;height:60px}.avgrid{grid-template-columns:repeat(4,1fr)}}.pgo .btn{flex:1 1 150px}
-.twfoe{display:flex;gap:12px;align-items:center}.twfoe .twav{width:64px;height:64px}@media (max-width:380px){.twfoe .twav{width:48px;height:48px}}
+.twfoe{display:flex;gap:12px;align-items:center}.twstars{letter-spacing:-1px;white-space:nowrap}.twfoe .twav{width:64px;height:64px}@media (max-width:380px){.twfoe .twav{width:48px;height:48px}}
 .twmode .opts,.opts.ptabs{display:flex!important;flex-wrap:wrap;gap:6px;margin:4px 0 8px;grid-template-columns:none!important}.twmode .opt,.ptabs .opt{flex:1 1 auto;width:auto;min-height:0;padding:6px 10px;text-align:center;justify-content:center}.opts.ptabs{flex-wrap:nowrap}.ptabs .opt{flex:1 1 0}
 .ptabs{padding:2px 10px!important;font-size:12px!important;min-height:0!important;margin-left:6px;border-width:2px!important;box-shadow:0 2px 0 var(--line)!important;vertical-align:middle}
 .ptabs{justify-content:center;margin:6px 0 4px}.ptabs{flex-wrap:nowrap}.ptabs .opt{flex:1 1 0;min-width:0}
@@ -399,6 +399,7 @@ html,body{margin:0}
 <script src="versi-data.js"></script>
 <script src="musica.js"></script>
 <script src="sprite-data.js"></script>
+<script src="statistiche-data.js"></script>
 <script src="avatar.js"></script>
 <script>
 /*CORE-START*/
@@ -415,13 +416,19 @@ function shuffle(a, rnd){ rnd = rnd || Math.random; const r=a.slice();
   for(let i=r.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); const t=r[i]; r[i]=r[j]; r[j]=t; } return r; }
 // Gruppi di Pokémon in gioco, in base ai tier National Dex di Showdown. Ogni gruppo è legale nel formato indicato.
 // "champions": solo i Pokémon presenti in Pokémon Champions (flag champions dei dati).
-const POOL_TIERS={ tutti:null, ou:['OU','UUBL'], megaou:['OU','UUBL'], uu:['UU','RUBL'], champions:null };
-// Nat Dex OU con le Megaevoluzioni (senza Teracristallizzazione): set con Megapietra da scarica-mega.js
+// "uber": tutti i Pokémon giocabili in [Gen 9] National Dex Ubers (tier Uber…RUBL) più i Pokémon base con una Mega permessa lì.
+// "megaou" non si sceglie più nelle impostazioni (sostituito da "uber") ma resta qui finché lo usa la Torre Lotta.
+const POOL_TIERS={ tutti:null, ou:['OU','UUBL'], megaou:['OU','UUBL'], uber:['Uber','OU','UUBL','UU','RUBL'], uu:['UU','RUBL'], champions:null };
+// Megaevoluzioni senza Teracristallizzazione: set con Megapietra da scarica-mega.js (MEGA_DATA per megaou, MEGA_UBER per uber)
 const MEGA = typeof MEGA_DATA!=='undefined' ? MEGA_DATA : {};
+const MEGA_U = typeof MEGA_UBER!=='undefined' ? MEGA_UBER : {};
+const megaSetsOf=tier=>tier==='uber'?MEGA_U:tier==='megaou'?MEGA:null;
 function filterPool(pool, o){
-  const tier=o.tier||'tutti', t=POOL_TIERS[tier];
-  return pool.filter(m=>(!t||t.includes(m.tier)||(tier==='megaou'&&MEGA[m.name])) && (tier!=='champions'||m.champions) && (o.legends!==false || !(m.legendary||m.mythical)));
+  const tier=o.tier||'tutti', t=POOL_TIERS[tier], ms=megaSetsOf(tier);
+  return pool.filter(m=>(!t||t.includes(m.tier)||(ms&&ms[m.name])) && (tier!=='champions'||m.champions) && (o.legends!==false || !(m.legendary||m.mythical)));
 }
+// Nat Dex Uber: in tutta l'asta escono al massimo 2 leggendari e 2 misteriosi (poi non ne escono più, per nessuno)
+const LEGEND_CAP={uber:2};
 // Doppio Champions: regolamento VGC attuale di Showdown. Valore salvato da scarica-set.js (SHOWDOWN_INFO),
 // aggiornato all'apertura del gioco se c'è internet (trovaVgcChampions sul testo di config/formats.ts).
 let CHAMP_VGC=(typeof SHOWDOWN_INFO!=='undefined'&&SHOWDOWN_INFO.champVgc)||'[Gen 9 Champions] VGC 2026 Reg M-C';
@@ -436,13 +443,14 @@ function trovaVgcChampions(testo){
 function showdownFormat(format, tier){
   if(tier==='champions') return format==='doppio' ? CHAMP_VGC : '[Gen 9 Champions] OU';
   if(format==='doppio') return '[Gen 9] Doubles Custom Game';
-  return ({tutti:'[Gen 9] National Dex AG', ou:'[Gen 9] National Dex', megaou:'[Gen 9] National Dex', uu:'[Gen 9] National Dex UU'})[tier||'tutti'];
+  return ({tutti:'[Gen 9] National Dex AG', ou:'[Gen 9] National Dex', megaou:'[Gen 9] National Dex', uber:'[Gen 9] National Dex Ubers', uu:'[Gen 9] National Dex UU'})[tier||'tutti'];
 }
 function newGame(o){
   return { format:o.format, mode:o.mode, tier:o.tier||'tutti', legends:o.legends!==false, startCoins:o.coins||START_COINS, coins:[o.coins||START_COINS,o.coins||START_COINS], teams:[[],[]],
     deck:shuffle(o.pool,o.rnd), openerIdx:o.firstOpener, auction:null, last:null, history:[], over:false, n:0,
     // Species Clause dei formati OU/UU/Champions: una sola forma per numero di Pokédex (es. non Tauros e Tauros di Paldea)
-    speciesClause:['ou','megaou','uu','champions'].includes(o.tier), usedDex:[],
+    speciesClause:['ou','megaou','uber','uu','champions'].includes(o.tier), usedDex:[],
+    legendCap:LEGEND_CAP[o.tier]||0,
     // Probabilità che un Pokémon estratto sia shiny (cromatico): 1 su 512
     shinyRate:o.shinyRate!=null?o.shinyRate:SHINY_RATE, rnd:o.rnd||Math.random,
     // Annullamento: "fotografie" dello stato all'inizio di ogni asta manuale (vedi undoLast)
@@ -471,7 +479,12 @@ function startAuction(s){
   if(s.over||s.auction) return;
   if(isFull(s,0)&&isFull(s,1)){ s.over=true; return; }
   let mon=s.deck.pop();
-  if(s.speciesClause){ while(s.usedDex.includes(mon.dex)&&s.deck.length) mon=s.deck.pop(); s.usedDex.push(mon.dex); }
+  // Pokémon già estratti = quelli nelle squadre (così l'annullamento ripristina anche i conteggi)
+  const got=s.teams[0].concat(s.teams[1]), cap=s.legendCap||0;
+  const nL=got.filter(m=>m.legendary).length, nM=got.filter(m=>m.mythical).length;
+  const ok=m=>!(s.speciesClause&&s.usedDex.includes(m.dex)) && !(cap&&((m.legendary&&nL>=cap)||(m.mythical&&nM>=cap)));
+  while(!ok(mon)&&s.deck.length) mon=s.deck.pop();
+  if(s.speciesClause) s.usedDex.push(mon.dex);
   if(s.rnd()<s.shinyRate && !SHINY_LOCK.includes(mon.name)) mon=Object.assign({},mon,{shiny:true}); // copia, così il Pokémon del pool resta normale
   const op=s.openerIdx, other=1-op;
   if(isFull(s,op)) return award(s,mon,other,1,op,true);
@@ -513,13 +526,19 @@ const SETS = typeof SET_DATA!=='undefined' ? SET_DATA : {};
 const USO = typeof CHAMP_USO!=='undefined' ? CHAMP_USO : {};
 function setsFor(mon, format, tier){ let v=SETS[mon.name]; if(v&&tier==='champions') v=v.champions; let base=v ? (v[format]||v.singolo||[]) : [];
   if(tier==='champions'&&USO[mon.name]&&USO[mon.name][format]) base=[...USO[mon.name][format],...base];
-  if(tier!=='megaou') return base;
-  return [...(MEGA[mon.name]||[]),...base].map(s=>s.tera?Object.assign({},s,{tera:null}):s); }
+  const ms=megaSetsOf(tier); if(!ms) return base;
+  return [...(ms[mon.name]||[]),...base].map(s=>s.tera?Object.assign({},s,{tera:null}):s); }
 // In Champions vale la "Item Clause": due Pokémon della stessa squadra non possono avere lo stesso strumento.
 // mosse di stato più comuni nei set (per non dare uno strumento Scelta a chi le usa)
 const STATUS_MOVES=new Set(['Protect','Detect','Spiky Shield','King\'s Shield','Baneful Bunker','Silk Trap','Burning Bulwark','Swords Dance','Nasty Plot','Calm Mind','Dragon Dance','Bulk Up','Quiver Dance','Shell Smash','Recover','Roost','Slack Off','Soft-Boiled','Moonlight','Morning Sun','Synthesis','Wish','Rest','Substitute','Toxic','Will-O-Wisp','Thunder Wave','Spore','Sleep Powder','Yawn','Stealth Rock','Spikes','Toxic Spikes','Sticky Web','Defog','Rapid Spin','Taunt','Encore','Trick Room','Tailwind','Reflect','Light Screen','Aurora Veil','Follow Me','Rage Powder','Helping Hand','Wide Guard','Quick Guard','Fake Tears','Haze','Leech Seed','Coil','Agility','Iron Defense','Curse','Belly Drum','Trick','Switcheroo','Parting Shot','Memento','Destiny Bond','Strength Sap','Shore Up','Life Dew','Pollen Puff','Snarl','Icy Wind']);
 // (Pollen Puff, Snarl, Icy Wind e Rapid Spin sono attacchi: tolti sotto)
 ['Pollen Puff','Snarl','Icy Wind','Rapid Spin'].forEach(x=>STATUS_MOVES.delete(x));
+// altre mosse di stato presenti nei set (controllo della chat Dati e set del 23/11/2026)
+['Acid Armor','Aromatherapy','Autotomize','Baton Pass','Charm','Chilly Reception','Clangorous Soul','Coaching','Cosmic Power','Cotton Guard','Court Change','Endure',
+ 'Entrainment','Fillet Away','Floral Healing','Focus Energy','Geomancy','Glare','Growth','Heal Bell','Heal Pulse','Healing Wish','Hone Claws','Hypnosis','Imprison',
+ 'Instruct','Jungle Healing','Lunar Blessing','Magnet Rise','Milk Drink','Minimize','No Retreat','Pain Split','Perish Song','Psych Up','Quash','Rain Dance',
+ 'Revival Blessing','Roar','Rock Polish','Shed Tail','Shelter','Shift Gear','Simple Beam','Sleep Talk','Speed Swap','Stockpile','Stun Spore','Sunny Day','Tail Glow',
+ 'Teleport','Tidy Up','Transform','Victory Dance','Whirlwind'].forEach(x=>STATUS_MOVES.add(x));
 const ITEM_ALT=['Leftovers','Sitrus Berry','Life Orb','Focus Sash','Choice Scarf','Expert Belt','Shell Bell','Lum Berry','Mental Herb','White Herb','Scope Lens','Black Glasses'];
 const EV_ORDER=['HP','Atk','Def','SpA','SpD','Spe'];
 function setText(mon, s){
@@ -655,6 +674,68 @@ function canSee(g,owner,viewer,localRevealed){
   return g.hide==='fine'&&!!g.over&&!!(g.reveal&&g.reveal[owner]);
 }
 function monView(g,mon,owner,viewer,localRevealed){ return !mon||mon.hidden||canSee(g,owner,viewer,localRevealed)?mon:hintOf(mon,g.mode); }
+// ---------- Il computer all'asta (Gioca su questo dispositivo contro il computer: g.cpu = 1, giocatore 2) ----------
+// Statistiche base da statistiche-data.js (genera-statistiche.js). Asta classica: il computer valuta il Pokémon dalle
+// statistiche base (i leggendari e misteriosi li vuole con più foga), cerca sinergie di meteo con la sua squadra
+// (chi porta pioggia/sole/sabbia/neve + chi ne approfitta) ed evita troppi doppioni di tipo. Nelle altre modalità
+// (tipo, numero, colore, verso) non sa chi è: offre "a sentimento".
+const STATS = typeof STAT_DATA!=='undefined' ? STAT_DATA : {};
+const WEATHER_SET={abil:{'Drizzle':'rain','Primordial Sea':'rain','Drought':'sun','Desolate Land':'sun','Orichalcum Pulse':'sun','Sand Stream':'sand','Snow Warning':'snow'},
+  move:{'Rain Dance':'rain','Sunny Day':'sun','Sandstorm':'sand','Snowscape':'snow','Chilly Reception':'snow'}};
+const WEATHER_USE={abil:{'Swift Swim':'rain','Rain Dish':'rain','Hydration':'rain','Dry Skin':'rain','Chlorophyll':'sun','Solar Power':'sun','Flower Gift':'sun','Protosynthesis':'sun','Harvest':'sun',
+  'Sand Rush':'sand','Sand Force':'sand','Slush Rush':'snow','Ice Body':'snow'},
+  move:{'Thunder':'rain','Hurricane':'rain','Solar Beam':'sun','Solar Blade':'sun','Blizzard':'snow','Aurora Veil':'snow','Shore Up':'sand'}};
+function cpuWeather(m,format,tier){
+  const r={sets:new Set(),uses:new Set()};
+  for(const s of setsFor(m,format||'singolo',tier)){
+    const ab=s.abilita; if(WEATHER_SET.abil[ab]) r.sets.add(WEATHER_SET.abil[ab]); if(WEATHER_USE.abil[ab]) r.uses.add(WEATHER_USE.abil[ab]);
+    for(const x of s.mosse||[]){ if(WEATHER_SET.move[x]) r.sets.add(WEATHER_SET.move[x]); if(WEATHER_USE.move[x]) r.uses.add(WEATHER_USE.move[x]); } }
+  return r;
+}
+// Quanto vale "mon" per la squadra del giocatore p: circa 0 (scarso) … 1,5 (da prendere a ogni costo)
+function cpuScore(g,mon,p){
+  const st=STATS[mon.name]; let sc;
+  if(st){ const bst=st.reduce((a,b)=>a+b,0), off=Math.max(st[1],st[3]), spe=st[5];
+    const n=(x,lo,hi)=>Math.max(0,Math.min(1,(x-lo)/(hi-lo)));
+    sc=0.6*n(bst,400,700)+0.25*n(off,70,150)+0.15*n(spe,40,130); }
+  else sc=0.45;
+  if(mon.legendary||mon.mythical) sc*=1.35;                          // leggendari: più foga
+  const ms=megaSetsOf(g.tier); if((ms&&ms[mon.name])||(g.tier==='champions'&&setsFor(mon,g.format,g.tier).some(s=>s.mega))) sc+=0.08; // ha una Mega
+  // sinergie di meteo con la squadra attuale
+  const team=g.teams[p], w=cpuWeather(mon,g.format,g.tier), tw=team.map(m=>cpuWeather(m,g.format,g.tier));
+  const teamSets=new Set(), useCount={};
+  tw.forEach(x=>{ x.sets.forEach(v=>teamSets.add(v)); x.uses.forEach(v=>useCount[v]=(useCount[v]||0)+1); });
+  for(const v of w.uses) if(teamSets.has(v)){ sc+=0.22; break; }    // ne approfitta: c'è già chi porta quel meteo
+  for(const v of w.sets) if(useCount[v]){ sc+=0.1+0.12*Math.min(2,useCount[v]); break; } // porta il meteo a chi ne approfitta
+  if(w.sets.size&&teamSets.size&&![...w.sets].some(v=>teamSets.has(v))) sc-=0.12; // meteo in conflitto
+  // troppi doppioni di tipo
+  const same=team.filter(m=>[m.type,m.type2].some(x=>x&&(x===mon.type||x===mon.type2))).length;
+  sc-=0.06*Math.min(3,same);
+  return Math.max(0,sc);
+}
+// Offerta massima che il computer è disposto a fare per il Pokémon all'asta (calcolata una volta per asta)
+function cpuLimit(g,p){
+  const a=g.auction; if(!a) return 0;
+  if(a.cpuMax!=null) return a.cpuMax;
+  const rnd=g.rnd||Math.random, slots=TEAM_SIZE-g.teams[p].length, avg=g.coins[p]/Math.max(1,slots);
+  const sc=g.mode==='classica'?cpuScore(g,a.mon,p):0.25+0.55*rnd();   // al buio: a sentimento
+  // 0,42 = Pokémon nella media: offre circa la sua quota di monete; più forte = di più. Verso la fine le monete avanzate non servono a niente: spende di più.
+  let f=Math.max(0.3,Math.min(3,Math.pow(sc/0.42,1.5)));
+  f*=Math.sqrt(Math.max(1,avg/(g.startCoins/TEAM_SIZE)));          // più ricco del previsto: spende di più
+  if(slots===2) f*=1.3; if(slots===1) f=Math.max(f,sc>=0.3?3:1.2);
+  let lim=Math.round(avg*f*(0.85+0.3*rnd()));
+  lim=Math.max(1,Math.min(maxBid(g,p),lim));
+  a.cpuMax=lim; return lim;
+}
+// Mossa del computer se tocca a lui: {act:'raise',amount} oppure {act:'pass'}; null se non tocca a lui
+function cpuMove(g,p){
+  const a=g.auction; if(!a||a.turn!==p||g.over) return null;
+  const lim=cpuLimit(g,p), cap=maxBid(g,p);
+  if(a.bid>=lim||a.bid>=cap) return {act:'pass'};
+  const rnd=g.rnd||Math.random; let amt=a.bid+1;
+  if(lim-a.bid>4&&rnd()<0.35) amt=a.bid+1+Math.floor(rnd()*Math.min(3,lim-a.bid-1)); // ogni tanto un rilancio più deciso
+  return {act:'raise',amount:Math.min(amt,lim,cap)};
+}
 function exportText(team, format, choice, tier, edits){
   const ss=teamSets(team, format, choice, tier, edits);
   return team.map((m,i)=>ss[i]?setText(m,ss[i]):m.name).join('\n\n');
@@ -670,11 +751,13 @@ const I18N={
   'credit':'Gioco amatoriale non ufficiale, gratuito e senza scopo di lucro. Pokémon e tutti i nomi e le immagini collegati sono marchi registrati e proprietà di Nintendo, Creatures Inc., GAME FREAK inc. e The Pokémon Company.',
   'back':'← Menu','setup.sub':n=>`Asta a due, 6 Pokémon da comprare a testa, estratti tra ${n} Pokémon.`,
   'setup.nodata':'Elenco dei Pokémon non trovato: il file <strong>pokemon-data.js</strong> deve stare nella stessa cartella di questa pagina. Si crea con <code>node scarica-pokemon.js</code>.',
+  'cpu.name':'Computer','cpu.vsFriend':['👥 Un amico','A turno sullo stesso dispositivo.'],'cpu.vsCpu':['🤖 Il computer','Il computer è il giocatore 2 (croce): fa le sue offerte e poi lotta.'],
+  'cpu.thinking':'🤖 Il computer ci sta pensando…','cpu.raised':n=>`🤖 Il computer rilancia a ${n}.`,'cpu.note':'Il computer valuta i Pokémon dalle statistiche base, vuole i leggendari con più foga e cerca squadre con il meteo (pioggia, sole, sabbia, neve). Nelle aste al buio offre a sentimento.','cpu.sets':'🤖 Set scelti dal computer.','cpu.opp':'Avversario:',
   's1':'1. Formato','s2':'2. Pokémon in gioco','s3':"3. Modalità d'asta",'s4':'4. Monete a testa','s5':'5. Giocatori',
   'fmt.singolo':['Singolo','Un Pokémon per lato in campo.'],'fmt.doppio':['Doppio','Due Pokémon per lato in campo.'],
-  'pool.tutti':['Tutti','Ogni Pokémon del gioco.'],'pool.ou':['Tier OU','Solo i più forti usati in OU.'],'pool.megaou':['Nat Dex OU (Mega)','Come OU, con le Megaevoluzioni e senza Tera.'],
+  'pool.tutti':['Tutti','Ogni Pokémon del gioco.'],'pool.ou':['Tier OU','Solo i più forti usati in OU.'],'pool.megaou':['Nat Dex OU (Mega)','Come OU, con le Megaevoluzioni e senza Tera.'],'pool.uber':['Nat Dex Uber','I più forti (Uber, OU, UU), con le Megaevoluzioni e senza Tera. Al massimo 2 leggendari e 2 misteriosi in tutta l\'asta.'],
   'pool.uu':['Tier UU','Forti ma un gradino sotto.'],'pool.champions':['Pokémon Champions','Solo quelli del gioco Pokémon Champions, con le Megaevoluzioni.'],
-  'poolName.tutti':'Tutti i Pokémon','poolName.ou':'Tier OU','poolName.megaou':'Nat Dex OU (Mega)','poolName.uu':'Tier UU','poolName.champions':'Pokémon Champions',
+  'poolName.tutti':'Tutti i Pokémon','poolName.ou':'Tier OU','poolName.megaou':'Nat Dex OU (Mega)','poolName.uber':'Nat Dex Uber','poolName.uu':'Tier UU','poolName.champions':'Pokémon Champions',
   'legends':'Leggendari e misteriosi:','yes':'Sì','no':'No','noLegends':', senza leggendari',
   'playOn':f=>`Su Showdown si gioca in <strong>${f}</strong>`,'fmtNote':' (si portano 6 Pokémon e se ne scelgono 4, livello 50)',
   'mode.classica':['Classica','Il Pokémon è mostrato: si sa esattamente chi è.'],'mode.tipo':['Per tipo','Si dichiara solo il tipo primario.'],
@@ -709,7 +792,7 @@ const I18N={
   'endIntro':(dbl,f,custom,note)=>`Set pronti per il ${dbl?'doppio':'singolo'}, presi dalle Random Battle di Pokémon Showdown. Dove ci sono più set puoi sceglierli dal menu. Su Showdown: Teambuilder, nuova squadra, "Import from text", incolla. Formato: <strong>${f}</strong>${custom?' (sfida diretta: non controlla le squadre, quindi accetta tutto)':', dove queste squadre sono valide'}${note}.`,
   'noSetsFile':'File set-data.js non trovato: il testo contiene solo i nomi. Si crea con: node scarica-set.js','again':'Nuova partita',
   'exit.title':'Uscire dalla partita?','exit.desc':'La partita in corso andrà persa: squadre, monete e aste fatte finora. Tornerai al menu iniziale, dove restano le impostazioni scelte.',
-  'cancel':'Annulla','exit.confirm':'Esci dalla partita','rulesBtn':'Regole','prof.backTo':'← Indietro','prof.avChange':'Cambia avatar','prof.avTrainers':'Allenatori','prof.avTypes':'Simboli dei tipi','prof.avHelp':'Avatar disegnati apposta per Pokémon Incanto. Si vedono nel profilo e, presto, anche in lotta accanto al tuo nome.',"tw.modeLabel":"Modalità","tw.modeHelp":"Ogni modalità ha la sua scalata, il suo record e le sue statistiche.","tw.dblNote":"In doppio il computer gioca da squadra: attacchi concentrati, Protect, Fake Out, Tailwind/Trick Room e cambi.","prof.allRecords":"Record per modalità","prof.resetOnline":"Azzera statistiche Online","prof.resetTower":"Azzera statistiche Torre","prof.resetSure":(n,w)=>n<3?`Sicuro? Azzera ${w} (${n}/3)`:`Ultima conferma: azzera ${w} per sempre`,"prof.resetH":"Azzerare cancella per sempre le statistiche di quella parte (per la Torre anche record e scalate in corso). Serve premere 3 volte per conferma.","prof.resetDone":"Statistiche azzerate.","prof.tabOnline":"Online","prof.towerBest":"Record (piano)","prof.runs":"Tentativi","prof.floorNow":"Piano attuale","prof.onlineHelp":"Contano le lotte online (\"Gioca qui\" dopo un'asta online). Gli shiny e le aste valgono per tutto il profilo.","prof.towerHelp":"Contano le lotte della Torre Lotta. Il record è il piano più alto superato.","tw.needProfile":"La Torre Lotta è legata al tuo profilo: la scalata, il record e le statistiche vengono salvati lì. Entra o crea un profilo per cominciare.","tw.toProfile":"Vai al profilo","tw.teamN":n=>'Squadra '+n,"tw.chosen":"scelta","tw.useThis":"Usa questa","tw.drawAnother":(n,m)=>`Estrai un'altra squadra (${n}/${m})`,"tw.noMoreDraws":"Hai già estratto 3 squadre: scegline una tra queste.","tw.saved":"La scalata si salva nel tuo profilo dopo ogni lotta: puoi uscire e riprendere da qui. Una lotta lasciata a metà conta come sconfitta.","tw.help":"Squadra casuale con i set di Showdown, formato National Dex AG, singolo. A ogni tentativo puoi estrarre fino a 3 squadre e scegliere quella che preferisci; dopo la prima lotta la squadra non si cambia più. Dopo ogni vittoria i tuoi Pokémon tornano in forma e sali di un piano; alla prima sconfitta la scalata finisce. Ogni 10 piani c'è un Asso della Torre.","tw.title":"Torre Lotta","tw.floor":n=>`Piano ${n}`,"tw.best":n=>`Record: piano ${n}`,"tw.lostT":n=>`Sconfitto al piano ${n}`,"tw.lostD":n=>n>0?`Hai superato ${n} ${n===1?'piano':'piani'}. Prova una nuova scalata con un'altra squadra!`:'Nessun piano superato questa volta. Riprova con un\'altra squadra!',"tw.again":"Nuova scalata","tw.wants":"vuole lottare!","tw.diff":"Difficoltà","tw.six":"6 Pokémon (set nascosti)","tw.fight":"Sfida!","tw.yourTeam":"La tua squadra","tw.reroll":"Nuova squadra casuale","tw.quit":"Abbandona la scalata","tw.quitSure":"Sicuro? Premi di nuovo per abbandonare","tw.beaten":"Allenatori battuti","tw.back":"Torna alla Torre","tw.fmt":n=>`Torre Lotta · Piano ${n}`,"prof.tower":"Record Torre","prof.btn":"Profilo","prof.title":"Il tuo profilo","prof.intro":"Crea un profilo con un nome e una password (niente email): il gioco conterà le tue lotte, vittorie, Pokémon preferiti, shiny trovati e altro. Il profilo resta su questo dispositivo; con \"Esporta\" puoi portarlo su un altro.","prof.nick":"Nome (come su Showdown)","prof.pass":"Password","prof.login":"Entra","prof.create":"Crea profilo","prof.privacy":"La password non viene salvata: si salva solo la sua impronta cifrata. Tutto resta in questo browser, niente viene inviato.","prof.importT":"Hai un codice di un profilo esportato?","prof.importH":"Incollalo qui, poi entra con il nome e la password di quel profilo.","prof.import":"Importa","prof.imported":"Profilo importato: ora entra con nome e password.","prof.since":d=>'Dal '+d,"prof.battles":"Lotte","prof.wins":"Vittorie","prof.losses":"Sconfitte","prof.games":"Aste finite","prof.winrate":p=>`${p}% di vittorie`,"prof.fav":"Pokémon più usato","prof.killer":"Più KO","prof.move":"Mossa più usata","prof.topKo":"Pokémon con più KO","prof.topUsed":"Pokémon più usati","prof.topMoves":"Mosse più usate","prof.lastTeams":"Ultime 3 squadre in lotta","prof.won":"Vinta","prof.lost":"Persa","prof.shinies":"Shiny trovati","prof.noShiny":"Ancora nessuno: ogni Pokémon estratto ha 1 probabilità su 512 di essere shiny!","prof.none":"Ancora niente: gioca una lotta con \"Gioca qui\".","prof.manage":"Gestione","prof.exportH":"\"Esporta\" crea un codice con il profilo e le statistiche (non la password in chiaro) da incollare su un altro dispositivo. Le statistiche contano le lotte giocate con \"Gioca qui\" in cui uno dei giocatori ha il nome del profilo.","prof.export":"Esporta","prof.logout":"Esci dal profilo","prof.delete":"Elimina profilo","prof.delConfirm":"Premi di nuovo \"Elimina profilo\" per cancellarlo per sempre da questo dispositivo.","prof.copy":"Copia il codice","prof.copied":"Copiato!","prof.errNick":"Il nome deve avere almeno 2 caratteri.","prof.errPass":"La password deve avere almeno 4 caratteri.","prof.errExists":"Esiste già un profilo con questo nome su questo dispositivo: premi \"Entra\".","prof.errWrong":"Password sbagliata.","prof.errNone":"Nessun profilo con questo nome su questo dispositivo: premi \"Crea profilo\".","prof.errStore":"Il browser non permette di salvare dati (navigazione privata?).","prof.errCode":"Codice non valido.",'music.on':'Accendi la musica','music.off':'Spegni la musica','homeBtn':'Home','homeAria':'Torna al menu iniziale','rulesAria':'Apri il regolamento','close':'Chiudi',
+  'cancel':'Annulla','exit.confirm':'Esci dalla partita','rulesBtn':'Regole','prof.backTo':'← Indietro','prof.avChange':'Cambia avatar','prof.avTrainers':'Allenatori','prof.avTypes':'Simboli dei tipi','prof.avHelp':'Avatar disegnati apposta per Pokémon Incanto. Si vedono nel profilo e, presto, anche in lotta accanto al tuo nome.',"tw.modeLabel":"Modalità","tw.modeHelp":"Ogni modalità ha la sua scalata, il suo record e le sue statistiche.","tw.dblNote":"In doppio il computer gioca da squadra: attacchi concentrati, Protect, Fake Out, Tailwind/Trick Room e cambi.","prof.allRecords":"Record per modalità","prof.resetOnline":"Azzera statistiche Online","prof.resetTower":"Azzera statistiche Torre","prof.resetSure":(n,w)=>n<3?`Sicuro? Azzera ${w} (${n}/3)`:`Ultima conferma: azzera ${w} per sempre`,"prof.resetH":"Azzerare cancella per sempre le statistiche di quella parte (per la Torre anche record e scalate in corso). Serve premere 3 volte per conferma.","prof.resetDone":"Statistiche azzerate.","prof.tabOnline":"Online","prof.towerBest":"Record (piano)","prof.runs":"Tentativi","prof.floorNow":"Piano attuale","prof.onlineHelp":"Contano le lotte online (\"Gioca qui\" dopo un'asta online). Gli shiny e le aste valgono per tutto il profilo.","prof.towerHelp":"Contano le lotte della Torre Lotta. Il record è il piano più alto superato.","tw.needProfile":"La Torre Lotta è legata al tuo profilo: la scalata, il record e le statistiche vengono salvati lì. Entra o crea un profilo per cominciare.","tw.toProfile":"Vai al profilo","tw.teamN":n=>'Squadra '+n,"tw.chosen":"scelta","tw.useThis":"Usa questa","tw.drawAnother":(n,m)=>`Estrai un'altra squadra (${n}/${m})`,"tw.noMoreDraws":"Hai già estratto 3 squadre: scegline una tra queste.","tw.saved":"La scalata si salva nel tuo profilo dopo ogni lotta: puoi uscire e riprendere da qui. Una lotta lasciata a metà conta come sconfitta.","tw.help":"Squadra casuale con i set di Showdown, formato National Dex AG, singolo. A ogni tentativo puoi estrarre fino a 3 squadre e scegliere quella che preferisci; dopo la prima lotta la squadra non si cambia più. Dopo ogni vittoria i tuoi Pokémon tornano in forma e sali di un piano; alla prima sconfitta la scalata finisce. Ogni 10 piani c'è un Asso della Torre.","tw.title":"Torre Lotta","tw.floor":n=>`Piano ${n}`,"tw.best":n=>`Record: piano ${n}`,"tw.lostT":n=>`Sconfitto al piano ${n}`,"tw.lostD":n=>n>0?`Hai superato ${n} ${n===1?'piano':'piani'}. Prova una nuova scalata con un'altra squadra!`:'Nessun piano superato questa volta. Riprova con un\'altra squadra!',"tw.again":"Nuova scalata","tw.wants":"vuole lottare!","tw.diff":"Difficoltà","tw.lvl":n=>`livello ${n}/10`,"tw.bo3":"Al meglio di 3: vince chi arriva per primo a 2 vittorie. Chiudere prima della fine della serie conta come sconfitta.","tw.mini":"Mini Boss","tw.master":"Maestro della Torre","tw.studied":"Ho studiato il tuo modo di giocare… questa volta non mi sorprendi.","tw.six":"6 Pokémon (set nascosti)","tw.fight":"Sfida!","tw.yourTeam":"La tua squadra","tw.reroll":"Nuova squadra casuale","tw.quit":"Abbandona la scalata","tw.quitSure":"Sicuro? Premi di nuovo per abbandonare","tw.beaten":"Allenatori battuti","tw.back":"Torna alla Torre","tw.fmt":n=>`Torre Lotta · Piano ${n}`,"prof.tower":"Record Torre","prof.btn":"Profilo","prof.title":"Il tuo profilo","prof.intro":"Crea un profilo con un nome e una password (niente email): il gioco conterà le tue lotte, vittorie, Pokémon preferiti, shiny trovati e altro. Il profilo resta su questo dispositivo; con \"Esporta\" puoi portarlo su un altro.","prof.nick":"Nome (come su Showdown)","prof.pass":"Password","prof.login":"Entra","prof.create":"Crea profilo","prof.privacy":"La password non viene salvata: si salva solo la sua impronta cifrata. Tutto resta in questo browser, niente viene inviato.","prof.importT":"Hai un codice di un profilo esportato?","prof.importH":"Incollalo qui, poi entra con il nome e la password di quel profilo.","prof.import":"Importa","prof.imported":"Profilo importato: ora entra con nome e password.","prof.since":d=>'Dal '+d,"prof.battles":"Lotte","prof.wins":"Vittorie","prof.losses":"Sconfitte","prof.games":"Aste finite","prof.winrate":p=>`${p}% di vittorie`,"prof.fav":"Pokémon più usato","prof.killer":"Più KO","prof.move":"Mossa più usata","prof.topKo":"Pokémon con più KO","prof.topUsed":"Pokémon più usati","prof.topMoves":"Mosse più usate","prof.lastTeams":"Ultime 3 squadre in lotta","prof.won":"Vinta","prof.lost":"Persa","prof.shinies":"Shiny trovati","prof.noShiny":"Ancora nessuno: ogni Pokémon estratto ha 1 probabilità su 512 di essere shiny!","prof.none":"Ancora niente: gioca una lotta con \"Gioca qui\".","prof.manage":"Gestione","prof.exportH":"\"Esporta\" crea un codice con il profilo e le statistiche (non la password in chiaro) da incollare su un altro dispositivo. Le statistiche contano le lotte giocate con \"Gioca qui\" in cui uno dei giocatori ha il nome del profilo.","prof.export":"Esporta","prof.logout":"Esci dal profilo","prof.delete":"Elimina profilo","prof.delConfirm":"Premi di nuovo \"Elimina profilo\" per cancellarlo per sempre da questo dispositivo.","prof.copy":"Copia il codice","prof.copied":"Copiato!","prof.errNick":"Il nome deve avere almeno 2 caratteri.","prof.errPass":"La password deve avere almeno 4 caratteri.","prof.errExists":"Esiste già un profilo con questo nome su questo dispositivo: premi \"Entra\".","prof.errWrong":"Password sbagliata.","prof.errNone":"Nessun profilo con questo nome su questo dispositivo: premi \"Crea profilo\".","prof.errStore":"Il browser non permette di salvare dati (navigazione privata?).","prof.errCode":"Codice non valido.",'music.on':'Accendi la musica','music.off':'Spegni la musica','homeBtn':'Home','homeAria':'Torna al menu iniziale','rulesAria':'Apri il regolamento','close':'Chiudi',
   'err.turn':'Non è il tuo turno','err.int':'Inserisci un numero intero','err.min':b=>"L'offerta deve superare "+b,'err.max':n=>'Puoi offrire al massimo '+n,
   'rolePrefix':'Mega, ',
   'undo':'↶ Annulla asta','undo.title':"Annullare l'ultima asta?",
@@ -762,11 +845,13 @@ const I18N={
   'credit':'Unofficial fan-made game, free and non-profit. Pokémon and all related names and images are trademarks and property of Nintendo, Creatures Inc., GAME FREAK inc. and The Pokémon Company.',
   'back':'← Menu','setup.sub':n=>`Two-player auction: buy 6 Pokémon each, drawn from ${n} Pokémon.`,
   'setup.nodata':'Pokémon list not found: the file <strong>pokemon-data.js</strong> must be in the same folder as this page. Create it with <code>node scarica-pokemon.js</code>.',
+  'cpu.name':'Computer','cpu.vsFriend':['👥 A friend','Taking turns on the same device.'],'cpu.vsCpu':['🤖 The computer','The computer is player 2 (tails): it bids and then battles.'],
+  'cpu.thinking':'🤖 The computer is thinking…','cpu.raised':n=>`🤖 The computer raises to ${n}.`,'cpu.note':'The computer rates Pokémon by base stats, wants legendaries more eagerly and looks for weather teams (rain, sun, sand, snow). In blind auctions it bids on a hunch.','cpu.sets':'🤖 Sets chosen by the computer.','cpu.opp':'Opponent:',
   's1':'1. Battle format','s2':'2. Pokémon pool','s3':'3. Auction mode','s4':'4. Coins per player','s5':'5. Players',
   'fmt.singolo':['Singles','One Pokémon per side on the field.'],'fmt.doppio':['Doubles','Two Pokémon per side on the field.'],
-  'pool.tutti':['All','Every Pokémon in the game.'],'pool.ou':['OU tier','Only the strongest, used in OU.'],'pool.megaou':['Nat Dex OU (Mega)','Like OU, with Mega Evolutions and no Tera.'],
+  'pool.tutti':['All','Every Pokémon in the game.'],'pool.ou':['OU tier','Only the strongest, used in OU.'],'pool.megaou':['Nat Dex OU (Mega)','Like OU, with Mega Evolutions and no Tera.'],'pool.uber':['Nat Dex Uber','The strongest (Uber, OU, UU), with Mega Evolutions and no Tera. At most 2 legendary and 2 mythical Pokémon in the whole auction.'],
   'pool.uu':['UU tier','Strong, one step below.'],'pool.champions':['Pokémon Champions','Only those in Pokémon Champions, with Mega Evolutions.'],
-  'poolName.tutti':'All Pokémon','poolName.ou':'OU tier','poolName.megaou':'Nat Dex OU (Mega)','poolName.uu':'UU tier','poolName.champions':'Pokémon Champions',
+  'poolName.tutti':'All Pokémon','poolName.ou':'OU tier','poolName.megaou':'Nat Dex OU (Mega)','poolName.uber':'Nat Dex Uber','poolName.uu':'UU tier','poolName.champions':'Pokémon Champions',
   'legends':'Legendaries and Mythicals:','yes':'Yes','no':'No','noLegends':', no legendaries',
   'playOn':f=>`On Showdown, play in <strong>${f}</strong>`,'fmtNote':' (bring 6 Pokémon, pick 4, level 50)',
   'mode.classica':['Classic','The Pokémon is shown: you know exactly who it is.'],'mode.tipo':['By type','Only the primary type is revealed.'],
@@ -801,7 +886,7 @@ const I18N={
   'endIntro':(dbl,f,custom,note)=>`Sets ready for ${dbl?'doubles':'singles'}, taken from Pokémon Showdown's Random Battles. Where there are several sets, pick one from the menu. On Showdown: Teambuilder, new team, "Import from text", paste. Format: <strong>${f}</strong>${custom?' (direct challenge: it does not check teams, so anything goes)':', where these teams are legal'}${note}.`,
   'noSetsFile':'File set-data.js not found: the text only contains names. Create it with: node scarica-set.js','again':'New game',
   'exit.title':'Leave the game?','exit.desc':'The current game will be lost: teams, coins and auctions so far. You will go back to the start menu, where your settings are kept.',
-  'cancel':'Cancel','exit.confirm':'Leave the game','rulesBtn':'Rules','prof.backTo':'← Back','prof.avChange':'Change avatar','prof.avTrainers':'Trainers','prof.avTypes':'Type symbols','prof.avHelp':'Avatars drawn just for Pokémon Incanto. They show in your profile and, soon, in battle next to your name.',"tw.modeLabel":"Mode","tw.modeHelp":"Each mode has its own climb, record and stats.","tw.dblNote":"In doubles the computer plays as a team: focused attacks, Protect, Fake Out, Tailwind/Trick Room and switches.","prof.allRecords":"Records by mode","prof.resetOnline":"Reset Online stats","prof.resetTower":"Reset Tower stats","prof.resetSure":(n,w)=>n<3?`Sure? Reset ${w} (${n}/3)`:`Last confirmation: reset ${w} forever`,"prof.resetH":"Resetting deletes that part's stats forever (for the Tower also records and climbs in progress). You need to press 3 times to confirm.","prof.resetDone":"Stats reset.","prof.tabOnline":"Online","prof.towerBest":"Record (floor)","prof.runs":"Attempts","prof.floorNow":"Current floor","prof.onlineHelp":"Online battles count here (\"Play here\" after an online auction). Shinies and auctions count for the whole profile.","prof.towerHelp":"Battle Tower battles count here. The record is the highest floor cleared.","tw.needProfile":"The Battle Tower is tied to your profile: the climb, the record and the stats are saved there. Log in or create a profile to start.","tw.toProfile":"Go to profile","tw.teamN":n=>'Team '+n,"tw.chosen":"chosen","tw.useThis":"Use this one","tw.drawAnother":(n,m)=>`Draw another team (${n}/${m})`,"tw.noMoreDraws":"You already drew 3 teams: pick one of these.","tw.saved":"The climb is saved in your profile after every battle: you can leave and resume from here. A battle left halfway counts as a loss.","tw.help":"Random team with Showdown sets, National Dex AG format, singles. Each attempt you can draw up to 3 teams and pick the one you like; after the first battle the team is locked. After each win your Pokémon are healed and you climb one floor; the first loss ends the climb. Every 10 floors there is a Tower Ace.","tw.title":"Battle Tower","tw.floor":n=>`Floor ${n}`,"tw.best":n=>`Record: floor ${n}`,"tw.lostT":n=>`Defeated on floor ${n}`,"tw.lostD":n=>n>0?`You cleared ${n} ${n===1?'floor':'floors'}. Try a new climb with another team!`:'No floors cleared this time. Try again with another team!',"tw.again":"New climb","tw.wants":"wants to battle!","tw.diff":"Difficulty","tw.six":"6 Pokémon (hidden sets)","tw.fight":"Battle!","tw.yourTeam":"Your team","tw.reroll":"New random team","tw.quit":"Give up the climb","tw.quitSure":"Sure? Press again to give up","tw.beaten":"Trainers defeated","tw.back":"Back to the Tower","tw.fmt":n=>`Battle Tower · Floor ${n}`,"prof.tower":"Tower record","prof.btn":"Profile","prof.title":"Your profile","prof.intro":"Create a profile with a name and a password (no email): the game will count your battles, wins, favorite Pokémon, shinies found and more. The profile stays on this device; with \"Export\" you can move it to another one.","prof.nick":"Name (as on Showdown)","prof.pass":"Password","prof.login":"Log in","prof.create":"Create profile","prof.privacy":"The password is not saved: only its encrypted fingerprint is. Everything stays in this browser, nothing is sent.","prof.importT":"Have a code from an exported profile?","prof.importH":"Paste it here, then log in with that profile's name and password.","prof.import":"Import","prof.imported":"Profile imported: now log in with name and password.","prof.since":d=>'Since '+d,"prof.battles":"Battles","prof.wins":"Wins","prof.losses":"Losses","prof.games":"Auctions done","prof.winrate":p=>`${p}% wins`,"prof.fav":"Most used Pokémon","prof.killer":"Most KOs","prof.move":"Most used move","prof.topKo":"Pokémon with most KOs","prof.topUsed":"Most used Pokémon","prof.topMoves":"Most used moves","prof.lastTeams":"Last 3 teams in battle","prof.won":"Won","prof.lost":"Lost","prof.shinies":"Shinies found","prof.noShiny":"None yet: every Pokémon drawn has a 1 in 512 chance to be shiny!","prof.none":"Nothing yet: play a battle with \"Play here\".","prof.manage":"Manage","prof.exportH":"\"Export\" creates a code with the profile and stats (not the plain password) to paste on another device. Stats count the battles played with \"Play here\" where one player has the profile's name.","prof.export":"Export","prof.logout":"Log out","prof.delete":"Delete profile","prof.delConfirm":"Press \"Delete profile\" again to delete it forever from this device.","prof.copy":"Copy the code","prof.copied":"Copied!","prof.errNick":"The name needs at least 2 characters.","prof.errPass":"The password needs at least 4 characters.","prof.errExists":"A profile with this name already exists on this device: press \"Log in\".","prof.errWrong":"Wrong password.","prof.errNone":"No profile with this name on this device: press \"Create profile\".","prof.errStore":"The browser does not allow saving data (private browsing?).","prof.errCode":"Invalid code.",'music.on':'Turn music on','music.off':'Turn music off','homeBtn':'Home','homeAria':'Back to the main menu','rulesAria':'Open the rules','close':'Close',
+  'cancel':'Cancel','exit.confirm':'Leave the game','rulesBtn':'Rules','prof.backTo':'← Back','prof.avChange':'Change avatar','prof.avTrainers':'Trainers','prof.avTypes':'Type symbols','prof.avHelp':'Avatars drawn just for Pokémon Incanto. They show in your profile and, soon, in battle next to your name.',"tw.modeLabel":"Mode","tw.modeHelp":"Each mode has its own climb, record and stats.","tw.dblNote":"In doubles the computer plays as a team: focused attacks, Protect, Fake Out, Tailwind/Trick Room and switches.","prof.allRecords":"Records by mode","prof.resetOnline":"Reset Online stats","prof.resetTower":"Reset Tower stats","prof.resetSure":(n,w)=>n<3?`Sure? Reset ${w} (${n}/3)`:`Last confirmation: reset ${w} forever`,"prof.resetH":"Resetting deletes that part's stats forever (for the Tower also records and climbs in progress). You need to press 3 times to confirm.","prof.resetDone":"Stats reset.","prof.tabOnline":"Online","prof.towerBest":"Record (floor)","prof.runs":"Attempts","prof.floorNow":"Current floor","prof.onlineHelp":"Online battles count here (\"Play here\" after an online auction). Shinies and auctions count for the whole profile.","prof.towerHelp":"Battle Tower battles count here. The record is the highest floor cleared.","tw.needProfile":"The Battle Tower is tied to your profile: the climb, the record and the stats are saved there. Log in or create a profile to start.","tw.toProfile":"Go to profile","tw.teamN":n=>'Team '+n,"tw.chosen":"chosen","tw.useThis":"Use this one","tw.drawAnother":(n,m)=>`Draw another team (${n}/${m})`,"tw.noMoreDraws":"You already drew 3 teams: pick one of these.","tw.saved":"The climb is saved in your profile after every battle: you can leave and resume from here. A battle left halfway counts as a loss.","tw.help":"Random team with Showdown sets, National Dex AG format, singles. Each attempt you can draw up to 3 teams and pick the one you like; after the first battle the team is locked. After each win your Pokémon are healed and you climb one floor; the first loss ends the climb. Every 10 floors there is a Tower Ace.","tw.title":"Battle Tower","tw.floor":n=>`Floor ${n}`,"tw.best":n=>`Record: floor ${n}`,"tw.lostT":n=>`Defeated on floor ${n}`,"tw.lostD":n=>n>0?`You cleared ${n} ${n===1?'floor':'floors'}. Try a new climb with another team!`:'No floors cleared this time. Try again with another team!',"tw.again":"New climb","tw.wants":"wants to battle!","tw.diff":"Difficulty","tw.lvl":n=>`level ${n}/10`,"tw.bo3":"Best of 3: the first to win 2 battles takes the series. Closing before the series ends counts as a loss.","tw.mini":"Mini Boss","tw.master":"Tower Master","tw.studied":"I studied the way you play… you won't surprise me this time.","tw.six":"6 Pokémon (hidden sets)","tw.fight":"Battle!","tw.yourTeam":"Your team","tw.reroll":"New random team","tw.quit":"Give up the climb","tw.quitSure":"Sure? Press again to give up","tw.beaten":"Trainers defeated","tw.back":"Back to the Tower","tw.fmt":n=>`Battle Tower · Floor ${n}`,"prof.tower":"Tower record","prof.btn":"Profile","prof.title":"Your profile","prof.intro":"Create a profile with a name and a password (no email): the game will count your battles, wins, favorite Pokémon, shinies found and more. The profile stays on this device; with \"Export\" you can move it to another one.","prof.nick":"Name (as on Showdown)","prof.pass":"Password","prof.login":"Log in","prof.create":"Create profile","prof.privacy":"The password is not saved: only its encrypted fingerprint is. Everything stays in this browser, nothing is sent.","prof.importT":"Have a code from an exported profile?","prof.importH":"Paste it here, then log in with that profile's name and password.","prof.import":"Import","prof.imported":"Profile imported: now log in with name and password.","prof.since":d=>'Since '+d,"prof.battles":"Battles","prof.wins":"Wins","prof.losses":"Losses","prof.games":"Auctions done","prof.winrate":p=>`${p}% wins`,"prof.fav":"Most used Pokémon","prof.killer":"Most KOs","prof.move":"Most used move","prof.topKo":"Pokémon with most KOs","prof.topUsed":"Most used Pokémon","prof.topMoves":"Most used moves","prof.lastTeams":"Last 3 teams in battle","prof.won":"Won","prof.lost":"Lost","prof.shinies":"Shinies found","prof.noShiny":"None yet: every Pokémon drawn has a 1 in 512 chance to be shiny!","prof.none":"Nothing yet: play a battle with \"Play here\".","prof.manage":"Manage","prof.exportH":"\"Export\" creates a code with the profile and stats (not the plain password) to paste on another device. Stats count the battles played with \"Play here\" where one player has the profile's name.","prof.export":"Export","prof.logout":"Log out","prof.delete":"Delete profile","prof.delConfirm":"Press \"Delete profile\" again to delete it forever from this device.","prof.copy":"Copy the code","prof.copied":"Copied!","prof.errNick":"The name needs at least 2 characters.","prof.errPass":"The password needs at least 4 characters.","prof.errExists":"A profile with this name already exists on this device: press \"Log in\".","prof.errWrong":"Wrong password.","prof.errNone":"No profile with this name on this device: press \"Create profile\".","prof.errStore":"The browser does not allow saving data (private browsing?).","prof.errCode":"Invalid code.",'music.on':'Turn music on','music.off':'Turn music off','homeBtn':'Home','homeAria':'Back to the main menu','rulesAria':'Open the rules','close':'Close',
   'err.turn':'Not your turn','err.int':'Enter a whole number','err.min':b=>'The bid must be higher than '+b,'err.max':n=>'You can bid at most '+n,
   'rolePrefix':'Mega, ',
   'undo':'↶ Undo auction','undo.title':'Undo the last auction?',
@@ -873,7 +958,7 @@ const COLOR_NAMES={it:{red:'rosso',blue:'blu',yellow:'giallo',green:'verde',blac
   en:{red:'red',blue:'blue',yellow:'yellow',green:'green',black:'black',brown:'brown',purple:'purple',gray:'gray',white:'white',pink:'pink'}};
 const colorName=k=>(COLOR_NAMES[ui.lang]||COLOR_NAMES.it)[k];
 const HIDE_KEYS=['subito','fine','showdown'];
-const MODE_KEYS=['classica','tipo','numero','colore','verso'], FORMAT_KEYS=['singolo','doppio'], POOL_KEYS=['tutti','ou','megaou','uu','champions'];
+const MODE_KEYS=['classica','tipo','numero','colore','verso'], FORMAT_KEYS=['singolo','doppio'], POOL_KEYS=['tutti','uber','ou','uu','champions'];
 const fmtNote=(format,tier)=>tier==='champions'&&format==='doppio'?t('fmtNote'):'';
 
 const $app=document.getElementById('app');
@@ -887,7 +972,7 @@ function ink(hex){const h=hex.replace('#','');const r=parseInt(h.slice(0,2),16),
   return (0.299*r+0.587*g+0.114*b)>150?'#142033':'#FFFFFF';}
 const tchip=k=>`<span class="tchip" style="background:${TYPE_COLORS[k]};color:${ink(TYPE_COLORS[k])}">${typeName(k)}</span>`;
 // Nome del giocatore: se il campo è vuoto si usa "Giocatore 1"/"Player 1" nella lingua scelta
-const name=i=>esc(ui.names[i]||t('player',i+1));
+const name=i=>esc(ui.game&&ui.game.cpu===i&&!ui.online?t('cpu.name'):(ui.names[i]||t('player',i+1)));
 const formOf=m=>m.form;
 // Pokémon come lo vede chi guarda questo schermo (vedi monView)
 const V=(mon,owner)=>ui.game?monView(ui.game,mon,owner,ui.online?ui.online.me:'local',ui.revealLocal):mon;
@@ -1029,7 +1114,7 @@ function rulesBody(){
   if(ui.lang==='en') return `
    <p>Two players buy <strong>6 Pokémon each</strong> at auction with coins, then play their teams on Pokémon Showdown.</p>
    <h3>1. Before starting</h3>
-   <ul><li>Choose <strong>Singles or Doubles</strong>, which <strong>Pokémon</strong> can be drawn (all, only the OU or UU tier, Nat Dex OU with Mega Evolutions and no Tera, or only those in Pokémon Champions; with or without legendaries), the <strong>auction mode</strong>, the <strong>coins</strong> per player (usually 25) and the names.</li>
+   <ul><li>Choose <strong>Singles or Doubles</strong>, which <strong>Pokémon</strong> can be drawn (all, Nat Dex Uber with Mega Evolutions, no Tera and at most 2 legendary and 2 mythical Pokémon per auction, only the OU or UU tier, or only those in Pokémon Champions; with or without legendaries), the <strong>auction mode</strong>, the <strong>coins</strong> per player (usually 25) and the names.</li>
    <li>Coin toss: <strong>heads</strong> (Poké Ball) is player 1, <strong>tails</strong> (Great Ball) is player 2. The winner opens the first auction, then players take turns opening.</li></ul>
    <h3>2. The auction</h3>
    <ol><li>The game draws a random Pokémon (each Pokémon comes up only once).</li>
@@ -1046,14 +1131,14 @@ function rulesBody(){
    <li>At the end each Pokémon has a full set (item, ability, EVs, nature, moves): if there are several, pick one from the menu.</li></ul>
    <h3>5. Playing on Showdown</h3>
    <ul><li>Press <strong>Copy text</strong>, then on Pokémon Showdown: Teambuilder → new team → <strong>Import from text</strong> → paste.</li>
-   <li><strong>Singles</strong> format: with "All" ${F('[Gen 9] National Dex AG')}; with a tier ${F('[Gen 9] National Dex')} (OU) or ${F('National Dex UU')}. Teams are legal there: the sets were checked with Showdown's validator.</li>
+   <li><strong>Singles</strong> format: with "All" ${F('[Gen 9] National Dex AG')}; with a tier ${F('[Gen 9] National Dex')} (OU) or ${F('National Dex UU')}; with Nat Dex Uber ${F('[Gen 9] National Dex Ubers')}. Teams are legal there: the sets were checked with Showdown's validator.</li>
    <li><strong>Doubles</strong> format: ${F('[Gen 9] Doubles Custom Game')}, used by challenging the other player directly. It does not check teams, so it accepts them all.</li>
    <li><strong>Pokémon Champions</strong>: singles in ${F('[Gen 9 Champions] OU')}, doubles in the current VGC regulation, today ${F(CHAMP_VGC)} (the game checks it on Showdown each time it opens): bring 6 Pokémon and pick 4, all at level 50. Sets follow Champions rules: no Tera, "Stat Points" instead of EVs, a different item for each Pokémon and, when available, a set with the Mega Stone.</li>
    <li>The right format is also shown in the settings and at the end of the game. Note: plain "[Gen 9] Anything Goes", without National Dex, rejects Pokémon that are not in Scarlet/Violet.</li></ul>`;
   return `
    <p>Due giocatori comprano all'asta <strong>6 Pokémon a testa</strong> con le monete, poi giocano le squadre su Pokémon Showdown.</p>
    <h3>1. Prima di iniziare</h3>
-   <ul><li>Scegliete <strong>Singolo o Doppio</strong>, quali <strong>Pokémon</strong> possono uscire (tutti, solo un tier OU o UU, il Nat Dex OU con le Megaevoluzioni e senza Tera, oppure solo quelli di Pokémon Champions; con o senza leggendari), la <strong>modalità d'asta</strong>, le <strong>monete</strong> a testa (di solito 25) e i nomi.</li>
+   <ul><li>Scegliete <strong>Singolo o Doppio</strong>, quali <strong>Pokémon</strong> possono uscire (tutti, il Nat Dex Uber con le Megaevoluzioni, senza Tera e al massimo 2 leggendari e 2 misteriosi per asta, solo un tier OU o UU, oppure solo quelli di Pokémon Champions; con o senza leggendari), la <strong>modalità d'asta</strong>, le <strong>monete</strong> a testa (di solito 25) e i nomi.</li>
    <li>Lancio della moneta: <strong>testa</strong> (Poké Ball) è il giocatore 1, <strong>croce</strong> (Mega Ball) il giocatore 2. Chi vince apre la prima asta, poi si apre a turno.</li></ul>
    <h3>2. L'asta</h3>
    <ol><li>Il gioco estrae un Pokémon a caso (ogni Pokémon esce una volta sola).</li>
@@ -1070,7 +1155,7 @@ function rulesBody(){
    <li>Alla fine ogni Pokémon ha un set completo (strumento, abilità, EV, natura, mosse): se ce ne sono più di uno lo scegli dal menu.</li></ul>
    <h3>5. Giocare su Showdown</h3>
    <ul><li>Premi <strong>Copia testo</strong>, poi su Pokémon Showdown: Teambuilder → nuova squadra → <strong>Import from text</strong> → incolla.</li>
-   <li>Formato in <strong>singolo</strong>: con "Tutti" ${F('[Gen 9] National Dex AG')}; con un tier ${F('[Gen 9] National Dex')} (OU) o ${F('National Dex UU')}. Le squadre sono valide lì: i set sono stati controllati con il validatore di Showdown.</li>
+   <li>Formato in <strong>singolo</strong>: con "Tutti" ${F('[Gen 9] National Dex AG')}; con un tier ${F('[Gen 9] National Dex')} (OU) o ${F('National Dex UU')}; con Nat Dex Uber ${F('[Gen 9] National Dex Ubers')}. Le squadre sono valide lì: i set sono stati controllati con il validatore di Showdown.</li>
    <li>Formato in <strong>doppio</strong>: ${F('[Gen 9] Doubles Custom Game')}, da usare sfidando direttamente l'altro giocatore. Non controlla le squadre, quindi le accetta tutte.</li>
    <li><strong>Pokémon Champions</strong>: singolo in ${F('[Gen 9 Champions] OU')}, doppio nel regolamento VGC attuale, oggi ${F(CHAMP_VGC)} (il gioco lo controlla su Showdown a ogni apertura): si portano 6 Pokémon e se ne scelgono 4, tutti a livello 50. I set seguono le regole di Champions: niente Tera, "Stat Points" al posto degli EV, strumenti diversi per ogni Pokémon e, quando c'è, un set con la Megapietra.</li>
    <li>Il formato giusto è scritto anche nelle impostazioni e a fine partita. Attenzione: il semplice "[Gen 9] Anything Goes", senza National Dex, rifiuta i Pokémon che non sono in Scarlatto/Violetto.</li></ul>`;
@@ -1162,7 +1247,9 @@ ${ui.setupOnline?`  <section class="card"><span class="label">${t('online.name')
    <div class="row"><div class="field"><label for="joincode" class="muted">${t('online.code')}</label><input type="text" id="joincode" maxlength="8" autocapitalize="characters" autocomplete="off" style="text-transform:uppercase;letter-spacing:.2em;font-weight:700" value="${esc(ui.joinCode||'')}"></div>
    <button class="btn" data-act="onlinejoin" style="align-self:flex-end">${t('online.joinBtn')}</button></div></section>`:`  <section class="card"><span class="label">${t('s5')}</span><div class="row">
    <div class="field"><label for="n0" class="muted">${t('heads')}</label><input type="text" id="n0" maxlength="16" placeholder="${esc(t('player',1))}" value="${esc(ui.names[0])}"></div>
-   <div class="field"><label for="n1" class="muted">${t('tails')}</label><input type="text" id="n1" maxlength="16" placeholder="${esc(t('player',2))}" value="${esc(ui.names[1])}"></div></div></section>
+   ${ui.vsCpu?'':`<div class="field"><label for="n1" class="muted">${t('tails')}</label><input type="text" id="n1" maxlength="16" placeholder="${esc(t('player',2))}" value="${esc(ui.names[1])}"></div>`}</div>
+   <p class="muted" style="margin:10px 0 6px">${t('cpu.opp')}</p><div class="opts" role="group" aria-label="${t('cpu.opp')}">${[['0','cpu.vsFriend'],['1','cpu.vsCpu']].map(([v,k])=>`<button class="opt" data-act="vscpu" data-v="${v}" aria-pressed="${!!ui.vsCpu===(v==='1')}"><strong>${t(k)[0]}</strong><span>${t(k)[1]}</span></button>`).join('')}</div>
+   ${ui.vsCpu?`<p class="muted" style="font-size:13px">${t('cpu.note')}</p>`:''}</section>
   <details class="card remote"><summary><strong>📡 ${t('remote.title')}</strong></summary>${t('remote.body')}</details>
   <div class="center"><button class="btn big" data-act="toflip">${t('toflip')}</button></div>`}`;
 }
@@ -1231,7 +1318,8 @@ function vGame(){
      <div class="duel">${side(0)}<div class="pot i${a.leader}" aria-label="${esc(t('potAria',a.bid,ui.names[a.leader]||t('player',a.leader+1)))}"><span class="arrow" aria-hidden="true">${a.leader===0?'◀':'▶'}</span><div class="bid">${a.bid}</div><span class="muted sm">${t('coinsWord',a.bid)}</span></div>${side(1)}</div>
      <div class="note turn i${p} ${can?'':'warn'}">${can?t('turnNote',name(p),a.bid+1,lo,name(a.leader),a.bid):t('turnNoteCap',name(p),lo,name(a.leader))}</div>
      ${ui.msg?`<div class="err" role="alert">${esc(ui.msg)}</div>`:''}
-     ${ui.online&&ui.online.me!==p?`<p class="muted waitdots">${t('online.waitTurn',name(p))}</p>`:`<div class="bidrow">${can?`<div class="field"><label for="draft" class="muted">${t('newBid',name(p))}</label><input type="number" id="draft" inputmode="numeric" min="${a.bid+1}" max="${lo}" step="1" value="${esc(ui.draft)}"></div><button class="btn pc i${p}" data-act="raise">${t('raise')}</button>`:''}
+     ${ui.cpuSay&&g.cpu!==p?`<div class="note">${esc(ui.cpuSay)}</div>`:''}
+     ${g.cpu===p&&!ui.online?`<p class="muted waitdots">${t('cpu.thinking')}</p>`:ui.online&&ui.online.me!==p?`<p class="muted waitdots">${t('online.waitTurn',name(p))}</p>`:`<div class="bidrow">${can?`<div class="field"><label for="draft" class="muted">${t('newBid',name(p))}</label><input type="number" id="draft" inputmode="numeric" min="${a.bid+1}" max="${lo}" step="1" value="${esc(ui.draft)}"></div><button class="btn pc i${p}" data-act="raise">${t('raise')}</button>`:''}
      <button class="btn ghost" data-act="pass">${t('pass')}</button></div>`}`;
   } else {
     const l=g.last;
@@ -1263,6 +1351,7 @@ const itemOf=(s,g)=>(g.tier==='uu'&&s.basso&&s.basso.strumento)||s.strumento;
 function setPicker(m,g,eff,i,j){
   const ss=setsFor(m,g.format,g.tier), cur=eff&&eff._k!=null?eff._k:(ui.setChoice[m.name]||0);
   if(!ss.length) return `<div class="setrow"><strong>${disp(m)}</strong><span class="muted">${t('noSet')}</span></div>`;
+  if(g.cpu===i&&!ui.online) return `<div class="setrow"><strong>${disp(m)}</strong><span class="muted">${esc(roleName((eff||ss[0]).ruolo))} · ${esc(eff?eff.strumento:itemOf(ss[0],g))}</span></div>`; // squadra del computer: sola lettura
   const open=ui.editOpen===m.name, tag=eff&&eff.edited?`<span class="edtag">✏️ ${t('edit.tag')}</span>`:'';
   const btn=`<button class="btn ghost sm minibtn" data-act="editset" data-n="${esc(m.name)}" aria-expanded="${open}">${open?t('edit.close'):t('edit.btn')}</button>`;
   const head=ss.length===1
@@ -1310,6 +1399,7 @@ function fightOk(g){ return true; }
 // Formato per il motore della lotta: Champions non esiste nel motore, quindi si gioca come partita libera
 // (National Dex AG in singolo, Doubles Custom Game in doppio) con i "Stat Points" convertiti in EV (1 punto ≈ 8 EV, max 252).
 function fightFormat(g){ if(g.tier==='champions') return g.format==='doppio'?'gen9doublescustomgame@@@Terastal Clause,Picked Team Size = 4':'gen9nationaldexag@@@Terastal Clause,Picked Team Size = 3';
+  if(g.tier==='uber') return g.format==='doppio'?'gen9doublescustomgame@@@Terastal Clause':'gen9nationaldexubers';   // Nat Dex Uber: Mega sì, Tera no
   return showdownFormat(g.format,g.tier).toLowerCase().replace(/[^a-z0-9]/g,''); }
 function fightTeam(g,i,choice,edits){ let tx=exportText(g.teams[i],g.format,choice,g.tier,edits);
   if(g.tier==='champions') tx=tx.replace(/^EVs: (.+)$/gm,(m,l)=>{ const ev=l.split(' / ').map(p=>{ const [n,s]=p.split(' '); return [Math.min(252,(+n||0)*8),s]; });
@@ -1348,7 +1438,7 @@ async function startFight(){
   catch(e){ if(b){ b.disabled=false; b.textContent='⚔ '+t('fight.btn'); } alert(t('fight.loadErr')); return; }
   const fmt=showdownFormat(g.format,g.tier);
   if(!ui.series) ui.series={bo:ui.bo===3?3:1,wins:[0,0],n:1};
-  const S=ui.series, nm0=ui.names[0]||t('player',1), nm1Raw=ui.names[1]||t('player',2), nm1=nm1Raw===nm0?nm1Raw+' (2)':nm1Raw;
+  const S=ui.series, nm0=ui.names[0]||t('player',1), nm1Raw=g.cpu===1&&!ui.online?t('cpu.name'):(ui.names[1]||t('player',2)), nm1=nm1Raw===nm0?nm1Raw+' (2)':nm1Raw;
   // in lotta i nomi devono essere diversi: dal nome del vincitore si capisce chi ha vinto
   const ser=S.bo===3?{series:t('bo.label',S.n,nm0,S.wins[0],S.wins[1],nm1), onEnd:w=>seriesWin(w===nm0?0:1,nm0,nm1), onNew:()=>startFight()}:{};
   const showOpp=g.mode==='classica'||!g.hide||g.hide==='subito'||(ui.revealLocal[0]&&ui.revealLocal[1]);
@@ -1366,7 +1456,7 @@ async function startFight(){
     closeLabel:t('fight.back'), onClose:()=>render() },ser));
 }
 async function guestFight(m){
-  const fid=String(m.formatid||''); if(!['gen9nationaldexag','gen9nationaldex','gen9nationaldexuu','gen9doublescustomgame','gen9nationaldexag@@@Terastal Clause,Picked Team Size = 3','gen9doublescustomgame@@@Terastal Clause,Picked Team Size = 4'].includes(fid)) return;
+  const fid=String(m.formatid||''); if(!['gen9nationaldexag','gen9nationaldex','gen9nationaldexuu','gen9nationaldexubers','gen9doublescustomgame@@@Terastal Clause','gen9doublescustomgame','gen9nationaldexag@@@Terastal Clause,Picked Team Size = 3','gen9doublescustomgame@@@Terastal Clause,Picked Team Size = 4'].includes(fid)) return;
   try{ await loadFight(); }catch(e){ alert(t('fight.loadErr')); return; }
   const nm=v=>String(v||'').slice(0,18), team=String(m.myTeam||'').slice(0,6000);
   const opp=(Array.isArray(m.oppSpecies)?m.oppSpecies:[]).slice(0,6).map(String).filter(s=>MON_BY_NAME.has(s));
@@ -1395,7 +1485,7 @@ function vEnd(){
     return head+mostra+`
      <div class="chips">${g.teams[i].map(m=>`<span class="tchip mon" style="${colorStyle(m,g.mode)};box-shadow:inset 0 0 0 1px var(--line)">${spr(m,'mini')}${disp(m)}</span>`).join('')}</div>
      <div class="muted" style="font-size:13px">${g.teams[i].map(m=>disp(m)+' ('+typeName(m.type)+(m.type2?'/'+typeName(m.type2):'')+')').join(' · ')}</div>
-     ${ui.online&&ui.online.me!==i?`<div class="note">🔒 ${t('online.oppSets',name(i))}</div></section>`:`<span class="label">${t('setsLabel')}</span><div class="setlist">${(eff=>g.teams[i].map((m,j)=>setPicker(m,g,eff[j],i,j)).join(''))(teamSets(g.teams[i],g.format,ui.setChoice,g.tier,ui.setEdit))}</div>
+     ${ui.online&&ui.online.me!==i?`<div class="note">🔒 ${t('online.oppSets',name(i))}</div></section>`:`<span class="label">${t('setsLabel')}</span>${g.cpu===i&&!ui.online?`<p class="muted" style="font-size:13px">${t('cpu.sets')}</p>`:''}<div class="setlist">${(eff=>g.teams[i].map((m,j)=>setPicker(m,g,eff[j],i,j)).join(''))(teamSets(g.teams[i],g.format,ui.setChoice,g.tier,ui.setEdit))}</div>
      <span class="label">${t('textLabel')}</span>
      <div class="fmtline">${t('fmtLine')} <strong>${showdownFormat(g.format,g.tier)}</strong>${fmtNote(g.format,g.tier)}</div><pre id="ex${i}">${esc(exportText(g.teams[i],g.format,ui.setChoice,g.tier,ui.setEdit))}</pre>
      <div class="row"><button class="btn ghost" data-act="copy" data-i="${i}">${t('copy')}</button><a class="btn play2" href="https://play.pokemonshowdown.com/teambuilder" target="_blank" rel="noopener noreferrer" style="text-decoration:none">${t('openSD')}</a><span class="muted" id="cp${i}" aria-live="polite"></span></div><p class="muted" style="font-size:12px">${t('openSDhint')}</p></section>`}`;}).join('');
@@ -1508,7 +1598,7 @@ function profExport(){ const all=profAll(), k=localStorage.getItem(PROF_ME); if(
 // scalata della Torre dentro un codice importato: solo Pokémon esistenti, numeri e testi limitati
 function cleanRun(r){ if(!twCheck(r)) return undefined; const s=(v,n)=>String(v||'').slice(0,n), tr=r.trainer;
   return {floor:wInt(r.floor,1,9999,1),draws:r.draws.map(d=>({team:d.team.slice(0,6),choice:cleanChoice(d.choice)})),pick:wInt(r.pick,0,2,0),
-    trainer:{name:s(tr.name,16),cls:s(tr.cls,30),line:s(tr.line,90),team:tr.team.slice(0,6),choice:cleanChoice(tr.choice),ai:wInt(tr.ai,0,4,0),boss:!!tr.boss,avatar:typeof Avatar!=='undefined'?Avatar.fix(tr.avatar):undefined},
+    trainer:{name:s(tr.name,16),cls:s(tr.cls,30),line:s(tr.line,90),team:tr.team.slice(0,6),choice:cleanChoice(tr.choice),ai:wInt(tr.ai,0,10,1),boss:!!tr.boss,mini:!!tr.mini,avatar:typeof Avatar!=='undefined'?Avatar.fix(tr.avatar):undefined},
     lost:!!r.lost,started:!!r.started,inBattle:!!r.inBattle,beaten:(Array.isArray(r.beaten)?r.beaten:[]).slice(-8).map(x=>({f:wInt(x&&x.f,1,9999,1),n:s(x&&x.n,50)}))}; }
 function profImport(code){ try{ const o=JSON.parse(decodeURIComponent(escape(atob(String(code||'').trim())))); const p=o&&o.p;
     if(!p||typeof p.nick!=='string'||!/^[0-9a-f]{32}$/.test(p.salt)||!/^(pbkdf2:[0-9a-f]{64}|fnv:[0-9a-f]{1,8})$/.test(p.hash)) return t('prof.errCode');
@@ -1577,62 +1667,88 @@ const TW_CLASS={it:['Escursionista','Pescatore','Karateka','Scienziata','Ragazza
 const TW_LINES={it:['Vediamo se arrivi in cima!','Non sarà una passeggiata.','Ho allenato la mia squadra per questo momento.','La Torre non perdona gli errori.','Fammi vedere di cosa sei capace!','Da qui non passa nessuno.'],
   en:['Let\'s see if you reach the top!','This won\'t be a walk in the park.','I trained my team for this moment.','The Tower forgives no mistakes.','Show me what you\'ve got!','Nobody gets past me.']};
 // Modalità della Torre: formato (singolo/doppio) × gruppo di Pokémon. Ogni combinazione ha la sua scalata, record e statistiche.
-const TW_FORMATS=['singolo','doppio'], TW_GROUPS=['tutti','ou','megaou','uu','champions'];
+// "Nat Dex Uber" (uber) ha preso il posto di "Nat Dex OU (Mega)": compare solo quando il gioco conosce il gruppo (POOL_TIERS.uber)
+const TW_FORMATS=['singolo','doppio'], TW_GROUPS=['tutti','ou'].concat(POOL_TIERS.uber?['uber']:[],['uu','champions']);
 const TW_KEYS=TW_FORMATS.flatMap(f=>TW_GROUPS.map(g=>f+'-'+g));
 function twMode(key){ key=TW_KEYS.includes(key)?key:'singolo-tutti'; const [format,tier]=key.split('-'); return {key,format,tier}; }
 function twCur(){ return twMode(ui.twMode||(profMe()&&profMe().twMode)||'singolo-tutti'); }
 const twModeName=key=>{ const m=twMode(key); return t('fmt.'+m.format)[0]+' · '+t('poolName.'+m.tier); };
-function twTiers(f){ if(f%10===0) return ['Uber','AG','OU']; if(f<=3) return ['RU','NFE','LC']; if(f<=5) return ['UU','UUBL','OU']; if(f<=9) return ['OU','UUBL','Uber']; return ['Uber','AG','OU']; }
-// IA: 0 = mosse a caso (piani 1-3); 2 = calcola i danni (4); 3 = senza errori (5-6); 4 = conosce i tuoi set (dal 7 e ogni Asso)
-function twAI(f){ if(f%10===0) return 4; return f<=3?0:f===4?2:f<=6?3:4; }
+function twTiers(f){ if(twBO3(f)) return ['Uber','AG','OU']; if(f<=3) return ['RU','NFE','LC']; if(f<=5) return ['UU','UUBL','OU']; if(f<=9) return ['OU','UUBL','Uber']; return ['Uber','AG','OU']; }
+// IA a 10 livelli (lotta.js): piano → livello scelto dall'utente. 5 = mini boss; 10, 15, 20 e poi ogni 10 piani = Asso con BO3
+const TW_LV=[0,1,2,3,4,6,5,6,7,7,8,8,8,8,8,9,9,9,9,9,10];
+function twAI(f){ return f>=21?10:TW_LV[Math.max(1,f)]; }
+function twBO3(f){ return f===10||f===15||f===20||(f>=30&&f%10===0); }
+const twMini=f=>f===5;
 // dal 4° piano gli allenatori usano i Pokémon più forti del gruppo (in base al tier National Dex)
 const TIER_RANK={AG:9,Uber:8,OU:7,UUBL:6,UU:5,RUBL:4,RU:3,NFE:2,LC:1};
-const bst=m=>(TIER_RANK[m.tier]||3)+Math.random()*0.9;
-function twStrong(pool,f){ if(f<=3||pool.length<14) return pool; const q=f<=6?.5:.3; const sorted=pool.slice().sort((a,b)=>bst(b)-bst(a)); return sorted.slice(0,Math.max(12,Math.round(pool.length*q))); }
-function twPick(pool,n,M){ const out=[], dex=new Set(); for(const m of shuffle(pool)){ if(out.length>=n) break; if(dex.has(m.dex)||!setsFor(m,M.format,M.tier).length) continue; dex.add(m.dex); out.push(m.name); } return out; }
+// nel gruppo Uber conta anche la Mega: Kangaskhan (RU) con la sua Mega vale come un Uber/OU
+const megaRank=m=>{ const L=typeof MEGA_UBER!=='undefined'&&MEGA_UBER[m.name]; return Array.isArray(L)?Math.max(0,...L.map(x=>TIER_RANK[x&&x.tier]||0)):0; };
+const bst=(m,M)=>Math.max(TIER_RANK[m.tier]||3,M&&M.tier==='uber'?megaRank(m):0)+Math.random()*0.9;
+function twStrong(pool,f,M){ if(f<=3||pool.length<14) return pool; const q=f<=6?.5:.3; const sorted=pool.slice().sort((a,b)=>bst(b,M)-bst(a,M)); return sorted.slice(0,Math.max(12,Math.round(pool.length*q))); }
+// nel gruppo Uber al massimo 2 leggendari e 2 mitici per squadra (come nell'asta)
+function twPick(pool,n,M){ const out=[], dex=new Set(), cap={legendary:0,mythical:0}, lim=M.tier==='uber'?2:99;
+  for(const m of shuffle(pool)){ if(out.length>=n) break; if(dex.has(m.dex)||!setsFor(m,M.format,M.tier).length) continue;
+    const k=m.legendary?'legendary':m.mythical?'mythical':null; if(k&&cap[k]>=lim) continue; if(k) cap[k]++; dex.add(m.dex); out.push(m.name); } return out; }
 // Champions: in ogni squadra almeno un Pokémon che può megaevolversi
 function twMegaOk(names,M,pool){ if(M.tier!=='champions') return names; const canMega=n=>setsFor(MON_BY_NAME.get(n),M.format,M.tier).some(s=>s.mega);
   if(names.some(canMega)) return names; const dex=new Set(names.map(n=>MON_BY_NAME.get(n).dex)); const c=shuffle(pool).find(m=>!dex.has(m.dex)&&setsFor(m,M.format,M.tier).some(s=>s.mega));
   if(c) names=names.slice(0,5).concat(c.name); return names; }
 function twChoice(names,M){ const c={}; for(const n of names){ const k=setsFor(MON_BY_NAME.get(n),M.format,M.tier).length; c[n]=Math.floor(Math.random()*k); } return c; }
 // avatar dell'allenatore (disegni originali di avatar.js): l'Asso ha il Campione, alcune classi il loro disegno, gli altri uno a caso del suo genere
-const TW_AV_CLS={3:'a08',8:'a16',1:'a18',13:'a11'}, TW_AV_BOSS='a20';
-function twAvatar(boss,ci,gen){ if(typeof Avatar==='undefined') return undefined; gen=gen==='f'?'f':'m';
-  let id=boss?TW_AV_BOSS:TW_AV_CLS[ci]; if(id&&!boss&&Avatar.gender(id)!==gen) id=null;
-  if(!id){ const l=Avatar.trainers.filter(x=>Avatar.gender(x)===gen&&x!==TW_AV_BOSS); id=l.length?l[Math.random()*l.length|0]:Avatar.random('trainers',gen); }
+// immagini degli allenatori dei giochi (avatar.js, sprite di Showdown): per classe (con il genere giusto), Asso = un campione, Mini Boss = un rivale
+const TW_AV_CLS={0:'backpacker',1:'fisherman',2:{m:'blackbelt',f:'battlegirl'},5:{m:'acetrainer',f:'acetrainerf'},8:'swimmerf',13:{f:'psychicf'},16:'hiker',12:{f:'kimonogirl'}};
+const twAvGroup=k=>{ const g=Avatar.groups&&Avatar.groups.find(x=>x.key===k); return g?g.ids:[]; };
+function twAvatar(boss,ci,gen,mini){ if(typeof Avatar==='undefined') return undefined; gen=gen==='f'?'f':'m';
+  const pickG=l=>{ l=l.filter(x=>Avatar.gender(x)===gen); return l.length?l[Math.random()*l.length|0]:null; };
+  let id=boss?pickG(twAvGroup('champ')):mini?pickG(twAvGroup('rival')):null;
+  if(!id&&!boss&&!mini){ const c=TW_AV_CLS[ci]; const x=typeof c==='string'?c:c&&c[gen]; if(x&&Avatar.gender(x)===gen) id=x; }
+  if(!id) id=pickG(twAvGroup('class').concat(twAvGroup('prot'))) || Avatar.random('trainers',gen);
   return Avatar.fix(id); }
 // avversari: nel gruppo "Tutti" i Pokémon diventano più forti salendo; negli altri gruppi si resta nel gruppo e cresce l'IA
-function twTrainer(f,M){ const boss=f%10===0, legends=f>=15||boss;
+function twTrainer(f,M){ const boss=twBO3(f), mini=twMini(f), legends=f>=15||boss;
   let pool=M.tier==='tutti'?POOL.filter(m=>twTiers(f).includes(m.tier)&&(legends||!(m.legendary||m.mythical))):filterPool(POOL,{tier:M.tier,legends:M.tier==='champions'?false:(f>=8||boss)});
   if(pool.length<6) pool=filterPool(POOL,{tier:M.tier,legends:true});
-  pool=twStrong(pool,f);
+  pool=twStrong(pool,f,M);
   const team=twMegaOk(twPick(pool,6,M),M,pool), lang=ui.lang==='en'?'en':'it';
   const ci=Math.random()*TW_CLASS.it.length|0, gen=boss?(Math.random()<.5?'m':'f'):(TW_GEN[ci]==='x'?(Math.random()<.5?'m':'f'):TW_GEN[ci]), nl=TW_NAMES[gen];
-  return {name:nl[Math.random()*nl.length|0], cls:boss?(lang==='en'?'Tower Ace':'Asso della Torre'):TW_CLASS[lang][ci],
-    line:TW_LINES[lang][Math.random()*TW_LINES[lang].length|0], team, choice:f>=4?Object.fromEntries(team.map(n=>[n,0])):twChoice(team,M), ai:twAI(f), boss, avatar:twAvatar(boss,ci,gen)}; }
+  return {name:nl[Math.random()*nl.length|0], cls:boss?(f>=20?(lang==='en'?'Tower Master':'Maestro della Torre'):(lang==='en'?'Tower Ace':'Asso della Torre')):mini?'Mini Boss':TW_CLASS[lang][ci],
+    line:TW_LINES[lang][Math.random()*TW_LINES[lang].length|0], team, choice:f>=4?Object.fromEntries(team.map(n=>[n,0])):twChoice(team,M), ai:twAI(f), boss, mini, bo3:boss, avatar:twAvatar(boss,ci,gen,mini)}; }
 // La scalata è legata al profilo (salvata dentro il profilo, quindi va anche con "Esporta"), una per modalità. Si salva solo
 // tra una lotta e l'altra: una lotta lasciata a metà (uscita o pagina chiusa) conta come sconfitta. A ogni tentativo si possono
 // estrarre fino a 3 squadre e sceglierne una; dopo la prima lotta la squadra non si cambia più.
 function twDraw(M){ const pool=filterPool(POOL,{tier:M.tier,legends:true}); const team=twMegaOk(twPick(pool,6,M),M,pool); return {team,choice:twChoice(team,M)}; }
 function twCheck(o){ return o&&Array.isArray(o.draws)&&o.draws.length>=1&&o.draws.length<=3&&o.draws.every(d=>d&&Array.isArray(d.team)&&d.team.length===6&&d.team.every(n=>MON_BY_NAME.has(n)))&&o.trainer&&Array.isArray(o.trainer.team)&&o.trainer.team.every(n=>MON_BY_NAME.has(n)); }
+// Il gruppo "Nat Dex OU (Mega)" non c'è più: scalate, record e statistiche *-megaou vengono cancellati da tutti i profili (scelta dell'utente, 24/11/2026)
+function twPurgeOld(){ const all=profAll(); let ch=false; for(const k in all){ const p=all[k]; if(!p||typeof p!=='object') continue;
+    for(const o of [p.runs,p.stats&&p.stats.torre]) if(o&&typeof o==='object') for(const x of Object.keys(o)) if(/-megaou$/.test(x)){ delete o[x]; ch=true; }
+    if(typeof p.twMode==='string'&&/-megaou$/.test(p.twMode)){ delete p.twMode; ch=true; } }
+  if(ch) profSaveAll(all); }
 function twRuns(p){ const r=p&&p.runs&&typeof p.runs==='object'?p.runs:{}; if(p&&p.run&&!r['singolo-tutti']) r['singolo-tutti']=p.run; return r; } // vecchi profili: una sola scalata
 function twLoad(key){ const p=profMe(); if(!p) return null; const M=twMode(key||twCur().key), o=twRuns(p)[M.key]; if(!twCheck(o)) return null;
   o.pick=Math.min(Math.max(0,o.pick|0),o.draws.length-1);
-  o.team=o.draws[o.pick].team; o.choice=o.draws[o.pick].choice; o.mode=M.key;
-  if(!o.trainer.avatar&&typeof Avatar!=='undefined'){ o.trainer.avatar=twAvatar(o.trainer.boss,-1,TW_NAMES.f.includes(o.trainer.name)?'f':'m'); twSave(o); } // scalate salvate prima degli avatar
+  o.team=o.draws[o.pick].team; o.choice=o.draws[o.pick].choice; o.mode=M.key; o.trainer.ai=twAI(o.floor); o.trainer.bo3=twBO3(o.floor); o.trainer.mini=twMini(o.floor);
+  if(typeof Avatar!=='undefined'&&(!o.trainer.avatar||!Avatar.valid(o.trainer.avatar))){ o.trainer.avatar=twAvatar(o.trainer.boss,-1,TW_NAMES.f.includes(o.trainer.name)?'f':'m',o.trainer.mini); twSave(o); } // scalate salvate prima degli avatar (o con i vecchi disegni)
   return o; }
 function twSave(o){ const all=profAll(), k=localStorage.getItem(PROF_ME); if(!k||!all[k]) return; const M=twMode(o.mode); const c=Object.assign({},o); delete c.team; delete c.choice; delete c.mode;
   all[k].runs=twRuns(all[k]); delete all[k].run; all[k].runs[M.key]=c; profSaveAll(all); }
 function twNew(key){ if(!profMe()) return null; const M=twMode(key||twCur().key);
   const o={mode:M.key,floor:1,draws:[twDraw(M)],pick:0,trainer:twTrainer(1,M),lost:false,started:false,inBattle:false,beaten:[]}; twSave(o); profUpdate(s=>{ s.torre[M.key].runs++; }); return twLoad(M.key); }
 const twText=(names,choice,M)=>fightTeam({teams:[names.map(n=>MON_BY_NAME.get(n))],format:M.format,tier:M.tier},0,choice);
-async function twFight(){ const o=twLoad(); if(!o||o.lost) return; const M=twMode(o.mode); const b=document.getElementById('twBtn'); if(b){ b.disabled=true; b.textContent=t('fight.loading'); }
+// Serie al meglio di 3 dei piani Asso: resta in memoria finché la serie non finisce (chiudere a metà conta come sconfitta).
+// mem è la memoria dell'IA (lotta.js, O.aiMem): dalla seconda lotta il computer sa come hai giocato.
+let TW_SER=null;
+async function twFight(next){ const o=twLoad(); if(!o||o.lost) return; const M=twMode(o.mode); const b=document.getElementById('twBtn'); if(b){ b.disabled=true; b.textContent=t('fight.loading'); }
   try{ await loadFight(); }catch(e){ alert(t('fight.loadErr')); render(); return; }
-  o.started=true; o.inBattle=true; twSave(o); const tr=o.trainer, me=profMe().nick, foe=tr.cls+' '+tr.name, team=o.team.slice(), fl=o.floor, label=t('tw.fmt',fl)+' · '+twModeName(M.key);
-  Lotta.open({lang:ui.lang, mode:'cpu', ai:tr.ai, showOpp:false, formatid:fightFormat({format:M.format,tier:M.tier}), formatName:label, names:{p1:me,p2:foe}, avatars:{p1:typeof profAvatar==='function'?profAvatar():undefined,p2:tr.avatar},
-    teams:{p1:twText(team,o.choice,M), p2:twText(tr.team,tr.choice,M)}, intro:`${foe}: «${tr.line}»`, closeLabel:t('tw.back'),
-    onStats:info=>{ profBattle(info,{p1:team,p2:tr.team},label,'torre',M.key); twResult(profKey(info.winner)===profKey(me),false,M.key); },
-    onClose:()=>{ const x=twLoad(M.key); if(x&&x.inBattle) twResult(false,true,M.key); ui.screen='tower'; render(); } }); }
+  o.started=true; o.inBattle=true; twSave(o); const tr=o.trainer, me=profMe().nick, foe=tr.cls+' '+tr.name, team=o.team.slice(), fl=o.floor;
+  if(!tr.bo3) TW_SER=null; else if(!next||!TW_SER||TW_SER.key!==M.key||TW_SER.floor!==fl||TW_SER.done) TW_SER={key:M.key,floor:fl,w:[0,0],n:1,mem:{},done:false};
+  const S=TW_SER, label=t('tw.fmt',fl)+' · '+twModeName(M.key), line=S&&S.n>1&&tr.ai>=8?t('tw.studied'):tr.line;
+  const ser=S?{series:t('bo.label',S.n,me,S.w[0],S.w[1],foe), aiMem:S.mem, onNew:()=>twFight(true),
+    onEnd:w=>{ const i=profKey(w)===profKey(me)?0:1; S.w[i]++; const score=S.w[0]+'–'+S.w[1], lab=t('bo.label',Math.min(3,S.n),me,S.w[0],S.w[1],foe);
+      if(S.w[i]>=2){ S.done=true; S.won=i===0; return {msg:t('bo.won',[me,foe][i],score),label:lab}; } S.n++; return {msg:t('bo.score',me,score,foe),next:t('bo.next',S.n),label:lab}; }}:{};
+  Lotta.open(Object.assign({lang:ui.lang, mode:'cpu', level:tr.ai, showOpp:false, formatid:fightFormat({format:M.format,tier:M.tier}), formatName:label, names:{p1:me,p2:foe}, avatars:{p1:typeof profAvatar==='function'?profAvatar():undefined,p2:tr.avatar},
+    teams:{p1:twText(team,o.choice,M), p2:twText(tr.team,tr.choice,M)}, intro:`${foe}: «${line}»`, closeLabel:t('tw.back'),
+    onStats:info=>{ profBattle(info,{p1:team,p2:tr.team},label,'torre',M.key); if(!S) twResult(profKey(info.winner)===profKey(me),false,M.key); else if(S.done) twResult(S.won,false,M.key); },
+    onClose:()=>{ const x=twLoad(M.key); if(x&&x.inBattle) twResult(false,true,M.key); TW_SER=null; ui.screen='tower'; render(); } },ser)); }
 function twResult(won,abandoned,key){ const o=twLoad(key); if(!o||!o.inBattle) return; const M=twMode(o.mode); o.inBattle=false;
   if(abandoned) profUpdate(s=>{ s.torre[M.key].battles++; s.torre[M.key].losses++; });
   if(won){ o.beaten.push({f:o.floor,n:o.trainer.cls+' '+o.trainer.name}); o.beaten=o.beaten.slice(-8); o.floor++; o.trainer=twTrainer(o.floor,M); }
@@ -1647,7 +1763,7 @@ function vTower(){
   const M=twCur();
   let o=twLoad(M.key); if(o&&o.inBattle){ twResult(false,true,M.key); o=twLoad(M.key); } // lotta lasciata a metà: conta come sconfitta
   if(!o) o=twNew(M.key);
-  const best=cleanStats(profMe().stats).torre[M.key].best, stars=n=>'★'.repeat(n+1)+'☆'.repeat(Math.max(0,4-n)), tr=o.trainer;
+  const best=cleanStats(profMe().stats).torre[M.key].best, stars=n=>'★'.repeat(n)+'☆'.repeat(Math.max(0,10-n)), tr=o.trainer;
   const chips=names=>`<div class="chips">${names.map(n=>{ const m=MON_BY_NAME.get(n); return `<span class="tchip mon">${spr(m,'mini')}${disp(m)}</span>`; }).join('')}</div>`;
   const draws=!o.started&&!o.lost?o.draws.map((d,i)=>`<div class="note${i===o.pick?' ok':''}" style="margin:6px 0"><b>${t('tw.teamN',i+1)}</b>${i===o.pick?` · ${t('tw.chosen')}`:''}${chips(d.team)}${i===o.pick?'':`<div class="twpickrow"><button class="btn ghost sm minibtn" data-act="twpick" data-v="${i}">${t('tw.useThis')}</button></div>`}</div>`).join('')
     +(o.draws.length<3?`<div class="center"><button class="btn ghost sm" data-act="twdraw">🎲 ${t('tw.drawAnother',o.draws.length,3)}</button></div>`:`<p class="muted" style="font-size:13px">${t('tw.noMoreDraws')}</p>`):chips(o.team);
@@ -1655,7 +1771,7 @@ function vTower(){
   <section class="card"><h2 class="nm" style="margin:0">${o.lost?t('tw.lostT',o.floor):t('tw.floor',o.floor)}</h2><div class="twrec"><span class="chip">🏆 ${t('tw.best',best)}</span></div>
    <p class="muted" style="margin:0 0 8px;font-size:13px">${esc(twModeName(M.key))}</p>
    ${o.lost?`<div class="note warn">${t('tw.lostD',o.floor-1)}</div><div class="center"><button class="btn big" data-act="twnew">${t('tw.again')}</button></div>`:
-   `<div class="note twfoe${tr.boss?' warn':''}">${tr.avatar&&typeof Avatar!=='undefined'?Avatar.html(tr.avatar,'twav',ui.lang):''}<div><b>${tr.boss?'👑 ':''}${esc(tr.cls)} ${esc(tr.name)}</b> ${t('tw.wants')}<br><span class="muted">«${esc(tr.line)}»</span><br><span class="muted" style="font-size:13px">${t('tw.diff')}: <b style="color:#E3350D">${stars(tr.ai)}</b> · ${t('tw.six')}</span></div></div>
+   `<div class="note twfoe${tr.boss?' warn':''}">${tr.avatar&&typeof Avatar!=='undefined'?Avatar.html(tr.avatar,'twav',ui.lang):''}<div><b>${tr.boss?'👑 ':tr.mini?'⭐ ':''}${esc(tr.cls)} ${esc(tr.name)}</b> ${t('tw.wants')}<br><span class="muted">«${esc(tr.line)}»</span><br><span class="muted" style="font-size:13px">${t('tw.diff')}: <b class="twstars" style="color:#E3350D">${stars(tr.ai)}</b> ${t('tw.lvl',tr.ai)} · ${t('tw.six')}</span>${tr.bo3?`<br><span class="chip" style="margin-top:4px">BO3</span> <span class="muted" style="font-size:12px">${t('tw.bo3')}</span>`:''}</div></div>
    <div class="center"><button class="btn big" data-act="twfight" id="twBtn">⚔ ${t('tw.fight')}</button></div><p class="muted" style="font-size:12px;text-align:center">💾 ${t('tw.saved')}</p>`}</section>
   <section class="card"><span class="label">${t('tw.yourTeam')}</span>${draws}
    <p class="muted" style="font-size:13px">${t('tw.help')}</p>
@@ -2029,6 +2145,18 @@ function vUndoReq(){
    <p id="urD" class="muted">${t('undo.desc',(m=>m.hidden?t('mystery'):disp(m))(V(h.mon,h.winner)),name(h.winner),h.price)}${g.auction?t('undo.next'):''}</p>
    <div class="row"><button class="btn ghost" data-act="undo-no" id="urNo">${t('online.decline')}</button><button class="btn danger" data-act="undo-yes">${t('online.accept')}</button></div></div></div>`;
 }
+// Turno del computer: risponde da solo dopo una breve pausa (solo su questo dispositivo)
+function cpuTick(){
+  const g=ui.game, a=g&&g.auction;
+  if(ui.online||!g||g.cpu!==1||!a||a.turn!==1||ui.screen!=='game'||ui.askUndo||ui.askExit||ui.cpuTimer) return;
+  const key=g.n+':'+a.bid+':'+g.history.length;
+  ui.cpuTimer=setTimeout(()=>{ ui.cpuTimer=null; const g2=ui.game, a2=g2&&g2.auction;
+    if(g2!==g||!a2||a2.turn!==1||g2.n+':'+a2.bid+':'+g2.history.length!==key||ui.screen!=='game'||ui.askUndo||ui.askExit){ cpuTick(); return; }
+    const mv=cpuMove(g2,1); if(!mv) return;
+    if(mv.act==='raise'&&!raise(g2,1,mv.amount)){ ui.cpuSay=t('cpu.raised',mv.amount); ui.draft=String(Math.min(a2.bid+1,Math.max(maxBid(g2,0),a2.bid+1))); }
+    else { pass(g2,1); ui.cpuSay=''; }
+    ui.msg=''; render(); }, 900+Math.random()*700);
+}
 function render(){
   document.documentElement.lang=ui.lang;
   const undoReq=!!(ui.online&&ui.online.undoReq&&ui.online.undoReq.from!==ui.online.me&&ui.game&&ui.screen!=='lobby');
@@ -2043,6 +2171,7 @@ function render(){
   else if(ui.modal) document.getElementById('rlClose').focus();
   try{ lobbySync(); }catch(e){}
   try{ cryAuto(); }catch(e){}
+  try{ cpuTick(); }catch(e){}
   try{ profWatch(); }catch(e){}
   try{ if(typeof Musica!=='undefined') Musica.want(ui.screen==='title'?'natale':'centro'); }catch(e){}
 }
@@ -2067,12 +2196,14 @@ function act(a,d){
     else if(ui.mode==='verso'&&!ui.cryOk){ui.msg=t('cry.needOk');}
     else {ui.msg='';ui.screen='flip';ui.flip=null;}}
   else if(a==='flip'){ui.flip=Math.random()<0.5?'testa':'croce';}
-  else if(a==='begin'){ui.revealLocal=[false,false];ui.celebN=null;ui.game=newGame({format:ui.format,mode:ui.mode,hide:ui.hide,coins:Number(ui.coins),tier:ui.tier,legends:ui.legends,
-    pool:filterPool(POOL,{tier:ui.tier,legends:ui.legends}),firstOpener:ui.flip==='testa'?0:1});ui.screen='game';ui.msg='';ui.setChoice={};ui.setEdit={};ui.editOpen=null;}
+  else if(a==='vscpu'){ui.vsCpu=d.v==='1';}
+  else if(a==='begin'){ui.revealLocal=[false,false];ui.celebN=null;ui.cpuSay='';ui.game=newGame({format:ui.format,mode:ui.mode,hide:ui.hide,coins:Number(ui.coins),tier:ui.tier,legends:ui.legends,
+    pool:filterPool(POOL,{tier:ui.tier,legends:ui.legends}),firstOpener:ui.flip==='testa'?0:1}); if(ui.vsCpu&&!ui.online&&!ui.setupOnline) ui.game.cpu=1;ui.screen='game';ui.msg='';ui.setChoice={};ui.setEdit={};ui.editOpen=null;}
   else if(a==='draw'){startAuction(g);ui.msg='';ui.draft=g.auction?String(g.auction.bid+1):'';}
-  else if(a==='raise'){const p=g.auction.turn;const err=raise(g,p,parseInt(ui.draft,10));ui.msg=err?errText(err):'';
+  else if((a==='raise'||a==='pass')&&g&&g.auction&&g.cpu===g.auction.turn&&!ui.online){ return; } // tocca al computer
+  else if(a==='raise'){const p=g.auction.turn;const err=raise(g,p,parseInt(ui.draft,10));ui.msg=err?errText(err):'';ui.cpuSay='';
     if(!err){ui.draft=String(Math.min(g.auction.bid+1,Math.max(maxBid(g,g.auction.turn),g.auction.bid+1)));}}
-  else if(a==='pass'){pass(g,g.auction.turn);ui.msg='';}
+  else if(a==='pass'){pass(g,g.auction.turn);ui.msg='';ui.cpuSay='';}
   else if(a==='finish'){ui.screen='end';}
   else if(a==='again'&&ui.online){ if(isHost()){ hostApply('newround',{},0); broadcast(); } }
   else if(a==='again'){ui.screen='setup';ui.game=null;ui.flip=null;ui.msg='';}
@@ -2185,6 +2316,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Enter'&&e.target.id==='ppass'){e.preventDefault();act('plogin',{});}
   if(e.key==='Enter'&&e.target.id==='joincode'){e.preventDefault();act('onlinejoin',{});}});
 
+twPurgeOld();
 render();
 // All'apertura, se c'è internet, controlla su Showdown qual è il regolamento VGC di Champions attuale
 // (legge il testo dei formati, senza eseguire niente). Senza internet resta il valore salvato.
