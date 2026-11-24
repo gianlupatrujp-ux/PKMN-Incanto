@@ -1427,7 +1427,7 @@ function seriesWin(i,nm0,nm1){ const S=ui.series; if(!S||S.bo!==3) return null; 
   S.n++; return {msg:t('bo.score',nm0,score,nm1), next:isGuest()?null:t('bo.next',S.n), label}; }
 // Gioca su questo dispositivo contro il computer: il computer è sempre il giocatore 2 (g.cpu===1, lo imposta l'asta).
 // Livello dell'IA in lotta provvisorio (0 casuale … 4 Asso): si tara con le indicazioni della chat Torre Lotta.
-const CPU_FIGHT_AI=3;
+const CPU_FIGHT_AI=3; // la Torre lo converte nel livello 6 su 10; aiMem = memoria del computer condivisa da tutte le lotte della serie (ui.series.mem)
 async function startFight(){
   const g=ui.game, b=document.getElementById('fightBtn');
   if(ui.online&&isGuest()){ // l'amico chiede all'host di far partire la lotta (con i suoi set scelti)
@@ -1452,7 +1452,7 @@ async function startFight(){
       teams:{p1:tHost,p2:tGuest}, closeLabel:t('fight.back'), onClose:()=>render() },ser));
     onlineSend({t:'bstart', formatid:fid, formatName:fmt, names:{p1:nG,p2:nH}, myTeam:tGuest, oppSpecies:g.teams[0].map(m=>m.name), series:S.bo===3?{n:S.n,w:S.wins}:null});
     return; }
-  Lotta.open(Object.assign({onStats:info=>profBattle(info,{p1:g.teams[0].map(m=>m.name),p2:g.teams[1].map(m=>m.name)},fmt), lang:ui.lang, ...(g.cpu===1?{mode:'cpu', ai:CPU_FIGHT_AI}:{mode:'two'}), showOpp, formatid:fightFormat(g), formatName:fmt,
+  Lotta.open(Object.assign({onStats:info=>profBattle(info,{p1:g.teams[0].map(m=>m.name),p2:g.teams[1].map(m=>m.name)},fmt), lang:ui.lang, ...(g.cpu===1?{mode:'cpu', ai:CPU_FIGHT_AI, aiMem:S.mem||(S.mem={})}:{mode:'two'}), showOpp, formatid:fightFormat(g), formatName:fmt,
     names:{p1:nm0, p2:nm1},
     teams:{p1:fightTeam(g,0,ui.setChoice,ui.setEdit), p2:fightTeam(g,1,ui.setChoice,ui.setEdit)},
     closeLabel:t('fight.back'), onClose:()=>render() },ser));
