@@ -1322,7 +1322,7 @@ function aiSetupGain(mv,c){ const bo=mv.boosts||(mv.self&&mv.self.boosts)||{}; c
   if(after>before*1.25) g+=8; if(after>=c.foeHp&&fast) g+=18; if(c.danger*2>=c.myHp) g-=15;
   if(c.opp.length>1&&c.opp.filter(o=>!o.active).every(o=>aiThreat(o,m2)<c.myHp*.5)) g+=10; return g; }
 // probabilità che l'avversario cambi Pokémon: di base (35% se minacciato) corretta con quello che ha fatto finora
-function aiPSwitch(c){ const thr=aiBest(c.mine,c.foe).d>=c.foe.hpPct*.8, prior=thr?.35:.06, k=c.M[thr?'thr':'calm'];
+function aiPSwitch(c){ const thr=aiBest(c.mine,c.foe).d>=c.foe.hpPct*.8||c.foe.hpPct<50, prior=thr?.35:.06, k=c.M[thr?'thr':'calm'];
   let p=prior; if(k&&c.P.mem) p=prior+c.P.mem*((k.sw+prior*3)/(k.n+3)-prior); return Math.min(.9,p)*Math.min(1,c.P.pred+.25); }
 // chi entrerà: quello che ha già usato contro questo Pokémon (memoria), altrimenti chi resiste meglio al mio attacco migliore
 function aiPredIn(c){ const cand=c.opp.filter(o=>!o.active); if(!cand.length) return null;
@@ -1466,7 +1466,7 @@ function aiObserve(sid,choice){ try{ if(!O||O.mode!=='cpu'||sid!=='p1'||!B||!B.r
   const mineAI=((B.req[S]&&B.req[S].side&&B.req[S].side.pokemon)||[]).filter(x=>x.active&&!x.condition.endsWith(' fnt')).map(x=>aiOwn(x,S));
   const parts=String(choice).split(',').map(s=>s.trim());
   parts.forEach((ch,i)=>{ const a=r.active[i], x=r.side.pokemon[i]; if(!a||!x||x.condition.endsWith(' fnt')) return;
-    const me=aiOwn(x,'p1'), sp=baseSp(me.sp), thr=Math.max(0,...mineAI.map(o=>aiThreat(o,me)))>=me.hpPct*.8, k=thr?'thr':'calm';
+    const me=aiOwn(x,'p1'), sp=baseSp(me.sp), thr=Math.max(0,...mineAI.map(o=>aiThreat(o,me)))>=me.hpPct*.8||me.hpPct<50, k=thr?'thr':'calm';
     M[k]=M[k]||{n:0,sw:0}; M[k].n++;
     if(ch.startsWith('switch')){ M[k].sw++; const to=r.side.pokemon[+ch.split(' ')[1]-1]; if(to) for(const o of mineAI){ const key=baseSp(o.sp); const t=(M.swTo=M.swTo||{})[key]=M.swTo[key]||{}; const ts=baseSp(to.details.split(',')[0]); t[ts]=(t[ts]||0)+1; } return; }
     if(!ch.startsWith('move')) return; const mv=a.moves[+ch.split(' ')[1]-1]; if(!mv) return;
