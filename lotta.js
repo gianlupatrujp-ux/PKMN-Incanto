@@ -1451,12 +1451,13 @@ function aiDouble(r,L,S){ const P=AIL[L], F=aiOther(S), M=aiMem(), team=r.side.p
     const th=foes.map(f=>f?aiThreat(f,me):0), single=Math.max(0,...th), sum=th[0]+th[1], danger=single+foc*(sum-single);
     const before=foes.reduce((t,f,k)=>t+(f&&!aiFirst(me,null,f,null)?th[k]:0),0), deadFirst=P.spd&&before>=me.hpPct&&!aiSash(me,before);
     const opts=[];
-    a.moves.forEach((m,j)=>{ if(m.disabled||(m.pp!==undefined&&m.pp<=0)) return; const d=Dex.moves.get(m.id); const t=m.target||d.target;
+    a.moves.forEach((m,j)=>{ if(m.disabled||(m.pp!==undefined&&m.pp<=0)) return; const d=Dex.moves.get(m.id); const locked=a.moves.length===1&&!m.target, t=locked?'self':(m.target||d.target);
       const add=(tgt,s)=>opts.push({j,tgt,s,d});
       if(d.category!=='Status'){ const pr=aiPrio(d,me)>0, slow=deadFirst&&!pr?.4:1, acc=L>=2&&d.accuracy!==true?d.accuracy/100:1;
         if(AI_SPREAD.includes(t)){ let s=0, kos=0; foes.forEach((f,k)=>{ if(!f) return; const dm=aiDmg(d,me,f)*.75; s+=Math.min(dm,f.hpPct)*(1-pProt[k]); if(dm>=f.hpPct) kos+=1-pProt[k]; });
           if(t==='allAdjacent'&&ally){ const hurt=aiDmg(d,me,ally)*.75; s-=hurt*1.3; if(hurt>=ally.hpPct) s-=80; }
           if(['icywind','electroweb','bulldoze','snarl','breakingswipe'].includes(d.id)) s+=12; add(null,(s+kos*45)*slow*acc); }
+        else if(!['normal','any','adjacentFoe'].includes(t)){ let s=0; foes.forEach(f=>{ if(f) s=Math.max(s,Math.min(aiDmg(d,me,f),f.hpPct)); }); add(null,(locked?s+20:s)*slow*acc); } // senza bersaglio: Counter, mosse bloccate (Phantom Force, ricarica)…
         else { foes.forEach((f,k)=>{ if(!f) return;
             if(foes.some((g,q)=>g&&q!==k&&((d.type==='Electric'&&g.ability==='Lightning Rod')||(d.type==='Water'&&g.ability==='Storm Drain')))) return;
             const dm=aiDmg(d,me,f); let s=Math.min(dm,f.hpPct); if(dm>=f.hpPct) s+=50+(pr?20:0);
@@ -1532,6 +1533,8 @@ function aiObserve(sid,choice){ try{ if(!O||O.mode!=='cpu'||sid!=='p1'||!B||!B.r
 }catch(e){ console.warn('memoria IA',e); } }
 
 function cpuChoice(r){ const S=r&&r.side&&r.side.id||'p2', L=O&&O.level||0;
+  // se il motore ha rifiutato la scelta di prima per questa richiesta, si sceglie a caso (mai la stessa all'infinito)
+  if(B.err&&B.aiRq===(r&&r.rqid)) return isDbl()?cpuDbl(r):cpuSingle(r); B.aiRq=r&&r.rqid;
   if(S==='p2'&&L>0){ try{ return isDbl()?aiDouble(r,L,S):aiSingle(r,L,S); }catch(e){ console.warn('IA',e); } }
   return isDbl()?cpuDbl(r):cpuSingle(r); }
 // solo per le prove automatiche: l'IA di livello L sceglie per il lato sid
