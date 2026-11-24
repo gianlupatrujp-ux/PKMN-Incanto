@@ -1367,7 +1367,7 @@ async function startFight(){
     closeLabel:t('fight.back'), onClose:()=>render() },ser));
 }
 async function guestFight(m){
-  const fid=String(m.formatid||''); if(!['gen9nationaldexag','gen9nationaldex','gen9nationaldexuu','gen9doublescustomgame','gen9nationaldexag@@@Terastal Clause,Picked Team Size = 3','gen9doublescustomgame@@@Terastal Clause,Picked Team Size = 4','gen9nationaldexubers','gen9doublescustomgame@@@Terastal Clause'].includes(fid)) return;
+  const fid=String(m.formatid||''); if(!['gen9nationaldexag','gen9nationaldex','gen9nationaldexuu','gen9nationaldexubers','gen9doublescustomgame@@@Terastal Clause','gen9doublescustomgame','gen9nationaldexag@@@Terastal Clause,Picked Team Size = 3','gen9doublescustomgame@@@Terastal Clause,Picked Team Size = 4'].includes(fid)) return;
   try{ await loadFight(); }catch(e){ alert(t('fight.loadErr')); return; }
   const nm=v=>String(v||'').slice(0,18), team=String(m.myTeam||'').slice(0,6000);
   const opp=(Array.isArray(m.oppSpecies)?m.oppSpecies:[]).slice(0,6).map(String).filter(s=>MON_BY_NAME.has(s));
