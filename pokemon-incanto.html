@@ -399,6 +399,7 @@ html,body{margin:0}
 <script src="versi-data.js"></script>
 <script src="musica.js"></script>
 <script src="sprite-data.js"></script>
+<script src="statistiche-data.js"></script>
 <script src="avatar.js"></script>
 <script>
 /*CORE-START*/
@@ -415,13 +416,19 @@ function shuffle(a, rnd){ rnd = rnd || Math.random; const r=a.slice();
   for(let i=r.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); const t=r[i]; r[i]=r[j]; r[j]=t; } return r; }
 // Gruppi di Pokémon in gioco, in base ai tier National Dex di Showdown. Ogni gruppo è legale nel formato indicato.
 // "champions": solo i Pokémon presenti in Pokémon Champions (flag champions dei dati).
-const POOL_TIERS={ tutti:null, ou:['OU','UUBL'], megaou:['OU','UUBL'], uu:['UU','RUBL'], champions:null };
-// Nat Dex OU con le Megaevoluzioni (senza Teracristallizzazione): set con Megapietra da scarica-mega.js
+// "uber": tutti i Pokémon giocabili in [Gen 9] National Dex Ubers (tier Uber…RUBL) più i Pokémon base con una Mega permessa lì.
+// "megaou" non si sceglie più nelle impostazioni (sostituito da "uber") ma resta qui finché lo usa la Torre Lotta.
+const POOL_TIERS={ tutti:null, ou:['OU','UUBL'], megaou:['OU','UUBL'], uber:['Uber','OU','UUBL','UU','RUBL'], uu:['UU','RUBL'], champions:null };
+// Megaevoluzioni senza Teracristallizzazione: set con Megapietra da scarica-mega.js (MEGA_DATA per megaou, MEGA_UBER per uber)
 const MEGA = typeof MEGA_DATA!=='undefined' ? MEGA_DATA : {};
+const MEGA_U = typeof MEGA_UBER!=='undefined' ? MEGA_UBER : {};
+const megaSetsOf=tier=>tier==='uber'?MEGA_U:tier==='megaou'?MEGA:null;
 function filterPool(pool, o){
-  const tier=o.tier||'tutti', t=POOL_TIERS[tier];
-  return pool.filter(m=>(!t||t.includes(m.tier)||(tier==='megaou'&&MEGA[m.name])) && (tier!=='champions'||m.champions) && (o.legends!==false || !(m.legendary||m.mythical)));
+  const tier=o.tier||'tutti', t=POOL_TIERS[tier], ms=megaSetsOf(tier);
+  return pool.filter(m=>(!t||t.includes(m.tier)||(ms&&ms[m.name])) && (tier!=='champions'||m.champions) && (o.legends!==false || !(m.legendary||m.mythical)));
 }
+// Nat Dex Uber: in tutta l'asta escono al massimo 2 leggendari e 2 misteriosi (poi non ne escono più, per nessuno)
+const LEGEND_CAP={uber:2};
 // Doppio Champions: regolamento VGC attuale di Showdown. Valore salvato da scarica-set.js (SHOWDOWN_INFO),
 // aggiornato all'apertura del gioco se c'è internet (trovaVgcChampions sul testo di config/formats.ts).
 let CHAMP_VGC=(typeof SHOWDOWN_INFO!=='undefined'&&SHOWDOWN_INFO.champVgc)||'[Gen 9 Champions] VGC 2026 Reg M-C';
@@ -436,13 +443,14 @@ function trovaVgcChampions(testo){
 function showdownFormat(format, tier){
   if(tier==='champions') return format==='doppio' ? CHAMP_VGC : '[Gen 9 Champions] OU';
   if(format==='doppio') return '[Gen 9] Doubles Custom Game';
-  return ({tutti:'[Gen 9] National Dex AG', ou:'[Gen 9] National Dex', megaou:'[Gen 9] National Dex', uu:'[Gen 9] National Dex UU'})[tier||'tutti'];
+  return ({tutti:'[Gen 9] National Dex AG', ou:'[Gen 9] National Dex', megaou:'[Gen 9] National Dex', uber:'[Gen 9] National Dex Ubers', uu:'[Gen 9] National Dex UU'})[tier||'tutti'];
 }
 function newGame(o){
   return { format:o.format, mode:o.mode, tier:o.tier||'tutti', legends:o.legends!==false, startCoins:o.coins||START_COINS, coins:[o.coins||START_COINS,o.coins||START_COINS], teams:[[],[]],
     deck:shuffle(o.pool,o.rnd), openerIdx:o.firstOpener, auction:null, last:null, history:[], over:false, n:0,
     // Species Clause dei formati OU/UU/Champions: una sola forma per numero di Pokédex (es. non Tauros e Tauros di Paldea)
-    speciesClause:['ou','megaou','uu','champions'].includes(o.tier), usedDex:[],
+    speciesClause:['ou','megaou','uber','uu','champions'].includes(o.tier), usedDex:[],
+    legendCap:LEGEND_CAP[o.tier]||0,
     // Probabilità che un Pokémon estratto sia shiny (cromatico): 1 su 512
     shinyRate:o.shinyRate!=null?o.shinyRate:SHINY_RATE, rnd:o.rnd||Math.random,
     // Annullamento: "fotografie" dello stato all'inizio di ogni asta manuale (vedi undoLast)
@@ -471,7 +479,12 @@ function startAuction(s){
   if(s.over||s.auction) return;
   if(isFull(s,0)&&isFull(s,1)){ s.over=true; return; }
   let mon=s.deck.pop();
-  if(s.speciesClause){ while(s.usedDex.includes(mon.dex)&&s.deck.length) mon=s.deck.pop(); s.usedDex.push(mon.dex); }
+  // Pokémon già estratti = quelli nelle squadre (così l'annullamento ripristina anche i conteggi)
+  const got=s.teams[0].concat(s.teams[1]), cap=s.legendCap||0;
+  const nL=got.filter(m=>m.legendary).length, nM=got.filter(m=>m.mythical).length;
+  const ok=m=>!(s.speciesClause&&s.usedDex.includes(m.dex)) && !(cap&&((m.legendary&&nL>=cap)||(m.mythical&&nM>=cap)));
+  while(!ok(mon)&&s.deck.length) mon=s.deck.pop();
+  if(s.speciesClause) s.usedDex.push(mon.dex);
   if(s.rnd()<s.shinyRate && !SHINY_LOCK.includes(mon.name)) mon=Object.assign({},mon,{shiny:true}); // copia, così il Pokémon del pool resta normale
   const op=s.openerIdx, other=1-op;
   if(isFull(s,op)) return award(s,mon,other,1,op,true);
@@ -513,13 +526,19 @@ const SETS = typeof SET_DATA!=='undefined' ? SET_DATA : {};
 const USO = typeof CHAMP_USO!=='undefined' ? CHAMP_USO : {};
 function setsFor(mon, format, tier){ let v=SETS[mon.name]; if(v&&tier==='champions') v=v.champions; let base=v ? (v[format]||v.singolo||[]) : [];
   if(tier==='champions'&&USO[mon.name]&&USO[mon.name][format]) base=[...USO[mon.name][format],...base];
-  if(tier!=='megaou') return base;
-  return [...(MEGA[mon.name]||[]),...base].map(s=>s.tera?Object.assign({},s,{tera:null}):s); }
+  const ms=megaSetsOf(tier); if(!ms) return base;
+  return [...(ms[mon.name]||[]),...base].map(s=>s.tera?Object.assign({},s,{tera:null}):s); }
 // In Champions vale la "Item Clause": due Pokémon della stessa squadra non possono avere lo stesso strumento.
 // mosse di stato più comuni nei set (per non dare uno strumento Scelta a chi le usa)
 const STATUS_MOVES=new Set(['Protect','Detect','Spiky Shield','King\'s Shield','Baneful Bunker','Silk Trap','Burning Bulwark','Swords Dance','Nasty Plot','Calm Mind','Dragon Dance','Bulk Up','Quiver Dance','Shell Smash','Recover','Roost','Slack Off','Soft-Boiled','Moonlight','Morning Sun','Synthesis','Wish','Rest','Substitute','Toxic','Will-O-Wisp','Thunder Wave','Spore','Sleep Powder','Yawn','Stealth Rock','Spikes','Toxic Spikes','Sticky Web','Defog','Rapid Spin','Taunt','Encore','Trick Room','Tailwind','Reflect','Light Screen','Aurora Veil','Follow Me','Rage Powder','Helping Hand','Wide Guard','Quick Guard','Fake Tears','Haze','Leech Seed','Coil','Agility','Iron Defense','Curse','Belly Drum','Trick','Switcheroo','Parting Shot','Memento','Destiny Bond','Strength Sap','Shore Up','Life Dew','Pollen Puff','Snarl','Icy Wind']);
 // (Pollen Puff, Snarl, Icy Wind e Rapid Spin sono attacchi: tolti sotto)
 ['Pollen Puff','Snarl','Icy Wind','Rapid Spin'].forEach(x=>STATUS_MOVES.delete(x));
+// altre mosse di stato presenti nei set (controllo della chat Dati e set del 23/11/2026)
+['Acid Armor','Aromatherapy','Autotomize','Baton Pass','Charm','Chilly Reception','Clangorous Soul','Coaching','Cosmic Power','Cotton Guard','Court Change','Endure',
+ 'Entrainment','Fillet Away','Floral Healing','Focus Energy','Geomancy','Glare','Growth','Heal Bell','Heal Pulse','Healing Wish','Hone Claws','Hypnosis','Imprison',
+ 'Instruct','Jungle Healing','Lunar Blessing','Magnet Rise','Milk Drink','Minimize','No Retreat','Pain Split','Perish Song','Psych Up','Quash','Rain Dance',
+ 'Revival Blessing','Roar','Rock Polish','Shed Tail','Shelter','Shift Gear','Simple Beam','Sleep Talk','Speed Swap','Stockpile','Stun Spore','Sunny Day','Tail Glow',
+ 'Teleport','Tidy Up','Transform','Victory Dance','Whirlwind'].forEach(x=>STATUS_MOVES.add(x));
 const ITEM_ALT=['Leftovers','Sitrus Berry','Life Orb','Focus Sash','Choice Scarf','Expert Belt','Shell Bell','Lum Berry','Mental Herb','White Herb','Scope Lens','Black Glasses'];
 const EV_ORDER=['HP','Atk','Def','SpA','SpD','Spe'];
 function setText(mon, s){
@@ -655,6 +674,68 @@ function canSee(g,owner,viewer,localRevealed){
   return g.hide==='fine'&&!!g.over&&!!(g.reveal&&g.reveal[owner]);
 }
 function monView(g,mon,owner,viewer,localRevealed){ return !mon||mon.hidden||canSee(g,owner,viewer,localRevealed)?mon:hintOf(mon,g.mode); }
+// ---------- Il computer all'asta (Gioca su questo dispositivo contro il computer: g.cpu = 1, giocatore 2) ----------
+// Statistiche base da statistiche-data.js (genera-statistiche.js). Asta classica: il computer valuta il Pokémon dalle
+// statistiche base (i leggendari e misteriosi li vuole con più foga), cerca sinergie di meteo con la sua squadra
+// (chi porta pioggia/sole/sabbia/neve + chi ne approfitta) ed evita troppi doppioni di tipo. Nelle altre modalità
+// (tipo, numero, colore, verso) non sa chi è: offre "a sentimento".
+const STATS = typeof STAT_DATA!=='undefined' ? STAT_DATA : {};
+const WEATHER_SET={abil:{'Drizzle':'rain','Primordial Sea':'rain','Drought':'sun','Desolate Land':'sun','Orichalcum Pulse':'sun','Sand Stream':'sand','Snow Warning':'snow'},
+  move:{'Rain Dance':'rain','Sunny Day':'sun','Sandstorm':'sand','Snowscape':'snow','Chilly Reception':'snow'}};
+const WEATHER_USE={abil:{'Swift Swim':'rain','Rain Dish':'rain','Hydration':'rain','Dry Skin':'rain','Chlorophyll':'sun','Solar Power':'sun','Flower Gift':'sun','Protosynthesis':'sun','Harvest':'sun',
+  'Sand Rush':'sand','Sand Force':'sand','Slush Rush':'snow','Ice Body':'snow'},
+  move:{'Thunder':'rain','Hurricane':'rain','Solar Beam':'sun','Solar Blade':'sun','Blizzard':'snow','Aurora Veil':'snow','Shore Up':'sand'}};
+function cpuWeather(m,format,tier){
+  const r={sets:new Set(),uses:new Set()};
+  for(const s of setsFor(m,format||'singolo',tier)){
+    const ab=s.abilita; if(WEATHER_SET.abil[ab]) r.sets.add(WEATHER_SET.abil[ab]); if(WEATHER_USE.abil[ab]) r.uses.add(WEATHER_USE.abil[ab]);
+    for(const x of s.mosse||[]){ if(WEATHER_SET.move[x]) r.sets.add(WEATHER_SET.move[x]); if(WEATHER_USE.move[x]) r.uses.add(WEATHER_USE.move[x]); } }
+  return r;
+}
+// Quanto vale "mon" per la squadra del giocatore p: circa 0 (scarso) … 1,5 (da prendere a ogni costo)
+function cpuScore(g,mon,p){
+  const st=STATS[mon.name]; let sc;
+  if(st){ const bst=st.reduce((a,b)=>a+b,0), off=Math.max(st[1],st[3]), spe=st[5];
+    const n=(x,lo,hi)=>Math.max(0,Math.min(1,(x-lo)/(hi-lo)));
+    sc=0.6*n(bst,400,700)+0.25*n(off,70,150)+0.15*n(spe,40,130); }
+  else sc=0.45;
+  if(mon.legendary||mon.mythical) sc*=1.35;                          // leggendari: più foga
+  const ms=megaSetsOf(g.tier); if((ms&&ms[mon.name])||(g.tier==='champions'&&setsFor(mon,g.format,g.tier).some(s=>s.mega))) sc+=0.08; // ha una Mega
+  // sinergie di meteo con la squadra attuale
+  const team=g.teams[p], w=cpuWeather(mon,g.format,g.tier), tw=team.map(m=>cpuWeather(m,g.format,g.tier));
+  const teamSets=new Set(), useCount={};
+  tw.forEach(x=>{ x.sets.forEach(v=>teamSets.add(v)); x.uses.forEach(v=>useCount[v]=(useCount[v]||0)+1); });
+  for(const v of w.uses) if(teamSets.has(v)){ sc+=0.22; break; }    // ne approfitta: c'è già chi porta quel meteo
+  for(const v of w.sets) if(useCount[v]){ sc+=0.1+0.12*Math.min(2,useCount[v]); break; } // porta il meteo a chi ne approfitta
+  if(w.sets.size&&teamSets.size&&![...w.sets].some(v=>teamSets.has(v))) sc-=0.12; // meteo in conflitto
+  // troppi doppioni di tipo
+  const same=team.filter(m=>[m.type,m.type2].some(x=>x&&(x===mon.type||x===mon.type2))).length;
+  sc-=0.06*Math.min(3,same);
+  return Math.max(0,sc);
+}
+// Offerta massima che il computer è disposto a fare per il Pokémon all'asta (calcolata una volta per asta)
+function cpuLimit(g,p){
+  const a=g.auction; if(!a) return 0;
+  if(a.cpuMax!=null) return a.cpuMax;
+  const rnd=g.rnd||Math.random, slots=TEAM_SIZE-g.teams[p].length, avg=g.coins[p]/Math.max(1,slots);
+  const sc=g.mode==='classica'?cpuScore(g,a.mon,p):0.25+0.55*rnd();   // al buio: a sentimento
+  // 0,42 = Pokémon nella media: offre circa la sua quota di monete; più forte = di più. Verso la fine le monete avanzate non servono a niente: spende di più.
+  let f=Math.max(0.3,Math.min(3,Math.pow(sc/0.42,1.5)));
+  f*=Math.sqrt(Math.max(1,avg/(g.startCoins/TEAM_SIZE)));          // più ricco del previsto: spende di più
+  if(slots===2) f*=1.3; if(slots===1) f=Math.max(f,sc>=0.3?3:1.2);
+  let lim=Math.round(avg*f*(0.85+0.3*rnd()));
+  lim=Math.max(1,Math.min(maxBid(g,p),lim));
+  a.cpuMax=lim; return lim;
+}
+// Mossa del computer se tocca a lui: {act:'raise',amount} oppure {act:'pass'}; null se non tocca a lui
+function cpuMove(g,p){
+  const a=g.auction; if(!a||a.turn!==p||g.over) return null;
+  const lim=cpuLimit(g,p), cap=maxBid(g,p);
+  if(a.bid>=lim||a.bid>=cap) return {act:'pass'};
+  const rnd=g.rnd||Math.random; let amt=a.bid+1;
+  if(lim-a.bid>4&&rnd()<0.35) amt=a.bid+1+Math.floor(rnd()*Math.min(3,lim-a.bid-1)); // ogni tanto un rilancio più deciso
+  return {act:'raise',amount:Math.min(amt,lim,cap)};
+}
 function exportText(team, format, choice, tier, edits){
   const ss=teamSets(team, format, choice, tier, edits);
   return team.map((m,i)=>ss[i]?setText(m,ss[i]):m.name).join('\n\n');
@@ -670,11 +751,13 @@ const I18N={
   'credit':'Gioco amatoriale non ufficiale, gratuito e senza scopo di lucro. Pokémon e tutti i nomi e le immagini collegati sono marchi registrati e proprietà di Nintendo, Creatures Inc., GAME FREAK inc. e The Pokémon Company.',
   'back':'← Menu','setup.sub':n=>`Asta a due, 6 Pokémon da comprare a testa, estratti tra ${n} Pokémon.`,
   'setup.nodata':'Elenco dei Pokémon non trovato: il file <strong>pokemon-data.js</strong> deve stare nella stessa cartella di questa pagina. Si crea con <code>node scarica-pokemon.js</code>.',
+  'cpu.name':'Computer','cpu.vsFriend':['👥 Un amico','A turno sullo stesso dispositivo.'],'cpu.vsCpu':['🤖 Il computer','Il computer è il giocatore 2 (croce): fa le sue offerte e poi lotta.'],
+  'cpu.thinking':'🤖 Il computer ci sta pensando…','cpu.raised':n=>`🤖 Il computer rilancia a ${n}.`,'cpu.note':'Il computer valuta i Pokémon dalle statistiche base, vuole i leggendari con più foga e cerca squadre con il meteo (pioggia, sole, sabbia, neve). Nelle aste al buio offre a sentimento.','cpu.sets':'🤖 Set scelti dal computer.','cpu.opp':'Avversario:',
   's1':'1. Formato','s2':'2. Pokémon in gioco','s3':"3. Modalità d'asta",'s4':'4. Monete a testa','s5':'5. Giocatori',
   'fmt.singolo':['Singolo','Un Pokémon per lato in campo.'],'fmt.doppio':['Doppio','Due Pokémon per lato in campo.'],
-  'pool.tutti':['Tutti','Ogni Pokémon del gioco.'],'pool.ou':['Tier OU','Solo i più forti usati in OU.'],'pool.megaou':['Nat Dex OU (Mega)','Come OU, con le Megaevoluzioni e senza Tera.'],
+  'pool.tutti':['Tutti','Ogni Pokémon del gioco.'],'pool.ou':['Tier OU','Solo i più forti usati in OU.'],'pool.megaou':['Nat Dex OU (Mega)','Come OU, con le Megaevoluzioni e senza Tera.'],'pool.uber':['Nat Dex Uber','I più forti (Uber, OU, UU), con le Megaevoluzioni e senza Tera. Al massimo 2 leggendari e 2 misteriosi in tutta l\'asta.'],
   'pool.uu':['Tier UU','Forti ma un gradino sotto.'],'pool.champions':['Pokémon Champions','Solo quelli del gioco Pokémon Champions, con le Megaevoluzioni.'],
-  'poolName.tutti':'Tutti i Pokémon','poolName.ou':'Tier OU','poolName.megaou':'Nat Dex OU (Mega)','poolName.uu':'Tier UU','poolName.champions':'Pokémon Champions',
+  'poolName.tutti':'Tutti i Pokémon','poolName.ou':'Tier OU','poolName.megaou':'Nat Dex OU (Mega)','poolName.uber':'Nat Dex Uber','poolName.uu':'Tier UU','poolName.champions':'Pokémon Champions',
   'legends':'Leggendari e misteriosi:','yes':'Sì','no':'No','noLegends':', senza leggendari',
   'playOn':f=>`Su Showdown si gioca in <strong>${f}</strong>`,'fmtNote':' (si portano 6 Pokémon e se ne scelgono 4, livello 50)',
   'mode.classica':['Classica','Il Pokémon è mostrato: si sa esattamente chi è.'],'mode.tipo':['Per tipo','Si dichiara solo il tipo primario.'],
@@ -762,11 +845,13 @@ const I18N={
   'credit':'Unofficial fan-made game, free and non-profit. Pokémon and all related names and images are trademarks and property of Nintendo, Creatures Inc., GAME FREAK inc. and The Pokémon Company.',
   'back':'← Menu','setup.sub':n=>`Two-player auction: buy 6 Pokémon each, drawn from ${n} Pokémon.`,
   'setup.nodata':'Pokémon list not found: the file <strong>pokemon-data.js</strong> must be in the same folder as this page. Create it with <code>node scarica-pokemon.js</code>.',
+  'cpu.name':'Computer','cpu.vsFriend':['👥 A friend','Taking turns on the same device.'],'cpu.vsCpu':['🤖 The computer','The computer is player 2 (tails): it bids and then battles.'],
+  'cpu.thinking':'🤖 The computer is thinking…','cpu.raised':n=>`🤖 The computer raises to ${n}.`,'cpu.note':'The computer rates Pokémon by base stats, wants legendaries more eagerly and looks for weather teams (rain, sun, sand, snow). In blind auctions it bids on a hunch.','cpu.sets':'🤖 Sets chosen by the computer.','cpu.opp':'Opponent:',
   's1':'1. Battle format','s2':'2. Pokémon pool','s3':'3. Auction mode','s4':'4. Coins per player','s5':'5. Players',
   'fmt.singolo':['Singles','One Pokémon per side on the field.'],'fmt.doppio':['Doubles','Two Pokémon per side on the field.'],
-  'pool.tutti':['All','Every Pokémon in the game.'],'pool.ou':['OU tier','Only the strongest, used in OU.'],'pool.megaou':['Nat Dex OU (Mega)','Like OU, with Mega Evolutions and no Tera.'],
+  'pool.tutti':['All','Every Pokémon in the game.'],'pool.ou':['OU tier','Only the strongest, used in OU.'],'pool.megaou':['Nat Dex OU (Mega)','Like OU, with Mega Evolutions and no Tera.'],'pool.uber':['Nat Dex Uber','The strongest (Uber, OU, UU), with Mega Evolutions and no Tera. At most 2 legendary and 2 mythical Pokémon in the whole auction.'],
   'pool.uu':['UU tier','Strong, one step below.'],'pool.champions':['Pokémon Champions','Only those in Pokémon Champions, with Mega Evolutions.'],
-  'poolName.tutti':'All Pokémon','poolName.ou':'OU tier','poolName.megaou':'Nat Dex OU (Mega)','poolName.uu':'UU tier','poolName.champions':'Pokémon Champions',
+  'poolName.tutti':'All Pokémon','poolName.ou':'OU tier','poolName.megaou':'Nat Dex OU (Mega)','poolName.uber':'Nat Dex Uber','poolName.uu':'UU tier','poolName.champions':'Pokémon Champions',
   'legends':'Legendaries and Mythicals:','yes':'Yes','no':'No','noLegends':', no legendaries',
   'playOn':f=>`On Showdown, play in <strong>${f}</strong>`,'fmtNote':' (bring 6 Pokémon, pick 4, level 50)',
   'mode.classica':['Classic','The Pokémon is shown: you know exactly who it is.'],'mode.tipo':['By type','Only the primary type is revealed.'],
@@ -873,7 +958,7 @@ const COLOR_NAMES={it:{red:'rosso',blue:'blu',yellow:'giallo',green:'verde',blac
   en:{red:'red',blue:'blue',yellow:'yellow',green:'green',black:'black',brown:'brown',purple:'purple',gray:'gray',white:'white',pink:'pink'}};
 const colorName=k=>(COLOR_NAMES[ui.lang]||COLOR_NAMES.it)[k];
 const HIDE_KEYS=['subito','fine','showdown'];
-const MODE_KEYS=['classica','tipo','numero','colore','verso'], FORMAT_KEYS=['singolo','doppio'], POOL_KEYS=['tutti','ou','megaou','uu','champions'];
+const MODE_KEYS=['classica','tipo','numero','colore','verso'], FORMAT_KEYS=['singolo','doppio'], POOL_KEYS=['tutti','uber','ou','uu','champions'];
 const fmtNote=(format,tier)=>tier==='champions'&&format==='doppio'?t('fmtNote'):'';
 
 const $app=document.getElementById('app');
@@ -887,7 +972,7 @@ function ink(hex){const h=hex.replace('#','');const r=parseInt(h.slice(0,2),16),
   return (0.299*r+0.587*g+0.114*b)>150?'#142033':'#FFFFFF';}
 const tchip=k=>`<span class="tchip" style="background:${TYPE_COLORS[k]};color:${ink(TYPE_COLORS[k])}">${typeName(k)}</span>`;
 // Nome del giocatore: se il campo è vuoto si usa "Giocatore 1"/"Player 1" nella lingua scelta
-const name=i=>esc(ui.names[i]||t('player',i+1));
+const name=i=>esc(ui.game&&ui.game.cpu===i&&!ui.online?t('cpu.name'):(ui.names[i]||t('player',i+1)));
 const formOf=m=>m.form;
 // Pokémon come lo vede chi guarda questo schermo (vedi monView)
 const V=(mon,owner)=>ui.game?monView(ui.game,mon,owner,ui.online?ui.online.me:'local',ui.revealLocal):mon;
@@ -1029,7 +1114,7 @@ function rulesBody(){
   if(ui.lang==='en') return `
    <p>Two players buy <strong>6 Pokémon each</strong> at auction with coins, then play their teams on Pokémon Showdown.</p>
    <h3>1. Before starting</h3>
-   <ul><li>Choose <strong>Singles or Doubles</strong>, which <strong>Pokémon</strong> can be drawn (all, only the OU or UU tier, Nat Dex OU with Mega Evolutions and no Tera, or only those in Pokémon Champions; with or without legendaries), the <strong>auction mode</strong>, the <strong>coins</strong> per player (usually 25) and the names.</li>
+   <ul><li>Choose <strong>Singles or Doubles</strong>, which <strong>Pokémon</strong> can be drawn (all, Nat Dex Uber with Mega Evolutions, no Tera and at most 2 legendary and 2 mythical Pokémon per auction, only the OU or UU tier, or only those in Pokémon Champions; with or without legendaries), the <strong>auction mode</strong>, the <strong>coins</strong> per player (usually 25) and the names.</li>
    <li>Coin toss: <strong>heads</strong> (Poké Ball) is player 1, <strong>tails</strong> (Great Ball) is player 2. The winner opens the first auction, then players take turns opening.</li></ul>
    <h3>2. The auction</h3>
    <ol><li>The game draws a random Pokémon (each Pokémon comes up only once).</li>
@@ -1046,14 +1131,14 @@ function rulesBody(){
    <li>At the end each Pokémon has a full set (item, ability, EVs, nature, moves): if there are several, pick one from the menu.</li></ul>
    <h3>5. Playing on Showdown</h3>
    <ul><li>Press <strong>Copy text</strong>, then on Pokémon Showdown: Teambuilder → new team → <strong>Import from text</strong> → paste.</li>
-   <li><strong>Singles</strong> format: with "All" ${F('[Gen 9] National Dex AG')}; with a tier ${F('[Gen 9] National Dex')} (OU) or ${F('National Dex UU')}. Teams are legal there: the sets were checked with Showdown's validator.</li>
+   <li><strong>Singles</strong> format: with "All" ${F('[Gen 9] National Dex AG')}; with a tier ${F('[Gen 9] National Dex')} (OU) or ${F('National Dex UU')}; with Nat Dex Uber ${F('[Gen 9] National Dex Ubers')}. Teams are legal there: the sets were checked with Showdown's validator.</li>
    <li><strong>Doubles</strong> format: ${F('[Gen 9] Doubles Custom Game')}, used by challenging the other player directly. It does not check teams, so it accepts them all.</li>
    <li><strong>Pokémon Champions</strong>: singles in ${F('[Gen 9 Champions] OU')}, doubles in the current VGC regulation, today ${F(CHAMP_VGC)} (the game checks it on Showdown each time it opens): bring 6 Pokémon and pick 4, all at level 50. Sets follow Champions rules: no Tera, "Stat Points" instead of EVs, a different item for each Pokémon and, when available, a set with the Mega Stone.</li>
    <li>The right format is also shown in the settings and at the end of the game. Note: plain "[Gen 9] Anything Goes", without National Dex, rejects Pokémon that are not in Scarlet/Violet.</li></ul>`;
   return `
    <p>Due giocatori comprano all'asta <strong>6 Pokémon a testa</strong> con le monete, poi giocano le squadre su Pokémon Showdown.</p>
    <h3>1. Prima di iniziare</h3>
-   <ul><li>Scegliete <strong>Singolo o Doppio</strong>, quali <strong>Pokémon</strong> possono uscire (tutti, solo un tier OU o UU, il Nat Dex OU con le Megaevoluzioni e senza Tera, oppure solo quelli di Pokémon Champions; con o senza leggendari), la <strong>modalità d'asta</strong>, le <strong>monete</strong> a testa (di solito 25) e i nomi.</li>
+   <ul><li>Scegliete <strong>Singolo o Doppio</strong>, quali <strong>Pokémon</strong> possono uscire (tutti, il Nat Dex Uber con le Megaevoluzioni, senza Tera e al massimo 2 leggendari e 2 misteriosi per asta, solo un tier OU o UU, oppure solo quelli di Pokémon Champions; con o senza leggendari), la <strong>modalità d'asta</strong>, le <strong>monete</strong> a testa (di solito 25) e i nomi.</li>
    <li>Lancio della moneta: <strong>testa</strong> (Poké Ball) è il giocatore 1, <strong>croce</strong> (Mega Ball) il giocatore 2. Chi vince apre la prima asta, poi si apre a turno.</li></ul>
    <h3>2. L'asta</h3>
    <ol><li>Il gioco estrae un Pokémon a caso (ogni Pokémon esce una volta sola).</li>
@@ -1070,7 +1155,7 @@ function rulesBody(){
    <li>Alla fine ogni Pokémon ha un set completo (strumento, abilità, EV, natura, mosse): se ce ne sono più di uno lo scegli dal menu.</li></ul>
    <h3>5. Giocare su Showdown</h3>
    <ul><li>Premi <strong>Copia testo</strong>, poi su Pokémon Showdown: Teambuilder → nuova squadra → <strong>Import from text</strong> → incolla.</li>
-   <li>Formato in <strong>singolo</strong>: con "Tutti" ${F('[Gen 9] National Dex AG')}; con un tier ${F('[Gen 9] National Dex')} (OU) o ${F('National Dex UU')}. Le squadre sono valide lì: i set sono stati controllati con il validatore di Showdown.</li>
+   <li>Formato in <strong>singolo</strong>: con "Tutti" ${F('[Gen 9] National Dex AG')}; con un tier ${F('[Gen 9] National Dex')} (OU) o ${F('National Dex UU')}; con Nat Dex Uber ${F('[Gen 9] National Dex Ubers')}. Le squadre sono valide lì: i set sono stati controllati con il validatore di Showdown.</li>
    <li>Formato in <strong>doppio</strong>: ${F('[Gen 9] Doubles Custom Game')}, da usare sfidando direttamente l'altro giocatore. Non controlla le squadre, quindi le accetta tutte.</li>
    <li><strong>Pokémon Champions</strong>: singolo in ${F('[Gen 9 Champions] OU')}, doppio nel regolamento VGC attuale, oggi ${F(CHAMP_VGC)} (il gioco lo controlla su Showdown a ogni apertura): si portano 6 Pokémon e se ne scelgono 4, tutti a livello 50. I set seguono le regole di Champions: niente Tera, "Stat Points" al posto degli EV, strumenti diversi per ogni Pokémon e, quando c'è, un set con la Megapietra.</li>
    <li>Il formato giusto è scritto anche nelle impostazioni e a fine partita. Attenzione: il semplice "[Gen 9] Anything Goes", senza National Dex, rifiuta i Pokémon che non sono in Scarlatto/Violetto.</li></ul>`;
@@ -1162,7 +1247,9 @@ ${ui.setupOnline?`  <section class="card"><span class="label">${t('online.name')
    <div class="row"><div class="field"><label for="joincode" class="muted">${t('online.code')}</label><input type="text" id="joincode" maxlength="8" autocapitalize="characters" autocomplete="off" style="text-transform:uppercase;letter-spacing:.2em;font-weight:700" value="${esc(ui.joinCode||'')}"></div>
    <button class="btn" data-act="onlinejoin" style="align-self:flex-end">${t('online.joinBtn')}</button></div></section>`:`  <section class="card"><span class="label">${t('s5')}</span><div class="row">
    <div class="field"><label for="n0" class="muted">${t('heads')}</label><input type="text" id="n0" maxlength="16" placeholder="${esc(t('player',1))}" value="${esc(ui.names[0])}"></div>
-   <div class="field"><label for="n1" class="muted">${t('tails')}</label><input type="text" id="n1" maxlength="16" placeholder="${esc(t('player',2))}" value="${esc(ui.names[1])}"></div></div></section>
+   ${ui.vsCpu?'':`<div class="field"><label for="n1" class="muted">${t('tails')}</label><input type="text" id="n1" maxlength="16" placeholder="${esc(t('player',2))}" value="${esc(ui.names[1])}"></div>`}</div>
+   <p class="muted" style="margin:10px 0 6px">${t('cpu.opp')}</p><div class="opts" role="group" aria-label="${t('cpu.opp')}">${[['0','cpu.vsFriend'],['1','cpu.vsCpu']].map(([v,k])=>`<button class="opt" data-act="vscpu" data-v="${v}" aria-pressed="${!!ui.vsCpu===(v==='1')}"><strong>${t(k)[0]}</strong><span>${t(k)[1]}</span></button>`).join('')}</div>
+   ${ui.vsCpu?`<p class="muted" style="font-size:13px">${t('cpu.note')}</p>`:''}</section>
   <details class="card remote"><summary><strong>📡 ${t('remote.title')}</strong></summary>${t('remote.body')}</details>
   <div class="center"><button class="btn big" data-act="toflip">${t('toflip')}</button></div>`}`;
 }
@@ -1231,7 +1318,8 @@ function vGame(){
      <div class="duel">${side(0)}<div class="pot i${a.leader}" aria-label="${esc(t('potAria',a.bid,ui.names[a.leader]||t('player',a.leader+1)))}"><span class="arrow" aria-hidden="true">${a.leader===0?'◀':'▶'}</span><div class="bid">${a.bid}</div><span class="muted sm">${t('coinsWord',a.bid)}</span></div>${side(1)}</div>
      <div class="note turn i${p} ${can?'':'warn'}">${can?t('turnNote',name(p),a.bid+1,lo,name(a.leader),a.bid):t('turnNoteCap',name(p),lo,name(a.leader))}</div>
      ${ui.msg?`<div class="err" role="alert">${esc(ui.msg)}</div>`:''}
-     ${ui.online&&ui.online.me!==p?`<p class="muted waitdots">${t('online.waitTurn',name(p))}</p>`:`<div class="bidrow">${can?`<div class="field"><label for="draft" class="muted">${t('newBid',name(p))}</label><input type="number" id="draft" inputmode="numeric" min="${a.bid+1}" max="${lo}" step="1" value="${esc(ui.draft)}"></div><button class="btn pc i${p}" data-act="raise">${t('raise')}</button>`:''}
+     ${ui.cpuSay&&g.cpu!==p?`<div class="note">${esc(ui.cpuSay)}</div>`:''}
+     ${g.cpu===p&&!ui.online?`<p class="muted waitdots">${t('cpu.thinking')}</p>`:ui.online&&ui.online.me!==p?`<p class="muted waitdots">${t('online.waitTurn',name(p))}</p>`:`<div class="bidrow">${can?`<div class="field"><label for="draft" class="muted">${t('newBid',name(p))}</label><input type="number" id="draft" inputmode="numeric" min="${a.bid+1}" max="${lo}" step="1" value="${esc(ui.draft)}"></div><button class="btn pc i${p}" data-act="raise">${t('raise')}</button>`:''}
      <button class="btn ghost" data-act="pass">${t('pass')}</button></div>`}`;
   } else {
     const l=g.last;
@@ -1263,6 +1351,7 @@ const itemOf=(s,g)=>(g.tier==='uu'&&s.basso&&s.basso.strumento)||s.strumento;
 function setPicker(m,g,eff,i,j){
   const ss=setsFor(m,g.format,g.tier), cur=eff&&eff._k!=null?eff._k:(ui.setChoice[m.name]||0);
   if(!ss.length) return `<div class="setrow"><strong>${disp(m)}</strong><span class="muted">${t('noSet')}</span></div>`;
+  if(g.cpu===i&&!ui.online) return `<div class="setrow"><strong>${disp(m)}</strong><span class="muted">${esc(roleName((eff||ss[0]).ruolo))} · ${esc(eff?eff.strumento:itemOf(ss[0],g))}</span></div>`; // squadra del computer: sola lettura
   const open=ui.editOpen===m.name, tag=eff&&eff.edited?`<span class="edtag">✏️ ${t('edit.tag')}</span>`:'';
   const btn=`<button class="btn ghost sm minibtn" data-act="editset" data-n="${esc(m.name)}" aria-expanded="${open}">${open?t('edit.close'):t('edit.btn')}</button>`;
   const head=ss.length===1
@@ -1348,7 +1437,7 @@ async function startFight(){
   catch(e){ if(b){ b.disabled=false; b.textContent='⚔ '+t('fight.btn'); } alert(t('fight.loadErr')); return; }
   const fmt=showdownFormat(g.format,g.tier);
   if(!ui.series) ui.series={bo:ui.bo===3?3:1,wins:[0,0],n:1};
-  const S=ui.series, nm0=ui.names[0]||t('player',1), nm1Raw=ui.names[1]||t('player',2), nm1=nm1Raw===nm0?nm1Raw+' (2)':nm1Raw;
+  const S=ui.series, nm0=ui.names[0]||t('player',1), nm1Raw=g.cpu===1&&!ui.online?t('cpu.name'):(ui.names[1]||t('player',2)), nm1=nm1Raw===nm0?nm1Raw+' (2)':nm1Raw;
   // in lotta i nomi devono essere diversi: dal nome del vincitore si capisce chi ha vinto
   const ser=S.bo===3?{series:t('bo.label',S.n,nm0,S.wins[0],S.wins[1],nm1), onEnd:w=>seriesWin(w===nm0?0:1,nm0,nm1), onNew:()=>startFight()}:{};
   const showOpp=g.mode==='classica'||!g.hide||g.hide==='subito'||(ui.revealLocal[0]&&ui.revealLocal[1]);
@@ -1366,7 +1455,7 @@ async function startFight(){
     closeLabel:t('fight.back'), onClose:()=>render() },ser));
 }
 async function guestFight(m){
-  const fid=String(m.formatid||''); if(!['gen9nationaldexag','gen9nationaldex','gen9nationaldexuu','gen9doublescustomgame','gen9nationaldexag@@@Terastal Clause,Picked Team Size = 3','gen9doublescustomgame@@@Terastal Clause,Picked Team Size = 4'].includes(fid)) return;
+  const fid=String(m.formatid||''); if(!['gen9nationaldexag','gen9nationaldex','gen9nationaldexuu','gen9nationaldexubers','gen9doublescustomgame@@@Terastal Clause','gen9doublescustomgame','gen9nationaldexag@@@Terastal Clause,Picked Team Size = 3','gen9doublescustomgame@@@Terastal Clause,Picked Team Size = 4'].includes(fid)) return;
   try{ await loadFight(); }catch(e){ alert(t('fight.loadErr')); return; }
   const nm=v=>String(v||'').slice(0,18), team=String(m.myTeam||'').slice(0,6000);
   const opp=(Array.isArray(m.oppSpecies)?m.oppSpecies:[]).slice(0,6).map(String).filter(s=>MON_BY_NAME.has(s));
@@ -1395,7 +1484,7 @@ function vEnd(){
     return head+mostra+`
      <div class="chips">${g.teams[i].map(m=>`<span class="tchip mon" style="${colorStyle(m,g.mode)};box-shadow:inset 0 0 0 1px var(--line)">${spr(m,'mini')}${disp(m)}</span>`).join('')}</div>
      <div class="muted" style="font-size:13px">${g.teams[i].map(m=>disp(m)+' ('+typeName(m.type)+(m.type2?'/'+typeName(m.type2):'')+')').join(' · ')}</div>
-     ${ui.online&&ui.online.me!==i?`<div class="note">🔒 ${t('online.oppSets',name(i))}</div></section>`:`<span class="label">${t('setsLabel')}</span><div class="setlist">${(eff=>g.teams[i].map((m,j)=>setPicker(m,g,eff[j],i,j)).join(''))(teamSets(g.teams[i],g.format,ui.setChoice,g.tier,ui.setEdit))}</div>
+     ${ui.online&&ui.online.me!==i?`<div class="note">🔒 ${t('online.oppSets',name(i))}</div></section>`:`<span class="label">${t('setsLabel')}</span>${g.cpu===i&&!ui.online?`<p class="muted" style="font-size:13px">${t('cpu.sets')}</p>`:''}<div class="setlist">${(eff=>g.teams[i].map((m,j)=>setPicker(m,g,eff[j],i,j)).join(''))(teamSets(g.teams[i],g.format,ui.setChoice,g.tier,ui.setEdit))}</div>
      <span class="label">${t('textLabel')}</span>
      <div class="fmtline">${t('fmtLine')} <strong>${showdownFormat(g.format,g.tier)}</strong>${fmtNote(g.format,g.tier)}</div><pre id="ex${i}">${esc(exportText(g.teams[i],g.format,ui.setChoice,g.tier,ui.setEdit))}</pre>
      <div class="row"><button class="btn ghost" data-act="copy" data-i="${i}">${t('copy')}</button><a class="btn play2" href="https://play.pokemonshowdown.com/teambuilder" target="_blank" rel="noopener noreferrer" style="text-decoration:none">${t('openSD')}</a><span class="muted" id="cp${i}" aria-live="polite"></span></div><p class="muted" style="font-size:12px">${t('openSDhint')}</p></section>`}`;}).join('');
@@ -2040,6 +2129,18 @@ function vUndoReq(){
    <p id="urD" class="muted">${t('undo.desc',(m=>m.hidden?t('mystery'):disp(m))(V(h.mon,h.winner)),name(h.winner),h.price)}${g.auction?t('undo.next'):''}</p>
    <div class="row"><button class="btn ghost" data-act="undo-no" id="urNo">${t('online.decline')}</button><button class="btn danger" data-act="undo-yes">${t('online.accept')}</button></div></div></div>`;
 }
+// Turno del computer: risponde da solo dopo una breve pausa (solo su questo dispositivo)
+function cpuTick(){
+  const g=ui.game, a=g&&g.auction;
+  if(ui.online||!g||g.cpu!==1||!a||a.turn!==1||ui.screen!=='game'||ui.askUndo||ui.askExit||ui.cpuTimer) return;
+  const key=g.n+':'+a.bid+':'+g.history.length;
+  ui.cpuTimer=setTimeout(()=>{ ui.cpuTimer=null; const g2=ui.game, a2=g2&&g2.auction;
+    if(g2!==g||!a2||a2.turn!==1||g2.n+':'+a2.bid+':'+g2.history.length!==key||ui.screen!=='game'||ui.askUndo||ui.askExit){ cpuTick(); return; }
+    const mv=cpuMove(g2,1); if(!mv) return;
+    if(mv.act==='raise'&&!raise(g2,1,mv.amount)){ ui.cpuSay=t('cpu.raised',mv.amount); ui.draft=String(Math.min(a2.bid+1,Math.max(maxBid(g2,0),a2.bid+1))); }
+    else { pass(g2,1); ui.cpuSay=''; }
+    ui.msg=''; render(); }, 900+Math.random()*700);
+}
 function render(){
   document.documentElement.lang=ui.lang;
   const undoReq=!!(ui.online&&ui.online.undoReq&&ui.online.undoReq.from!==ui.online.me&&ui.game&&ui.screen!=='lobby');
@@ -2054,6 +2155,7 @@ function render(){
   else if(ui.modal) document.getElementById('rlClose').focus();
   try{ lobbySync(); }catch(e){}
   try{ cryAuto(); }catch(e){}
+  try{ cpuTick(); }catch(e){}
   try{ profWatch(); }catch(e){}
   try{ if(typeof Musica!=='undefined') Musica.want(ui.screen==='title'?'natale':'centro'); }catch(e){}
 }
@@ -2078,12 +2180,14 @@ function act(a,d){
     else if(ui.mode==='verso'&&!ui.cryOk){ui.msg=t('cry.needOk');}
     else {ui.msg='';ui.screen='flip';ui.flip=null;}}
   else if(a==='flip'){ui.flip=Math.random()<0.5?'testa':'croce';}
-  else if(a==='begin'){ui.revealLocal=[false,false];ui.celebN=null;ui.game=newGame({format:ui.format,mode:ui.mode,hide:ui.hide,coins:Number(ui.coins),tier:ui.tier,legends:ui.legends,
-    pool:filterPool(POOL,{tier:ui.tier,legends:ui.legends}),firstOpener:ui.flip==='testa'?0:1});ui.screen='game';ui.msg='';ui.setChoice={};ui.setEdit={};ui.editOpen=null;}
+  else if(a==='vscpu'){ui.vsCpu=d.v==='1';}
+  else if(a==='begin'){ui.revealLocal=[false,false];ui.celebN=null;ui.cpuSay='';ui.game=newGame({format:ui.format,mode:ui.mode,hide:ui.hide,coins:Number(ui.coins),tier:ui.tier,legends:ui.legends,
+    pool:filterPool(POOL,{tier:ui.tier,legends:ui.legends}),firstOpener:ui.flip==='testa'?0:1}); if(ui.vsCpu&&!ui.online&&!ui.setupOnline) ui.game.cpu=1;ui.screen='game';ui.msg='';ui.setChoice={};ui.setEdit={};ui.editOpen=null;}
   else if(a==='draw'){startAuction(g);ui.msg='';ui.draft=g.auction?String(g.auction.bid+1):'';}
-  else if(a==='raise'){const p=g.auction.turn;const err=raise(g,p,parseInt(ui.draft,10));ui.msg=err?errText(err):'';
+  else if((a==='raise'||a==='pass')&&g&&g.auction&&g.cpu===g.auction.turn&&!ui.online){ return; } // tocca al computer
+  else if(a==='raise'){const p=g.auction.turn;const err=raise(g,p,parseInt(ui.draft,10));ui.msg=err?errText(err):'';ui.cpuSay='';
     if(!err){ui.draft=String(Math.min(g.auction.bid+1,Math.max(maxBid(g,g.auction.turn),g.auction.bid+1)));}}
-  else if(a==='pass'){pass(g,g.auction.turn);ui.msg='';}
+  else if(a==='pass'){pass(g,g.auction.turn);ui.msg='';ui.cpuSay='';}
   else if(a==='finish'){ui.screen='end';}
   else if(a==='again'&&ui.online){ if(isHost()){ hostApply('newround',{},0); broadcast(); } }
   else if(a==='again'){ui.screen='setup';ui.game=null;ui.flip=null;ui.msg='';}
