@@ -97,6 +97,9 @@ const STRUMENTI_VIETATI_BASSI = new Set(['Light Clay']);
 // Pokémon Champions, singolo ([Gen 9 Champions] OU): Sleep Moves Clause (niente mosse che addormentano) e mosse vietate
 const CHAMPIONS_VIETATE_SINGOLO = new Set(['spore', 'sleeppowder', 'hypnosis', 'yawn', 'lovelykiss', 'sing', 'grasswhistle',
   'darkvoid', 'relicsong', 'lastrespects', 'batonpass', 'shedtail']);
+// Mosse di stato permesse con uno strumento Scelta (decisione dell'utente del 24/11/2026): Trick/Switcheroo danno lo
+// strumento all'avversario; le altre si usano una volta o fanno uscire il Pokémon, e uscendo il blocco della Scelta si azzera.
+const SCELTA_STATO_OK = new Set(['trick', 'switcheroo', 'healingwish', 'lunardance', 'memento', 'partingshot', 'teleport', 'chillyreception', 'batonpass']);
 const RUOLI_VELOCI = /Fast|Setup Sweeper|Wallbreaker|Offensive Protect|Choice Item|Tera Blast/;
 const RUOLI_SPECIALI_ATTACCO = /Wallbreaker/;
 
@@ -281,10 +284,10 @@ function creaRegole(dati) {
     const scelte = scegliMosse(specie, set, doppio, riserva);
     const abilita = scegliAbilita(specie, set);
     let strumento = scegliStrumento(specie, set, scelte, abilita, doppio);
-    // Con uno strumento Scelta si è bloccati su una mossa: le mosse di stato (tranne Trick/Switcheroo) diventano
+    // Con uno strumento Scelta si è bloccati su una mossa: le mosse di stato (tranne quelle di SCELTA_STATO_OK) diventano
     // attacchi dello stesso set; se non ce ne sono abbastanza, niente Scelta (es. Houndstone con Will-O-Wisp)
     if (/^Choice /.test(strumento)) {
-      const stato = scelte.filter(id => !attacco(mossa(id)) && !['trick', 'switcheroo'].includes(id));
+      const stato = scelte.filter(id => !attacco(mossa(id)) && !SCELTA_STATO_OK.has(id));
       const altri = [...new Set([...set.movepool, ...(riserva || [])].map(toId))].filter(id => legale(id) && attacco(mossa(id)) && !scelte.includes(id));
       if (stato.length && altri.length >= stato.length) stato.forEach((id, i) => { scelte[scelte.indexOf(id)] = altri[i]; });
       else if (stato.length) { strumento = champ ? 'Life Orb' : (doppio ? 'Sitrus Berry' : 'Leftovers');

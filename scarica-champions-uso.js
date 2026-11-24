@@ -25,7 +25,10 @@ async function testo(url) {
   const c = {}; vm.createContext(c); vm.runInContext(fs.readFileSync(path.join(DIR, 'lib/pkmn-sim.js'), 'utf8'), c);
   for (const f of ['pokemon-data.js', 'set-data.js']) vm.runInContext(fs.readFileSync(path.join(DIR, f), 'utf8').replace(/^const /m, 'var '), c);
   const D = c.PkmnSim.Dex, pool = c.POKEMON_DATA.filter(p => p.champions).map(p => p.name);
-  const STATO_OK = new Set(['trick', 'switcheroo']);
+  // con uno strumento Scelta: Trick/Switcheroo (danno via lo strumento) e mosse che si usano una volta o fanno uscire
+  // il Pokémon (decisione dell'utente del 24/11/2026); Trick/Switcheroo invece solo con uno strumento Scelta
+  const STATO_OK = new Set(['trick', 'switcheroo', 'healingwish', 'lunardance', 'memento', 'partingshot', 'teleport', 'chillyreception', 'batonpass']);
+  const SOLO_SCELTA = new Set(['trick', 'switcheroo']);
   // Regole dei formati (controllo del 23/11/2026 con il validatore di Showdown): Megaevoluzioni Uber vietate in
   // [Gen 9 Champions] OU (es. Raichu-Mega-Y) e DUber nel VGC, lette come testo da data/mods/champions/formats-data.ts;
   // abilità che alzano l'elusione vietate (Evasion Abilities Clause); nel singolo anche strumenti e mosse vietati
@@ -49,7 +52,7 @@ async function testo(url) {
       const mosse = [];
       for (const [id] of top(e.Moves)) { if (mosse.length >= 4) break; const m = D.moves.get(id); if (!m.exists) continue;
         if (scelta && m.category === 'Status' && !STATO_OK.has(m.id)) continue; if (mosse.includes(m.name)) continue;
-        if (VIETATI[fmt].moves.has(m.id) || (!scelta && STATO_OK.has(m.id))) continue;
+        if (VIETATI[fmt].moves.has(m.id) || (!scelta && SOLO_SCELTA.has(m.id))) continue;
         if (!UTIL.has(m.id) && ((fis && m.category === 'Special') || (spe && m.category === 'Physical'))) continue; mosse.push(m.name); }
       if (mosse.length < 4) return null;
       K.forEach((k, i) => { if (v[i]) evs[k] = Math.min(32, v[i]); });
