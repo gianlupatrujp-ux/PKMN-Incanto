@@ -1444,7 +1444,7 @@ function aiDouble(r,L,S){ const P=AIL[L], F=aiOther(S), M=aiMem(), team=r.side.p
   const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0, slower=avg(mine.filter(Boolean).map(aiSpe))<avg(foes.filter(Boolean).map(aiSpe));
   const foc=M.foc&&P.mem?.55+P.mem*((M.foc.same+.55*3)/(M.foc.n+3)-.55):.55;   // quanto l'avversario concentra gli attacchi
   const pProt=foes.map(f=>aiPProtect(f,mine,P,M));
-  const plans=[null,null]; let megaUsed=false, teraUsed=false;
+  const plans=[null,null], cand=[null,null]; let megaUsed=false, teraUsed=false;
   for(let i=0;i<2;i++){
     const a=r.active&&r.active[i], me=mine[i]; if(!a||!me){ plans[i]='pass'; continue; }
     const ally=mine[1-i];
@@ -1485,6 +1485,8 @@ function aiDouble(r,L,S){ const P=AIL[L], F=aiOther(S), M=aiMem(), team=r.side.p
         else add(null,s); }
     });
     if(!opts.length){ plans[i]='move 1'; continue; }
+    // dal livello 7 le due mosse si scelgono insieme (aiJoint)
+    if(P.look){ cand[i]={opts,me,a,danger}; plans[i]='joint'; continue; }
     if(i===1&&plans[0]&&plans[0].tgt){ const f=foes[+plans[0].tgt-1]; if(f) for(const o of opts) if(o.tgt===plans[0].tgt&&o.d.category!=='Status'){ const dm=aiDmg(o.d,me,f); if(plans[0].dmg<f.hpPct&&plans[0].dmg+dm>=f.hpPct) o.s+=40; else if(plans[0].dmg>=f.hpPct&&L>=5) o.s*=.3; } }
     for(const o of opts) o.s+=aiNoise(L);
     opts.sort((x,y)=>y.s-x.s); const best=opts[0];
@@ -1492,6 +1494,9 @@ function aiDouble(r,L,S){ const P=AIL[L], F=aiOther(S), M=aiMem(), team=r.side.p
       if(c&&c.s>-danger*.6){ used.push(c.x.idx); plans[i]={sw:c.x.idx}; continue; } }
     plans[i]={j:best.j,tgt:best.tgt,d:best.d,s:best.s,dmg:best.tgt&&foes[+best.tgt-1]?aiDmg(best.d,me,foes[+best.tgt-1]):0,canMega:a.canMegaEvo,canTera:a.canTerastallize,me,danger};
   }
+  if(cand[0]||cand[1]){ const pick=aiJoint(cand,foes,mine,pProt,L,bench,foc);
+    for(let i=0;i<2;i++){ if(!cand[i]) continue; const o=pick[i], c=cand[i];
+      plans[i]=o.sw!=null?{sw:o.sw}:{j:o.j,tgt:o.tgt,d:o.d,s:o.s,canMega:c.a.canMegaEvo,canTera:c.a.canTerastallize,me:c.me,danger:c.danger}; } }
   B.aiProt=B.aiProt||{};
   return plans.map((p,i)=>{ if(p==='pass'||typeof p==='string') return p; if(p.sw!=null) return 'switch '+(p.sw+1);
     let ch='move '+(p.j+1)+(p.tgt?' '+p.tgt:'');
@@ -1501,6 +1506,35 @@ function aiDouble(r,L,S){ const P=AIL[L], F=aiOther(S), M=aiMem(), team=r.side.p
       const saves=P.tera>=2&&p.danger>=p.me.hpPct&&foes.reduce((t,f)=>t+(f?aiThreat(f,m2):0),0)<p.me.hpPct*.7;
       if((off&&p.s>=(P.tera>=3?70:50))||saves){ ch+=' terastallize'; teraUsed=true; } }
     return ch; }).join(', '); }
+// Doppio, livello 7+: valuta le coppie di scelte (le migliori 5 mosse per posto, più i cambi) come un giocatore forte:
+// KO insieme, niente attacchi sprecati su chi va già KO, chi va KO prima di attaccare non fa danni (minaccia tolta),
+// danni che si ricevono (ogni avversario colpisce chi gli conviene; Protect li annulla; chi entra col cambio li prende lui).
+function aiJoint(cand,foes,mine,pProt,L,bench,foc){ const J=Object.assign({tk:.7,sw:-15,rm1:.6,rm2:.25,ko:40,waste:.6,die:30},AIL[L].j);
+  const lists=cand.map((c,i)=>{ if(!c) return [null]; const l=c.opts.slice().sort((x,y)=>y.s-x.s).slice(0,5);
+    if(bench.length&&!c.a.trapped&&!c.a.maybeTrapped) for(const x of bench) l.push({sw:x.idx,x,s:J.sw});
+    return l; });
+  const fBest=foes.map(f=>f?mine.map(m=>m?aiBest(f,m):{d:0,mv:null}):null);
+  let best=null;
+  for(const o0 of lists[0]) for(const o1 of lists[1]){ const sel=[o0,o1];
+    if(o0&&o1&&o0.sw!=null&&o0.sw===o1.sw) continue;
+    let v=0; const dealt=[0,0], alone=[0,0], att=[[],[]];
+    sel.forEach((o,i)=>{ if(!o) return; v+=o.d&&PROTECTS_ID.has(o.d.id)?Math.min(o.s,4):o.s; if(o.sw!=null||o.d.category==='Status') return; const me=cand[i].me;  // Protect: il suo valore viene dai danni evitati (sotto)
+      if(o.tgt&&+o.tgt>0){ const k=+o.tgt-1, f=foes[k]; if(!f) return; const d=aiDmg(o.d,me,f)*(1-pProt[k]); dealt[k]+=d; alone[k]=Math.max(alone[k],d); att[k].push(i); }
+      else if(AI_SPREAD.includes(o.d.target)) foes.forEach((f,k)=>{ if(!f) return; const d=aiDmg(o.d,me,f)*.75*(1-pProt[k]); dealt[k]+=d; att[k].push(i); }); });
+    const deadFirst=[false,false];
+    foes.forEach((f,k)=>{ if(!f) return; const ko=dealt[k]>=f.hpPct;
+      if(ko&&alone[k]<f.hpPct&&att[k].length>1) v+=J.ko;                                   // KO solo insieme
+      if(att[k].length>1&&alone[k]>=f.hpPct*1.15) v-=Math.min(...att[k].map(i=>sel[i].s))*J.waste;  // attacco sprecato
+      if(ko){ const first=att[k].every(i=>aiFirst(cand[i].me,sel[i].d,f,(fBest[k][i]||{}).mv)); deadFirst[k]=first;
+        v+=Math.max(0,...mine.map(m=>m?aiThreat(f,m):0))*(first?J.rm1:J.rm2); } });
+    // danni ricevuti: ogni avversario vivo (e non già KO prima di agire) colpisce chi gli conviene
+    const taken=[0,0], who=sel.map((o,i)=>o&&o.sw!=null?o.x:cand[i]?cand[i].me:null);
+    foes.forEach((f,k)=>{ if(!f||deadFirst[k]) return; let bi=-1, bd=0; who.forEach((m,i)=>{ if(!m) return; const d=aiThreat(f,m); if(d>bd){ bd=d; bi=i; } }); if(bi<0) return;
+      const prot=sel[bi]&&sel[bi].d&&PROTECTS_ID.has(sel[bi].d.id); if(!prot) taken[bi]+=bd*(foc+(1-foc)*.6); });
+    who.forEach((m,i)=>{ if(!m) return; const hp=m.hpPct-(sel[i]&&sel[i].sw!=null?aiHaz(m):0), t=Math.min(taken[i],hp); v-=t*J.tk; if(taken[i]>=hp) v-=J.die; });
+    v+=aiNoise(L);
+    if(!best||v>best.v) best={v,sel}; }
+  return best.sel; }
 // probabilità che un avversario usi Protect: niente se non ce l'ha, poca se l'ha appena usato, di più se è in pericolo; corretta dalla memoria
 function aiPProtect(f,mine,P,M){ if(!f||!P.pred) return 0; const fm=f.moves||[]; if(fm.length&&!fm.some(m=>PROTECTS_ID.has(m.id))&&(!f.partial||fm.length>=4)) return 0;
   if(M.lastProt&&M.lastProt[f.nick]===B.turn-1) return .05*P.pred;
@@ -2154,5 +2188,5 @@ function demo(o){ if(!B) return; if('weather' in o) B.weather=o.weather||null; i
   draw(); }
 // Solo anteprima: prova un'animazione di mossa
 async function demoMove(name,from,dry){ await loadPS(); return psRun('move',name,from||'p1',(from||'p1')==='p1'?'p2':'p1',false,dry); }
-window.Lotta={net,isOpen:()=>!!(root&&B),_ai:()=>B&&B.aiLog,_play:(sid,L,fn)=>{ if(B&&need(sid)) send(sid,fn?fn(B.req[sid],()=>aiChoiceFor(sid,L)):aiChoiceFor(sid,L)); },_mem:()=>O&&O.aiMem,_audio:()=>({ctx:SND.ctx&&SND.ctx.state,music:!!SND.mus,track:SND.mus&&SND.mus.m.file,playing:!!(SND.mus&&!SND.mus.el.paused),sfx:SND.sfx,sil:!!SIL}),open,close,demo,demoMove,SCENES,SCENE_NAMES,_B:()=>B};
+window.Lotta={net,isOpen:()=>!!(root&&B),_ai:()=>B&&B.aiLog,_play:(sid,L,fn)=>{ if(B&&need(sid)) send(sid,fn?fn(B.req[sid],()=>aiChoiceFor(sid,L)):aiChoiceFor(sid,L)); },_mem:()=>O&&O.aiMem,_ail:()=>AIL,_audio:()=>({ctx:SND.ctx&&SND.ctx.state,music:!!SND.mus,track:SND.mus&&SND.mus.m.file,playing:!!(SND.mus&&!SND.mus.el.paused),sfx:SND.sfx,sil:!!SIL}),open,close,demo,demoMove,SCENES,SCENE_NAMES,_B:()=>B};
 })();
