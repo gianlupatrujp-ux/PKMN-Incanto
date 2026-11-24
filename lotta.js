@@ -496,7 +496,7 @@ const CSS=`#lotta{position:fixed;inset:0;z-index:60;overflow:auto;background:#F6
 #lotta .trainer{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0;font:800 12px/1.2 'Inter',sans-serif;color:var(--line)}
 #lotta .trainer.p1{grid-area:t1;justify-content:flex-end}#lotta .trainer.p2{grid-area:t2;justify-content:flex-start}
 #lotta .trainer .avatar,#lotta .trainer .lt-av0{width:72px;height:72px;box-shadow:0 3px 0 var(--line)}
-#lotta .lt-av0{display:inline-grid;place-items:center;flex:none;border-radius:50%;border:3px solid var(--line);background:#fff;font:900 26px 'Inter',sans-serif;color:var(--line)}
+#lotta .lt-av0{display:inline-grid;place-items:center;flex:none;border-radius:12px;border:3px solid var(--line);background:#fff;font:900 26px 'Inter',sans-serif;color:var(--line)}
 #lotta .trainer .tnm{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
 #lotta .trainer{--k:1}
 #lotta .tteam{display:grid;grid-template-columns:repeat(3,calc(40px*var(--k)));gap:2px 0;justify-content:center}
@@ -1720,7 +1720,7 @@ function net(m){
   if(!root||!B||!O||!O.net||!m||typeof m!=='object') return;
   if(m.t==='chat'){ const now=Date.now(); B.rcv=(B.rcv||[]).filter(t=>now-t<8000); if(B.rcv.length>=10) return; B.rcv.push(now);
     chatAdd(O.names.p2,String(m.x||'').replace(/\s+/g,' ').trim().slice(0,200),false); sfxChat(); return; }
-  if(m.t==='bav'){ const a=String(m.a||''); if(/^[a-z]\d{2}$/.test(a)&&(typeof Avatar==='undefined'||Avatar.valid(a))){ O.avatars.p2=a; drawTrainers(); } return; }
+  if(m.t==='bav'){ const a=String(m.a||''); if(/^[a-z0-9-]{1,24}$/.test(a)){ O.avatars.p2=typeof Avatar==='undefined'?a:Avatar.fix(a); drawTrainers(); } return; }   // id = nome del file dell'allenatore; uno sconosciuto (anche i vecchi a01…a20) diventa quello predefinito
   if(m.t==='bexit'){ if(B.over) return; timerClear(); say(`${PN('p2')} ha lasciato la lotta.`); if(O.role==='host') B.streams.omniscient.write('>forcelose p2'); else { B.over=true; say(`Vince ${PN('p1')}!`,'win'); musicStop(); prompt(); } return; }
   if(O.role==='host'){
     if(m.t==='bc'){ const c=String(m.c||''); if(CHOICE_OK.test(c)&&!B.over) B.streams.p2.write(c); }
