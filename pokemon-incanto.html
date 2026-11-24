@@ -1310,6 +1310,7 @@ function fightOk(g){ return true; }
 // Formato per il motore della lotta: Champions non esiste nel motore, quindi si gioca come partita libera
 // (National Dex AG in singolo, Doubles Custom Game in doppio) con i "Stat Points" convertiti in EV (1 punto ≈ 8 EV, max 252).
 function fightFormat(g){ if(g.tier==='champions') return g.format==='doppio'?'gen9doublescustomgame@@@Terastal Clause,Picked Team Size = 4':'gen9nationaldexag@@@Terastal Clause,Picked Team Size = 3';
+  if(g.tier==='uber') return g.format==='doppio'?'gen9doublescustomgame@@@Terastal Clause':'gen9nationaldexubers';   // Nat Dex Uber: Mega sì, Tera no
   return showdownFormat(g.format,g.tier).toLowerCase().replace(/[^a-z0-9]/g,''); }
 function fightTeam(g,i,choice,edits){ let tx=exportText(g.teams[i],g.format,choice,g.tier,edits);
   if(g.tier==='champions') tx=tx.replace(/^EVs: (.+)$/gm,(m,l)=>{ const ev=l.split(' / ').map(p=>{ const [n,s]=p.split(' '); return [Math.min(252,(+n||0)*8),s]; });
@@ -1366,7 +1367,7 @@ async function startFight(){
     closeLabel:t('fight.back'), onClose:()=>render() },ser));
 }
 async function guestFight(m){
-  const fid=String(m.formatid||''); if(!['gen9nationaldexag','gen9nationaldex','gen9nationaldexuu','gen9doublescustomgame','gen9nationaldexag@@@Terastal Clause,Picked Team Size = 3','gen9doublescustomgame@@@Terastal Clause,Picked Team Size = 4'].includes(fid)) return;
+  const fid=String(m.formatid||''); if(!['gen9nationaldexag','gen9nationaldex','gen9nationaldexuu','gen9doublescustomgame','gen9nationaldexag@@@Terastal Clause,Picked Team Size = 3','gen9doublescustomgame@@@Terastal Clause,Picked Team Size = 4','gen9nationaldexubers','gen9doublescustomgame@@@Terastal Clause'].includes(fid)) return;
   try{ await loadFight(); }catch(e){ alert(t('fight.loadErr')); return; }
   const nm=v=>String(v||'').slice(0,18), team=String(m.myTeam||'').slice(0,6000);
   const opp=(Array.isArray(m.oppSpecies)?m.oppSpecies:[]).slice(0,6).map(String).filter(s=>MON_BY_NAME.has(s));
