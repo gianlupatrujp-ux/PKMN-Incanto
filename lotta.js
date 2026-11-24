@@ -1120,7 +1120,9 @@ async function handle(line){
     case 'swap': { const id=parseId(p[2]); if(id&&isDbl()){ const sd=B.side[id.side]; const a=slotK(id.side), b=slotK(id.side+'b'); const t=sd[a]; sd[a]=sd[b]; sd[b]=t; for(const q of [id.side,id.side+'b']){ const el=$('mon'+q); el.dataset.sp=''; el.classList.remove('faint'); } draw(); say(`${label(p[2])} cambia posto con il compagno!`); return 900; } return 0; }
     case '-mega': say(`${label(p[2])} megaevolve!`); return 1000;
     case 'turn': { shieldsOff(); B.turn=+p[2]||0; const tb=$('turn'); tb.hidden=false; tb.textContent='Turno '+p[2]; say(`Turno ${esc(p[2])}`,'turn'); return 350; }
-    case 'win': B.over=true; timerClear(); musicStop(); say(`Vince ${esc(p[2])}!`,'win'); seriesEnd(String(p[2]||'')); try{ if(O.onStats) O.onStats({winner:String(p[2]||''),names:Object.assign({},O.names),stats:B.stats||null,turns:B.turn||0}); }catch(e){} return 0;
+    case 'win': { // il simulatore conosce solo i primi 18 caratteri del nome: si torna al nome intero
+      const w=String(p[2]||''), sd=['p1','p2'].find(s=>String(O.names[s])===w)||['p1','p2'].find(s=>String(O.names[s]).slice(0,18)===w); p[2]=sd?String(O.names[sd]):w; }
+      B.over=true; timerClear(); musicStop(); say(`Vince ${esc(p[2])}!`,'win'); seriesEnd(String(p[2]||'')); try{ if(O.onStats) O.onStats({winner:String(p[2]||''),names:Object.assign({},O.names),stats:B.stats||null,turns:B.turn||0}); }catch(e){} return 0;
     case 'tie': B.over=true; say('Pareggio!'); return 0;
     case 'teamsize': { const sd=p[2]; if(sd==='p1'||sd==='p2'){ (B.tsize=B.tsize||{})[sd]=Math.max(1,Math.min(6,parseInt(p[3],10)||6)); drawTrainers(); } return 0; }
   }
