@@ -613,7 +613,7 @@ function editInfo(team, i, format, choice, tier, edits){
       else if(cur.mega&&!megaOf(ss,n)&&otherMegas===0&&!altMega) why='mega1'; }
     if(!why&&isChoiceItem(n)&&status) why='choice';
     return {n,why}; });
-  const mosse=op.mosse.map(n=>({n,why:choiceIt&&STATUS_MOVES.has(n)&&n!=='Trick'&&n!=='Switcheroo'?'choice':''}));
+  const mosse=op.mosse.map(n=>({n,why:choiceIt&&STATUS_MOVES.has(n)&&!CHOICE_OK_STATUS.has(n)?'choice':''}));
   return {cur, k:cur._k, mosse, items};
 }
 // Pokémon Champions: almeno 1 e al massimo 2 Megapietre, e nessuno strumento ripetuto (Item Clause).
@@ -624,11 +624,14 @@ function editInfo(team, i, format, choice, tier, edits){
 //     (1° +20, 2° +10), meno alternative (+5 se ha al massimo un altro set); a parità, l'ordine in squadra.
 //     Chi lo perde passa a un altro suo set con uno strumento libero (così mosse e strumento restano coerenti);
 //     se non ce n'è, riceve uno strumento adatto al suo ruolo (difensivo: Leftovers, Sitrus Berry…; offensivo: Life Orb…).
-//  3) Mai uno strumento "Scelta" con mosse di stato (tranne Trick/Switcheroo).
+//  3) Mai uno strumento "Scelta" con mosse di stato (tranne quelle di CHOICE_OK_STATUS: Trick, Switcheroo, Healing Wish, Memento, Parting Shot...).
 const ITEM_DIF=['Leftovers','Sitrus Berry','Lum Berry','Shell Bell','Mental Herb','White Herb'];
 const ITEM_OFF=['Life Orb','Expert Belt','Focus Sash','Choice Scarf','Scope Lens','Black Glasses','Shell Bell'];
 const RECOVERY=new Set(['Recover','Roost','Slack Off','Soft-Boiled','Moonlight','Morning Sun','Synthesis','Wish','Rest','Strength Sap','Shore Up','Life Dew','Protect','Detect','Spiky Shield','King\'s Shield','Baneful Bunker','Silk Trap','Burning Bulwark','Substitute','Leech Seed']);
-const hasStatus=s=>(s.mosse||[]).some(x=>STATUS_MOVES.has(x)&&x!=='Trick'&&x!=='Switcheroo');
+// Mosse di stato permesse con uno strumento Scelta (scelta dell'utente): Trick/Switcheroo passano lo strumento all'avversario;
+// le altre si usano una volta o fanno uscire il Pokémon dal campo, e uscendo il blocco della Scelta si azzera.
+const CHOICE_OK_STATUS=new Set(['Trick','Switcheroo','Healing Wish','Lunar Dance','Memento','Parting Shot','Teleport','Chilly Reception','Baton Pass']);
+const hasStatus=s=>(s.mosse||[]).some(x=>STATUS_MOVES.has(x)&&!CHOICE_OK_STATUS.has(x));
 function champSets(team, format, choice, ed){
   ed=ed||{};
   const all=team.map(m=>setsFor(m,format,'champions'));
@@ -1425,7 +1428,7 @@ function seriesWin(i,nm0,nm1){ const S=ui.series; if(!S||S.bo!==3) return null; 
   S.n++; return {msg:t('bo.score',nm0,score,nm1), next:isGuest()?null:t('bo.next',S.n), label}; }
 // Gioca su questo dispositivo contro il computer: il computer è sempre il giocatore 2 (g.cpu===1, lo imposta l'asta).
 // Livello dell'IA in lotta provvisorio (0 casuale … 4 Asso): si tara con le indicazioni della chat Torre Lotta.
-const CPU_FIGHT_AI=3;
+const CPU_FIGHT_AI=3; // la Torre lo converte nel livello 6 su 10; aiMem = memoria del computer condivisa da tutte le lotte della serie (ui.series.mem)
 async function startFight(){
   const g=ui.game, b=document.getElementById('fightBtn');
   if(ui.online&&isGuest()){ // l'amico chiede all'host di far partire la lotta (con i suoi set scelti)
@@ -1450,7 +1453,7 @@ async function startFight(){
       teams:{p1:tHost,p2:tGuest}, closeLabel:t('fight.back'), onClose:()=>render() },ser));
     onlineSend({t:'bstart', formatid:fid, formatName:fmt, names:{p1:nG,p2:nH}, myTeam:tGuest, oppSpecies:g.teams[0].map(m=>m.name), series:S.bo===3?{n:S.n,w:S.wins}:null});
     return; }
-  Lotta.open(Object.assign({onStats:info=>profBattle(info,{p1:g.teams[0].map(m=>m.name),p2:g.teams[1].map(m=>m.name)},fmt), lang:ui.lang, ...(g.cpu===1?{mode:'cpu', ai:CPU_FIGHT_AI}:{mode:'two'}), showOpp, formatid:fightFormat(g), formatName:fmt,
+  Lotta.open(Object.assign({onStats:info=>profBattle(info,{p1:g.teams[0].map(m=>m.name),p2:g.teams[1].map(m=>m.name)},fmt), lang:ui.lang, ...(g.cpu===1?{mode:'cpu', ai:CPU_FIGHT_AI, aiMem:S.mem||(S.mem={})}:{mode:'two'}), showOpp, formatid:fightFormat(g), formatName:fmt,
     names:{p1:nm0, p2:nm1},
     teams:{p1:fightTeam(g,0,ui.setChoice,ui.setEdit), p2:fightTeam(g,1,ui.setChoice,ui.setEdit)},
     closeLabel:t('fight.back'), onClose:()=>render() },ser));
