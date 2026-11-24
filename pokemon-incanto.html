@@ -613,7 +613,7 @@ function editInfo(team, i, format, choice, tier, edits){
       else if(cur.mega&&!megaOf(ss,n)&&otherMegas===0&&!altMega) why='mega1'; }
     if(!why&&isChoiceItem(n)&&status) why='choice';
     return {n,why}; });
-  const mosse=op.mosse.map(n=>({n,why:choiceIt&&STATUS_MOVES.has(n)&&n!=='Trick'&&n!=='Switcheroo'?'choice':''}));
+  const mosse=op.mosse.map(n=>({n,why:choiceIt&&STATUS_MOVES.has(n)&&!CHOICE_OK_STATUS.has(n)?'choice':''}));
   return {cur, k:cur._k, mosse, items};
 }
 // Pokémon Champions: almeno 1 e al massimo 2 Megapietre, e nessuno strumento ripetuto (Item Clause).
@@ -624,11 +624,14 @@ function editInfo(team, i, format, choice, tier, edits){
 //     (1° +20, 2° +10), meno alternative (+5 se ha al massimo un altro set); a parità, l'ordine in squadra.
 //     Chi lo perde passa a un altro suo set con uno strumento libero (così mosse e strumento restano coerenti);
 //     se non ce n'è, riceve uno strumento adatto al suo ruolo (difensivo: Leftovers, Sitrus Berry…; offensivo: Life Orb…).
-//  3) Mai uno strumento "Scelta" con mosse di stato (tranne Trick/Switcheroo).
+//  3) Mai uno strumento "Scelta" con mosse di stato (tranne quelle di CHOICE_OK_STATUS: Trick, Switcheroo, Healing Wish, Memento, Parting Shot...).
 const ITEM_DIF=['Leftovers','Sitrus Berry','Lum Berry','Shell Bell','Mental Herb','White Herb'];
 const ITEM_OFF=['Life Orb','Expert Belt','Focus Sash','Choice Scarf','Scope Lens','Black Glasses','Shell Bell'];
 const RECOVERY=new Set(['Recover','Roost','Slack Off','Soft-Boiled','Moonlight','Morning Sun','Synthesis','Wish','Rest','Strength Sap','Shore Up','Life Dew','Protect','Detect','Spiky Shield','King\'s Shield','Baneful Bunker','Silk Trap','Burning Bulwark','Substitute','Leech Seed']);
-const hasStatus=s=>(s.mosse||[]).some(x=>STATUS_MOVES.has(x)&&x!=='Trick'&&x!=='Switcheroo');
+// Mosse di stato permesse con uno strumento Scelta (scelta dell'utente): Trick/Switcheroo passano lo strumento all'avversario;
+// le altre si usano una volta o fanno uscire il Pokémon dal campo, e uscendo il blocco della Scelta si azzera.
+const CHOICE_OK_STATUS=new Set(['Trick','Switcheroo','Healing Wish','Lunar Dance','Memento','Parting Shot','Teleport','Chilly Reception','Baton Pass']);
+const hasStatus=s=>(s.mosse||[]).some(x=>STATUS_MOVES.has(x)&&!CHOICE_OK_STATUS.has(x));
 function champSets(team, format, choice, ed){
   ed=ed||{};
   const all=team.map(m=>setsFor(m,format,'champions'));
