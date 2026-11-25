@@ -1115,6 +1115,7 @@ function track(p){ if(!B) return; const S=B.stats||(B.stats={p1:{used:{},moves:{
   else if(k==='turn') B.lastActor=null; }
 // efficacia e brutto colpo in attesa del danno del loro bersaglio
 function effMsgs(pos){ const L=(B.effPend||{})[pos]; if(!L) return ''; delete B.effPend[pos]; return L.join(' '); }
+window.__lottaFeed=l=>handle(l);   // solo per le prove (controlla-messaggi.js): passa alla lotta un messaggio del simulatore alla volta
 async function flushEff(){ for(const pos of Object.keys(B.effPend||{})){ const t=effMsgs(pos); if(t){ say(t); await sleep(750); } } }
 async function handle(line){
   const p=line.split('|'); const k=p[1]; try{ track(p); }catch(e){}
@@ -2107,5 +2108,4 @@ function demo(o){ if(!B) return; if('weather' in o) B.weather=o.weather||null; i
 // Solo anteprima: prova un'animazione di mossa
 async function demoMove(name,from,dry){ await loadPS(); return psRun('move',name,from||'p1',(from||'p1')==='p1'?'p2':'p1',false,dry); }
 window.Lotta={net,isOpen:()=>!!(root&&B),_ai:()=>B&&B.aiLog,_audio:()=>({ctx:SND.ctx&&SND.ctx.state,music:!!SND.mus,track:SND.mus&&SND.mus.m.file,playing:!!(SND.mus&&!SND.mus.el.paused),sfx:SND.sfx,sil:!!SIL}),open,close,demo,demoMove,SCENES,SCENE_NAMES,_B:()=>B};
-window.Lotta._feed=l=>handle(l);   // solo per le prove: passa alla lotta un messaggio del simulatore alla volta
 })();

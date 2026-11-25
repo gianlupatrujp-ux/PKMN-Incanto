@@ -1,6 +1,6 @@
 // Controllo dei messaggi della lotta: gioca molte lotte casuali con il simulatore e i set del gioco
 // e raccoglie ogni tipo di messaggio, con un esempio. Uso: node controlla-messaggi.js . 600 > messaggi.json
-// Poi, in anteprima, ogni esempio si passa alla lotta con Lotta._feed(riga) per vedere cosa scrive.
+// Poi, in anteprima, ogni esempio si passa alla lotta con __lottaFeed(riga) per vedere cosa scrive.
 const fs=require('fs'),vm=require('vm'),path=require('path');
 const dir=process.argv[2], N=+process.argv[3]||100;
 vm.runInThisContext(fs.readFileSync(path.join(dir,'lib/pkmn-sim.js'),'utf8').replace(/^var PkmnSim/m,'globalThis.PkmnSim'));
