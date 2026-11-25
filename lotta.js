@@ -2106,5 +2106,6 @@ function demo(o){ if(!B) return; if('weather' in o) B.weather=o.weather||null; i
   draw(); }
 // Solo anteprima: prova un'animazione di mossa
 async function demoMove(name,from,dry){ await loadPS(); return psRun('move',name,from||'p1',(from||'p1')==='p1'?'p2':'p1',false,dry); }
-window.Lotta={net,isOpen:()=>!!(root&&B),_ai:()=>B&&B.aiLog,_audio:()=>({ctx:SND.ctx&&SND.ctx.state,music:!!SND.mus,track:SND.mus&&SND.mus.m.file,playing:!!(SND.mus&&!SND.mus.el.paused),sfx:SND.sfx,sil:!!SIL}),open,close,demo,demoMove,SCENES,SCENE_NAMES,_B:()=>B,_feed:l=>handle(l)};   // _feed: solo per le prove (un messaggio del simulatore alla volta)
+window.Lotta={net,isOpen:()=>!!(root&&B),_ai:()=>B&&B.aiLog,_audio:()=>({ctx:SND.ctx&&SND.ctx.state,music:!!SND.mus,track:SND.mus&&SND.mus.m.file,playing:!!(SND.mus&&!SND.mus.el.paused),sfx:SND.sfx,sil:!!SIL}),open,close,demo,demoMove,SCENES,SCENE_NAMES,_B:()=>B};
+window.Lotta._feed=l=>handle(l);   // solo per le prove: passa alla lotta un messaggio del simulatore alla volta
 })();
