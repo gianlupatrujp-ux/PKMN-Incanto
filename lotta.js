@@ -1168,8 +1168,8 @@ const AIL=[null,
  {rnd:0,  noise:4.5,sw:.9,  spd:1,know:1,look:0,pred:0,  mem:0,  prev:2,tera:2},
  {rnd:0,  noise:3,  sw:1,   spd:1,know:1,look:1,pred:0,  mem:0,  prev:2,tera:2},
  {rnd:0,  noise:2,  sw:1,   spd:1,know:1,look:1,pred:.5, mem:.5, prev:3,tera:2},
- {rnd:0,  noise:1,  sw:1,   spd:1,know:1,look:2,pred:.75,mem:.75,prev:3,tera:3},
- {rnd:0,  noise:.3, sw:1,   spd:1,know:1,look:2,pred:1,  mem:1,  prev:3,tera:3}];
+ {rnd:0,  noise:1,  sw:1,   spd:1,know:1,look:2,pred:.75,mem:.75,prev:3,tera:3,sim:1},
+ {rnd:0,  noise:.3, sw:1,   spd:1,know:1,look:2,pred:1,  mem:1,  prev:3,tera:3,sim:2}];
 const AI_SETUP={swordsdance:1,dragondance:1,nastyplot:1,calmmind:1,bulkup:1,quiverdance:1,shellsmash:1,coil:1,agility:1,rockpolish:1,autotomize:1,victorydance:1,tidyup:1,shiftgear:1,growth:1,honeclaws:1,workup:1,curse:1,bellydrum:1,filletaway:1,irondefense:.5,amnesia:.5,cosmicpower:.5,acidarmor:.5,cottonguard:.5};
 const AI_HEAL={recover:1,roost:1,softboiled:1,slackoff:1,moonlight:1,morningsun:1,synthesis:1,shoreup:1,milkdrink:1,healorder:1,strengthsap:1,rest:1};
 const AI_HAZ={stealthrock:'stealthrock',spikes:'spikes',toxicspikes:'toxicspikes',stickyweb:'stickyweb'};
@@ -1297,6 +1297,11 @@ function aiSingle(r,L,S){ const P=AIL[L], F=aiOther(S), M=aiMem();
     const acts=opts.map(o=>({o,s:o.s+aiLookMove(o,c)}));
     if(!trapped) for(const b of bench) acts.push({b,s:aiLookSwitch(b,c)});
     for(const x of acts) x.s+=aiNoise(L); acts.sort((x,y)=>y.s-x.s); pick=acts[0];
+    // dal livello 9: le azioni migliori si provano sulla copia della lotta contro le risposte probabili
+    if(P.sim&&aiSimInit()){ const replies=aiReplies(F,P.sim>=2?4:3); let bestS=null;
+      if(replies.length) for(const x of acts.slice(0,P.sim>=2?7:5)){ const ch=x.b?'switch '+(x.b.idx+1):'move '+(x.o.i+1)+(a.canMegaEvo?' mega':a.canTerastallize&&aiTeraOk(a.canTerastallize,x.o,c)?' terastallize':'');
+        const sc=aiSimEval(ch,replies,S,P.sim>=2?2:1); if(sc!=null&&(!bestS||sc+x.s*.05>bestS.s)) bestS={s:sc+x.s*.05,x}; }
+      if(bestS) pick=bestS.x; }
   } else {
     for(const o of opts) o.s+=aiNoise(L); opts.sort((x,y)=>y.s-x.s); pick={o:opts[0],s:opts[0].s};
     // cambio "a regola": se resto vado KO e in panchina c'è chi regge molto meglio
@@ -1479,7 +1484,7 @@ function aiDouble(r,L,S){ const P=AIL[L], F=aiOther(S), M=aiMem(), team=r.side.p
         else if(id==='partingshot') s=danger>=me.hpPct&&bench.length?30:10;
         else s=6;
         const needT=T_ONE.includes(t)&&t!=='adjacentAlly'&&t!=='adjacentAllyOrSelf';
-        if(needT){ const k=foes.findIndex(f=>f); add(String(k+1),s); }
+        if(needT){ const k=foes.findIndex(f=>f); add(k>=0?String(k+1):null,s); }
         else if(t==='adjacentAlly'){ if(ally) add(String(-((i===0)?2:1)),s); }
         else if(t==='adjacentAllyOrSelf') add(String(-(i+1)),s);
         else add(null,s); }
@@ -1494,18 +1499,24 @@ function aiDouble(r,L,S){ const P=AIL[L], F=aiOther(S), M=aiMem(), team=r.side.p
       if(c&&c.s>-danger*.6){ used.push(c.x.idx); plans[i]={sw:c.x.idx}; continue; } }
     plans[i]={j:best.j,tgt:best.tgt,d:best.d,s:best.s,dmg:best.tgt&&foes[+best.tgt-1]?aiDmg(best.d,me,foes[+best.tgt-1]):0,canMega:a.canMegaEvo,canTera:a.canTerastallize,me,danger};
   }
-  if(cand[0]||cand[1]){ const pick=aiJoint(cand,foes,mine,pProt,L,bench,foc);
-    for(let i=0;i<2;i++){ if(!cand[i]) continue; const o=pick[i], c=cand[i];
-      plans[i]=o.sw!=null?{sw:o.sw}:{j:o.j,tgt:o.tgt,d:o.d,s:o.s,canMega:c.a.canMegaEvo,canTera:c.a.canTerastallize,me:c.me,danger:c.danger}; } }
-  B.aiProt=B.aiProt||{};
-  return plans.map((p,i)=>{ if(p==='pass'||typeof p==='string') return p; if(p.sw!=null) return 'switch '+(p.sw+1);
+  const build=(pl,mark)=>{ let megaU=false, teraU=false; return pl.map((p,i)=>{ if(p==='pass'||typeof p==='string') return p; if(p.sw!=null) return 'switch '+(p.sw+1);
     let ch='move '+(p.j+1)+(p.tgt?' '+p.tgt:'');
-    aiProtMark(myPos[i],PROTECTS_ID.has(p.d.id));
-    if(p.canMega&&!megaUsed){ ch+=' mega'; megaUsed=true; }
-    else if(p.canTera&&!teraUsed&&P.tera){ const tt=p.canTera, off=p.d.category!=='Status'&&p.d.type===tt; const m2=Object.assign({},p.me,{types:[tt],tera:tt});
+    if(mark) aiProtMark(myPos[i],PROTECTS_ID.has(p.d.id));
+    if(p.canMega&&!megaU){ ch+=' mega'; megaU=true; }
+    else if(p.canTera&&!teraU&&P.tera){ const tt=p.canTera, off=p.d.category!=='Status'&&p.d.type===tt; const m2=Object.assign({},p.me,{types:[tt],tera:tt});
       const saves=P.tera>=2&&p.danger>=p.me.hpPct&&foes.reduce((t,f)=>t+(f?aiThreat(f,m2):0),0)<p.me.hpPct*.7;
-      if((off&&p.s>=(P.tera>=3?70:50))||saves){ ch+=' terastallize'; teraUsed=true; } }
-    return ch; }).join(', '); }
+      if((off&&p.s>=(P.tera>=3?70:50))||saves){ ch+=' terastallize'; teraU=true; } }
+    return ch; }).join(', '); };
+  if(cand[0]||cand[1]){ const ranked=aiJoint(cand,foes,mine,pProt,L,bench,foc);
+    const toPlans=sel=>plans.map((p,i)=>{ if(!cand[i]) return p; const o=sel[i], c=cand[i]; return o.sw!=null?{sw:o.sw}:{j:o.j,tgt:o.tgt,d:o.d,s:o.s,canMega:c.a.canMegaEvo,canTera:c.a.canTerastallize,me:c.me,danger:c.danger}; });
+    let chosen=ranked[0].sel;
+    // dal livello 9: le coppie migliori si provano sulla copia della lotta contro le risposte probabili
+    if(P.sim&&aiSimInit()){ const top=ranked.slice(0,P.sim>=2?12:8), replies=aiReplies(aiOther(S),P.sim>=2?4:3); let bestS=null;
+      if(replies.length) for(const x of top){ const sc=aiSimEval(build(toPlans(x.sel),false),replies,S,P.sim>=2?2:1); if(sc!=null&&(!bestS||sc+x.v*.05>bestS.s)) bestS={s:sc+x.v*.05,sel:x.sel}; }
+      if(bestS) chosen=bestS.sel; }
+    const pl=toPlans(chosen); for(let i=0;i<2;i++) if(cand[i]) plans[i]=pl[i]; }
+  B.aiProt=B.aiProt||{};
+  return build(plans,true); }
 // Doppio, livello 7+: valuta le coppie di scelte (le migliori 5 mosse per posto, più i cambi) come un giocatore forte:
 // KO insieme, niente attacchi sprecati su chi va già KO, chi va KO prima di attaccare non fa danni (minaccia tolta),
 // danni che si ricevono (ogni avversario colpisce chi gli conviene; Protect li annulla; chi entra col cambio li prende lui).
@@ -1514,7 +1525,7 @@ function aiJoint(cand,foes,mine,pProt,L,bench,foc){ const J=Object.assign({tk:.7
     if(bench.length&&!c.a.trapped&&!c.a.maybeTrapped) for(const x of bench) l.push({sw:x.idx,x,s:J.sw});
     return l; });
   const fBest=foes.map(f=>f?mine.map(m=>m?aiBest(f,m):{d:0,mv:null}):null);
-  let best=null;
+  const all=[];
   for(const o0 of lists[0]) for(const o1 of lists[1]){ const sel=[o0,o1];
     if(o0&&o1&&o0.sw!=null&&o0.sw===o1.sw) continue;
     let v=0; const dealt=[0,0], alone=[0,0], att=[[],[]];
@@ -1532,9 +1543,8 @@ function aiJoint(cand,foes,mine,pProt,L,bench,foc){ const J=Object.assign({tk:.7
     foes.forEach((f,k)=>{ if(!f||deadFirst[k]) return; let bi=-1, bd=0; who.forEach((m,i)=>{ if(!m) return; const d=aiThreat(f,m); if(d>bd){ bd=d; bi=i; } }); if(bi<0) return;
       const prot=sel[bi]&&sel[bi].d&&PROTECTS_ID.has(sel[bi].d.id); if(!prot) taken[bi]+=bd*(foc+(1-foc)*.6); });
     who.forEach((m,i)=>{ if(!m) return; const hp=m.hpPct-(sel[i]&&sel[i].sw!=null?aiHaz(m):0), t=Math.min(taken[i],hp); v-=t*J.tk; if(taken[i]>=hp) v-=J.die; });
-    v+=aiNoise(L);
-    if(!best||v>best.v) best={v,sel}; }
-  return best.sel; }
+    v+=aiNoise(L); all.push({v,sel}); }
+  return all.sort((a,b)=>b.v-a.v); }
 // probabilità che un avversario usi Protect: niente se non ce l'ha, poca se l'ha appena usato, di più se è in pericolo; corretta dalla memoria
 function aiPProtect(f,mine,P,M){ if(!f||!P.pred) return 0; const fm=f.moves||[]; if(fm.length&&!fm.some(m=>PROTECTS_ID.has(m.id))&&(!f.partial||fm.length>=4)) return 0;
   if(M.lastProt&&M.lastProt[f.nick]===B.turn-1) return .05*P.pred;
@@ -1545,6 +1555,33 @@ function aiStall(f){ if(!f) return false; const lm=actMon(f.pos||'p1')||{}; cons
 // Protect: mai due volte di fila, tranne quando l'avversario perde PS da solo (allora al massimo 2 di fila: il secondo riesce solo 1 volta su 3)
 function aiProtOk(pos,foe){ const P=B.aiProt||{}, R=B.aiProtRun||{}; if(P[pos]!==B.turn-1) return true; return !!(foe&&aiStall(foe))&&(R[pos]||0)<2; }
 function aiProtMark(pos,used){ B.aiProt=B.aiProt||{}; B.aiProtRun=B.aiProtRun||{}; if(used){ B.aiProtRun[pos]=B.aiProt[pos]===B.turn-1?(B.aiProtRun[pos]||1)+1:1; B.aiProt[pos]=B.turn; } else B.aiProtRun[pos]=0; }
+
+// ---------- livelli 9-10: provare le mosse su una copia della lotta (motore vero di Showdown) ----------
+// La copia ha dadi nuovi (il computer non conosce i tiri futuri) e i set veri (dal livello 6 li conosce già).
+// Il computer prova le sue scelte migliori contro le risposte più probabili dell'avversario e guarda come resta la lotta dopo un turno.
+let AI_SIMOK=null;
+function aiSimInit(){ if(AI_SIMOK!==null) return AI_SIMOK&&!!(B.bs&&B.bs.battle); try{ const b=B.bs&&B.bs.battle; if(!b) return false; const D=b.dex;
+    // la libreria è compressa: i nomi delle classi servono alla copia (toJSON/fromJSON) e vanno rimessi
+    const fix=(C,n)=>{ if(C&&C.name!==n) Object.defineProperty(C,'name',{value:n}); };
+    fix(b.constructor,'Battle'); fix(b.field.constructor,'Field'); fix(b.sides[0].constructor,'Side'); fix(b.sides[0].pokemon[0].constructor,'Pokemon');
+    fix(D.conditions.get('brn').constructor,'Condition'); fix(D.abilities.get('levitate').constructor,'Ability'); fix(D.items.get('leftovers').constructor,'Item'); fix(D.moves.get('tackle').constructor,'Move'); fix(D.species.get('pikachu').constructor,'Species');
+    const c=aiClone(); AI_SIMOK=!!(c&&c.sides[0].pokemon.every(p=>p.side)); }catch(e){ console.warn('IA copia',e); AI_SIMOK=false; } return AI_SIMOK; }
+// copia completa (JSON in testo): toJSON condivide alcuni oggetti con la lotta vera (set, registro) e la copia li modificherebbe
+let AI_SNAP=null;
+function aiClone(){ const b=B.bs.battle; if(!AI_SNAP||AI_SNAP.b!==b||AI_SNAP.n!==B.nreq) AI_SNAP={b,n:B.nreq,s:JSON.stringify(b.toJSON())}; const j=JSON.parse(AI_SNAP.s); j.prng=[0,0,0,0].map(()=>Math.random()*65536|0).join(','); const c=b.constructor.fromJSON(j); c.send=()=>{}; return c; }
+function aiSideVal(sd){ let v=0; for(const p of sd.pokemon){ if(!p.hp) continue; v+=40+100*p.hp/p.maxhp; if(p.status) v-=p.status==='slp'||p.status==='frz'?15:8;
+    if(p.isActive) for(const k of ['atk','spa','spe','def','spd']) v+=Math.max(-2,Math.min(3,p.boosts[k]||0))*(k==='def'||k==='spd'?2:4); }
+  for(const k of ['stealthrock','spikes','toxicspikes','stickyweb']) if(sd.sideConditions[k]) v-=8*sd.pokemon.filter(p=>p.hp&&!p.isActive).length/5;
+  if(sd.sideConditions.tailwind) v+=10; if(sd.sideConditions.reflect||sd.sideConditions.lightscreen||sd.sideConditions.auroraveil) v+=8; return v; }
+// valore di una scelta: media (65%) e caso peggiore (35%) sulle risposte probabili, ripetendo i dadi
+function aiSimEval(myCh,foeChs,S,reps){ const vals=[], me=S==='p1'?0:1;
+  for(const fc of foeChs) for(let k=0;k<reps;k++){ try{ const c=aiClone(); if(me===1) c.makeChoices(fc,myCh); else c.makeChoices(myCh,fc); vals.push(aiSideVal(c.sides[me])-aiSideVal(c.sides[1-me])); }catch(e){ return null; } }
+  if(!vals.length) return null; return vals.reduce((a,b)=>a+b,0)/vals.length*.65+Math.min(...vals)*.35; }
+// risposte probabili dell'avversario: l'IA di livello 6 dal suo punto di vista, più volte (con un po' di errore), senza ripetizioni
+function aiReplies(F,n){ const r=B.req[F]; if(!r||r.wait||r.teamPreview) return []; const keep={prot:B.aiProt,run:B.aiProtRun,log:B.aiLog,sw:B.aiSwT}; const out=new Set();
+  B.aiProt=Object.assign({},B.aiProt); B.aiProtRun=Object.assign({},B.aiProtRun);
+  try{ for(let i=0;i<n*2&&out.size<n;i++) out.add(isDbl()?aiDouble(r,6,F):aiSingle(r,6,F)); }catch(e){}
+  B.aiProt=keep.prot; B.aiProtRun=keep.run; B.aiLog=keep.log; B.aiSwT=keep.sw; return [...out]; }
 
 // ---------- memoria: come gioca l'avversario (per i BO3, dal livello 8) ----------
 // Si registrano solo le scelte del giocatore 1 contro il computer: con chi inizia, chi porta, se cambia quando è in pericolo e
@@ -2175,7 +2212,7 @@ function open(opts){
   say('La lotta sta per cominciare!'); loadPS(); drawTools(); loadJS('descrizioni-data.js').catch(()=>{}); loadJS('audio-data.js').then(()=>{ if(root) musicStart(); }).catch(()=>{}); B.tick=setInterval(timerTick,250);
   if(O.intro) say(esc(O.intro),'turn');
   if(O.role==='guest'){ say(`In attesa che ${PN('p2')} faccia partire la lotta…`); return; }   // l'amico non ha il motore: riceve tutto dall'host
-  const streams=BattleStreams.getPlayerStreams(new BattleStreams.BattleStream()); B.streams=streams;
+  const bstream=new BattleStreams.BattleStream(); B.bs=bstream; const streams=BattleStreams.getPlayerStreams(bstream); B.streams=streams;
   readSide(g,'p1',streams.p1); readSide(g,'p2',streams.p2); readLog(g,streams.omniscient);
   const pl=s=>JSON.stringify({name:String(O.names[s]).slice(0,18),team:Teams.pack(B.sets[s])});
   streams.omniscient.write(`>start ${JSON.stringify({formatid:O.formatid})}\n>player p1 ${pl('p1')}\n>player p2 ${pl('p2')}`);
