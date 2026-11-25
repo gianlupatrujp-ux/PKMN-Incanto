@@ -232,8 +232,8 @@ const CSS=`#lotta{position:fixed;inset:0;z-index:60;overflow:auto;background:#F6
 #lotta .hud.p2{left:auto;right:6%;top:5%}#lotta .hud.p1{right:auto;left:5%;bottom:auto;top:30%}
 #lotta .lt-series{font:800 12px 'Inter',sans-serif;background:#FFD23F;color:#1F2A44;border:2px solid #1F2A44;border-radius:99px;padding:2px 10px;white-space:nowrap}
 #lotta .sb{flex:1;min-width:0;cursor:help;opacity:1;animation:none;transform:none}
-#lotta .sbn{display:flex;align-items:baseline;gap:4px;color:#fff;font:800 clamp(11px,1.9vw,15px) 'Inter',sans-serif;text-shadow:0 0 2px #000,0 1px 2px #000,1px 0 2px #000,-1px 0 2px #000;white-space:nowrap;overflow:hidden}
-#lotta .sbn b{overflow:hidden;text-overflow:ellipsis}#lotta .sbn small{font-size:.75em;opacity:.95}#lotta .sbn .shy{font-style:normal;font-size:.8em}
+#lotta .sbn{display:flex;align-items:baseline;gap:4px;color:#fff;font:800 clamp(11px,1.9vw,15px) 'Inter',sans-serif;text-shadow:0 0 2px #000,0 1px 2px #000,1px 0 2px #000,-1px 0 2px #000;white-space:nowrap;overflow:hidden;padding:1px 3px;margin:-1px -3px}
+#lotta .sbn b{overflow:hidden;text-overflow:ellipsis;padding:1px 3px;margin:-1px -3px}   /* spazio per il contorno: la prima lettera non viene tagliata */#lotta .sbn small{font-size:.75em;opacity:.95}#lotta .sbn .shy{font-style:normal;font-size:.8em}
 #lotta .sbbar{display:flex;align-items:center;gap:3px;margin-top:1px}
 #lotta .sbbar .tr{flex:1;height:clamp(6px,1.2vw,9px);background:#3A4253;border:2px solid #1B2233;border-radius:3px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.4)}
 #lotta .sbbar .fill{height:100%;background:linear-gradient(#7CF08A,#2FBF4C);border-radius:0}
@@ -732,7 +732,7 @@ function drawPos(sid){ const side=sideOfPos(sid);
   if(!m||m.st==='fnt'||(m.hp===0&&m.fadedAt0)){ hud.hidden=true; if(!m&&sid!==side){ el.innerHTML=''; el.dataset.sp=''; } if(m){ el.classList.add('faint'); setTimeout(stackDbl,0); } return; }
   hud.hidden=false;
   const seeItem=setVisible(side)||m.itemSeen;
-  hud.innerHTML=`<div class="sb" data-tip="act:${sid}"><div class="sbn"><b>${esc(m.species)}</b>${m.shiny?'<i class="shy">✨</i>':''}<small>L100</small></div>
+  hud.innerHTML=`<div class="sb" data-tip="act:${sid}"><div class="sbn"><b>${esc(m.species)}</b>${m.shiny?'<i class="shy">✨</i>':''}<small>L${m.level||100}</small></div>
     <div class="sbbar"><div class="tr"><div class="fill" id="lt-fill${sid}"></div></div><span class="pct" id="lt-pct${sid}"></span></div>
     <div class="sbst">${m.st&&m.st!=='fnt'?`<span class="st ${m.st}">${m.st.toUpperCase()}</span>`:''}${m.tera?`<span class="st" style="background:${TYPE_COLORS[m.tera]||'#666'}">TERA ${(TIPI[m.tera]||m.tera).toUpperCase()}</span>`:''}${boostChips(m)}${volChips(m)}<span class="hpn" id="lt-num${sid}"></span></div></div>`;
   hpView(sid);
@@ -1132,7 +1132,7 @@ async function handle(line){
         if(prev){ prev.boosts={}; prev.vol={}; prev.sub=false; prev.tchange=null; }
         if(B.lastMv) delete B.lastMv[id.pos]; }
       if(s[sk]&&s[sk]!==id.nick&&s.team[s[sk]]&&s.team[s[sk]].st!=='fnt'){ el.classList.add('out'); await sleep(350); }
-      s[sk]=id.nick; cry(species); el.classList.remove('faint'); el.dataset.sp=''; draw(); el.classList.add('out'); void el.offsetWidth; el.classList.remove('out');
+      s[sk]=id.nick; cry(species); el.classList.remove('faint'); el.dataset.sp=''; draw(); stackDbl(); el.classList.add('out'); void el.offsetWidth; el.classList.remove('out');
       say(`${PN(id.side)} manda in campo <b>${esc(species)}</b>!`); return 900; }
     case 'detailschange': case '-formechange': { const id=parseId(p[2]); const m=mon(id.side,id.nick); m.species=p[3].split(',')[0]; if(m.st==='fnt'||p.includes('[silent]')){ if(m.st!=='fnt'){ $('mon'+id.pos).dataset.sp=''; draw(); } return 0; } $('mon'+id.pos).dataset.sp=''; draw(); if(/-Mega/.test(p[3])&&k==='detailschange') return 300;
       { const sp=p[3].split(',')[0], fr=fromOf(p)||'', L=label(p[2]), en=isEN(), Le=en?enL(L):L; let t='';
