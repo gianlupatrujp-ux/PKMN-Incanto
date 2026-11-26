@@ -232,8 +232,8 @@ const CSS=`#lotta{position:fixed;inset:0;z-index:60;overflow:auto;background:#F6
 #lotta .hud.p2{left:auto;right:6%;top:5%}#lotta .hud.p1{right:auto;left:5%;bottom:auto;top:30%}
 #lotta .lt-series{font:800 12px 'Inter',sans-serif;background:#FFD23F;color:#1F2A44;border:2px solid #1F2A44;border-radius:99px;padding:2px 10px;white-space:nowrap}
 #lotta .sb{flex:1;min-width:0;cursor:help;opacity:1;animation:none;transform:none}
-#lotta .sbn{display:flex;align-items:baseline;gap:4px;color:#fff;font:800 clamp(11px,1.9vw,15px) 'Inter',sans-serif;text-shadow:0 0 2px #000,0 1px 2px #000,1px 0 2px #000,-1px 0 2px #000;white-space:nowrap;overflow:hidden}
-#lotta .sbn b{overflow:hidden;text-overflow:ellipsis}#lotta .sbn small{font-size:.75em;opacity:.95}#lotta .sbn .shy{font-style:normal;font-size:.8em}
+#lotta .sbn{display:flex;align-items:baseline;gap:4px;color:#fff;font:800 clamp(11px,1.9vw,15px) 'Inter',sans-serif;text-shadow:0 0 2px #000,0 1px 2px #000,1px 0 2px #000,-1px 0 2px #000;white-space:nowrap;overflow:hidden;padding:1px 3px;margin:-1px -3px}
+#lotta .sbn b{overflow:hidden;text-overflow:ellipsis;padding:1px 3px;margin:-1px -3px}   /* spazio per il contorno: la prima lettera non viene tagliata */#lotta .sbn small{font-size:.75em;opacity:.95}#lotta .sbn .shy{font-style:normal;font-size:.8em}
 #lotta .sbbar{display:flex;align-items:center;gap:3px;margin-top:1px}
 #lotta .sbbar .tr{flex:1;height:clamp(6px,1.2vw,9px);background:#3A4253;border:2px solid #1B2233;border-radius:3px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.4)}
 #lotta .sbbar .fill{height:100%;background:linear-gradient(#7CF08A,#2FBF4C);border-radius:0}
@@ -533,12 +533,14 @@ const TYPE_COLORS={Normal:'#A8A77A',Fire:'#EE8130',Water:'#6390F0',Electric:'#D9
 const TIPI={Normal:'Normale',Fire:'Fuoco',Water:'Acqua',Electric:'Elettro',Grass:'Erba',Ice:'Ghiaccio',Fighting:'Lotta',Poison:'Veleno',Ground:'Terra',
   Flying:'Volante',Psychic:'Psico',Bug:'Coleottero',Rock:'Roccia',Ghost:'Spettro',Dragon:'Drago',Dark:'Buio',Steel:'Acciaio',Fairy:'Folletto',Stellar:'Astrale'};
 const STAT={hp:'PS',atk:'Attacco',def:'Difesa',spa:'Att. Sp.',spd:'Dif. Sp.',spe:'Velocità',accuracy:'Precisione',evasion:'Elusione'};
+const STATUS_ALREADY={par:'è già paralizzato!',brn:'è già scottato!',psn:'è già avvelenato!',tox:'è già avvelenato!',slp:'sta già dormendo!',frz:'è già congelato!'};
+const HINT_IT={'Since gen 7, Dark is immune to Prankster moves.':'Dalla 7ª generazione i Pokémon di tipo Buio sono immuni alle mosse potenziate da Prankster.','Fake Out only works on your first turn out.':'Fake Out funziona solo nel primo turno in campo.','First Impression only works on your first turn out.':'First Impression funziona solo nel primo turno in campo.','Mat Block only works on your first turn out.':'Mat Block funziona solo nel primo turno in campo.','Psychic Terrain doesn\'t affect airborne Pok\xE9mon.':'Il Campo Psichico non protegge i Pokémon che non toccano terra.','Psychic Terrain doesn\'t affect airborne Pokémon.':'Il Campo Psichico non protegge i Pokémon che non toccano terra.','Sleep Clause Mod prevents players from putting more than one of their opponent\'s Pokemon to sleep at a time':'Regola del sonno: non si può addormentare più di un Pokémon avversario alla volta.','Skill Swap does not announce the abilities of the Pok\xE9mon when used between allies.':'Skill Swap tra compagni non mostra le abilità scambiate.','Skill Swap does not announce the abilities of the Pokémon when used between allies.':'Skill Swap tra compagni non mostra le abilità scambiate.'};
 const STATUS={brn:'è scottato',par:'è paralizzato e potrebbe non muoversi',slp:'si è addormentato',psn:'è avvelenato',tox:'è gravemente avvelenato',frz:'è congelato'};
 const WEATHER={RainDance:'Pioggia',SunnyDay:'Sole intenso',Sandstorm:'Tempesta di sabbia',Snowscape:'Neve',Hail:'Grandine',DesolateLand:'Sole estremo',PrimordialSea:'Diluvio',DeltaStream:'Correnti misteriose'};
 const WSTART={RainDance:'Inizia a piovere!',SunnyDay:'La luce del sole è intensa!',Sandstorm:'Si alza una tempesta di sabbia!',Snowscape:'Inizia a nevicare!',Hail:'Inizia a grandinare!',DesolateLand:'Il sole è diventato rovente!',PrimordialSea:'Inizia un diluvio!',DeltaStream:'Soffiano correnti misteriose!'};
 const CAT={Physical:'Fisica',Special:'Speciale',Status:'Stato'};
 const EVN={hp:'PS',atk:'Att',def:'Dif',spa:'AtSp',spd:'DfSp',spe:'Vel'};
-const CAUSE={psn:'il veleno',tox:'il veleno',brn:'la scottatura','Stealth Rock':'le rocce aguzze',Spikes:'le punte',Sandstorm:'la tempesta di sabbia',Hail:'la grandine',Recoil:'il contraccolpo',confusion:'la confusione'};
+const CAUSE={highjumpkick:'lo schianto a terra',jumpkick:'lo schianto a terra','High Jump Kick':'lo schianto a terra','Jump Kick':'lo schianto a terra',psn:'il veleno',tox:'il veleno',brn:'la scottatura','Stealth Rock':'le rocce aguzze',Spikes:'le punte',Sandstorm:'la tempesta di sabbia',Hail:'la grandine',Recoil:'il contraccolpo',confusion:'la confusione'};
 const SIDECOND={stealthrock:['Stealth Rock','Rocce aguzze fluttuano intorno alla squadra di'],spikes:['Spikes','Punte sparse sotto la squadra di'],toxicspikes:['Toxic Spikes','Punte velenose sparse sotto la squadra di'],
   stickyweb:['Sticky Web','Una rete vischiosa è tesa sotto la squadra di'],reflect:['Reflect','Reflect protegge la squadra di'],lightscreen:['Light Screen','Light Screen protegge la squadra di'],
   auroraveil:['Aurora Veil','Aurora Veil protegge la squadra di'],tailwind:['Tailwind','Tailwind soffia alle spalle di'],safeguard:['Safeguard','Safeguard protegge la squadra di'],mist:['Mist','La nebbia avvolge la squadra di']};
@@ -608,7 +610,117 @@ function volLabel(n,extra){ const id=toID(n); if(/^perish(\d)$/.test(id)) return
   if((id==='protosynthesis'||id==='quarkdrive')&&extra){ const s=String(extra).replace(/^(protosynthesis|quarkdrive)/i,'').toLowerCase(); return VOL[id]+(STATN[s]?': '+STATN[s]:''); } return VOL[id]||n; }
 function volChips(m){ const out=[]; if(m.tchange&&m.tchange.length) out.push(`<span class="st vol">${m.tchange.map(x=>(TIPI[x]||x)).join('/')}</span>`);
   for(const v of Object.values(m.vol||{})) if(v!=='Substitute') out.push(`<span class="st vol">${esc(v)}</span>`); return out.join(''); }
-const VOLMSG={confusion:a=>`${a} è confuso!`,leechseed:a=>`${a} è stato colpito da Leech Seed!`,taunt:a=>`${a} cade nella provocazione!`,encore:a=>`${a} è costretto da Encore!`,yawn:a=>`${a} diventa sonnolento!`,focusenergy:a=>`${a} si concentra al massimo!`,attract:a=>`${a} si è infatuato!`,curse:a=>`${a} è maledetto!`,disable:(a,x)=>`La mossa ${esc(x||'')} di ${a} è bloccata!`,
+// testi di Showdown per abilità, effetti e campi (L = nome del Pokémon già pronto)
+const ofL=p=>{ const o=p.find(x=>x&&x.startsWith('[of] ')); return o?label(o.slice(5)):''; };
+const ABIL_START={pressure:L=>`${L} esercita la sua pressione!`,moldbreaker:L=>`${L} rompe gli schemi!`,turboblaze:L=>`${L} emana un'aura ardente!`,teravolt:L=>`${L} emana un'aura elettrica!`,
+  comatose:L=>`${L} è in dormiveglia!`,fairyaura:L=>`${L} emana un'aura fatata!`,darkaura:L=>`${L} emana un'aura oscura!`,aurabreak:L=>`${L} inverte le aure di tutti gli altri Pokémon!`,
+  airlock:()=>'Gli effetti del meteo spariscono.',cloudnine:()=>'Gli effetti del meteo spariscono.',anticipation:L=>`${L} rabbrividisce!`,
+  tabletsofruin:L=>`Tablets of Ruin di ${L} indebolisce l'Attacco di tutti gli altri Pokémon!`,swordofruin:L=>`Sword of Ruin di ${L} indebolisce la Difesa di tutti gli altri Pokémon!`,
+  vesselofruin:L=>`Vessel of Ruin di ${L} indebolisce l'Att. Sp. di tutti gli altri Pokémon!`,beadsofruin:L=>`Beads of Ruin di ${L} indebolisce la Dif. Sp. di tutti gli altri Pokémon!`,
+  neutralizinggas:()=>'Un gas neutralizzante riempie il campo!',screencleaner:()=>'Gli schermi di tutti spariscono!',unnerve:(L,p)=>{ const id=parseId(p[2]); return id?`La squadra di ${PN(other(id.side))} è troppo nervosa per mangiare le bacche!`:''; },
+  zerotohero:L=>`${L} si trasforma in un eroe!`,curiousmedicine:L=>`Le modifiche alle statistiche dei compagni di ${L} spariscono!`,
+  supersweetsyrup:L=>`Il dolce profumo di ${L} diminuisce l'elusione degli avversari!`};
+const ACT_MSG={aromatherapy:()=>'Un aroma rilassante si diffonde nel campo!',healbell:()=>'Suona una campana rilassante!',confusion:L=>`${L} è confuso!`,
+  mummy:(L,p)=>{ const t=parseId(p[4]); return t?`L'abilità di ${label(p[4])} diventa Mummy!`:''; },lingeringaroma:(L,p)=>{ const t=parseId(p[4]); return t?`L'abilità di ${label(p[4])} diventa Lingering Aroma!`:''; },
+  wanderingspirit:(L,p)=>`${L} scambia l'abilità con ${p[4]&&parseId(p[4])?label(p[4]):'il bersaglio'}!`,
+  poltergeist:(L,p)=>`${L} sta per essere colpito dal suo ${esc(p[4]||'strumento')}!`,skillswap:L=>`${L} scambia l'abilità con il bersaglio!`,stickyweb:L=>`${L} è caduto nella rete vischiosa!`,
+  trapped:L=>`${L} non può più fuggire!`,iceface:L=>`Ice Face di ${L} si rompe!`,sturdy:L=>`${L} resiste grazie a Sturdy!`,endure:L=>`${L} resiste al colpo!`,
+  destinybond:L=>`${L} trascina con sé l'avversario!`,grudge:(L,p)=>`I PP di ${esc(p[4]||'una mossa')} si esauriscono per la vendetta!`,
+  attract:(L,p)=>`${L} è innamorato di ${ofL(p)||'qualcuno'}!`,spite:(L,p)=>`I PP di ${esc(p[4]||'')} di ${L} diminuiscono di ${esc(p[5]||'')}!`,
+  trick:(L,p)=>`${L} scambia lo strumento con ${ofL(p)||'il bersaglio'}!`,switcheroo:(L,p)=>`${L} scambia lo strumento con ${ofL(p)||'il bersaglio'}!`,
+  quarkdrive:L=>`Electric Terrain attiva Quark Drive di ${L}!`,protosynthesis:L=>`Il sole intenso attiva Protosynthesis di ${L}!`,
+  forewarn:(L,p)=>`${L} prevede la mossa ${esc(p[4]||'')}!`,synchronize:L=>`Synchronize di ${L} passa il problema di stato!`,leafguard:L=>`${L} è protetto da Leaf Guard!`,
+  magiccoat:L=>`${L} respinge la mossa!`,magicbounce:L=>`${L} respinge la mossa!`,mirrorarmor:L=>`Mirror Armor di ${L} respinge il calo!`,
+  courtchange:L=>`${L} scambia gli effetti dei due lati del campo!`,bide:L=>`${L} accumula energia!`,charge:L=>`${L} si carica di elettricità!`,
+  magnitude:(L,p)=>`Magnitudo ${esc(p[4]||'')}!`,healingwish:L=>`Il desiderio di cura si avvera per ${L}!`,lunardance:L=>`${L} è avvolto da una luce mistica!`,
+  costar:(L,p)=>`${L} copia le modifiche alle statistiche di ${ofL(p)||'il compagno'}!`,commander:L=>`${L} entra in bocca al compagno!`,
+  tidyup:L=>`${L} fa pulizia!`,disguise:L=>`Il travestimento di ${L} fa da esca!`,electricterrain:L=>`${L} è protetto dal campo elettrico!`,psychicterrain:L=>`${L} è protetto dal campo psichico!`,mistyterrain:L=>`${L} è protetto dal campo nebbioso!`,
+  ficklebeam:L=>`${L} attacca con tutte le sue forze!`,lightningrod:L=>`${L} attira la mossa su di sé!`,stormdrain:L=>`${L} attira la mossa su di sé!`,struggle:L=>`${L} non ha più mosse da usare!`,
+  orichalcumpulse:L=>`${L} si crogiola al sole e il suo battito antico si scatena!`,powerconstruct:()=>'Si percepisce la presenza di molte cellule!',supremeoverlord:L=>`${L} trae forza dai compagni caduti!`,
+  terashell:L=>`${L} fa brillare il guscio! Le efficacie dei tipi sono alterate!`,terashift:L=>`${L} cambia forma!`,zerotohero:L=>`${L} si trasforma in un eroe!`,shedtail:L=>`${L} lascia la coda come sostituto!`,eerieSpell:()=>'',protectivepads:L=>`${L} è protetto da Protective Pads!`,
+  safetygoggles:L=>`${L} è protetto da Safety Goggles!`,abilityshield:L=>`L'abilità di ${L} è protetta da Ability Shield!`,clearamulet:L=>`Clear Amulet impedisce il calo delle statistiche di ${L}!`};
+const END_MSG={confusion:L=>`${L} non è più confuso!`,encore:L=>`L'Encore di ${L} è finito!`,taunt:L=>`${L} non è più provocato!`,healblock:L=>`${L} può di nuovo curarsi!`,
+  illusion:L=>`L'illusione di ${L} svanisce!`,disable:L=>`${L} può di nuovo usare la mossa bloccata!`,leechseed:L=>`${L} si libera da Leech Seed!`,slowstart:L=>`${L} finalmente ingrana!`,
+  torment:L=>`${L} non è più tormentato!`,embargo:L=>`${L} può di nuovo usare gli strumenti!`,magnetrise:L=>`Il campo magnetico di ${L} svanisce!`,attract:L=>`${L} non è più infatuato!`,
+  stockpile:L=>`L'effetto di Stockpile di ${L} svanisce!`,throatchop:L=>`${L} può di nuovo usare mosse sonore!`,saltcure:L=>`${L} non è più colpito da Salt Cure!`,
+  syrupbomb:L=>`${L} si libera dallo sciroppo!`,futuresight:L=>`${L} subisce l'attacco di Future Sight!`,doomdesire:L=>`${L} subisce l'attacco di Doom Desire!`,protosynthesis:L=>`L'effetto di Protosynthesis di ${L} svanisce!`,quarkdrive:L=>`L'effetto di Quark Drive di ${L} svanisce!`,tarshot:()=>'',uproar:L=>`${L} si calma.`,bide:L=>`${L} libera l'energia!`,telekinesis:L=>`${L} non fluttua più!`,
+  smackdown:()=>'',powertrick:()=>'',nightmare:L=>`${L} non ha più incubi!`,charge:()=>''};
+const SINGLE_MSG={followme:L=>`${L} attira l'attenzione su di sé!`,ragepowder:L=>`${L} attira l'attenzione su di sé!`,spotlight:L=>`${L} è al centro dell'attenzione!`,
+  helpinghand:(L,p)=>`${ofL(p)||'Il compagno'} si prepara ad aiutare ${L}!`,endure:L=>`${L} si prepara a resistere!`,focuspunch:L=>`${L} si concentra al massimo!`,
+  magiccoat:L=>`${L} si avvolge in Magic Coat!`,snatch:L=>`${L} aspetta di rubare la mossa dell'avversario!`,beakblast:L=>`${L} inizia a scaldare il becco!`,shelltrap:L=>`${L} prepara una trappola a guscio!`,
+  powder:L=>`${L} è coperto di polvere!`,electrify:L=>`Le mosse di ${L} diventano di tipo Elettro!`,roost:()=>'',
+  quash:L=>`${L} è costretto ad agire per ultimo!`,instruct:(L,p)=>`${L} ripete la mossa su richiesta di ${ofL(p)||'un compagno'}!`,afteryou:L=>`${L} accetta la gentile offerta!`,celebrate:()=>'Congratulazioni!'};
+const FIELD_START={electricterrain:'Una corrente elettrica attraversa il campo!',grassyterrain:"L'erba ricopre il campo!",mistyterrain:'La nebbia avvolge il campo!',psychicterrain:'Il campo diventa strano!',
+  trickroom:'Le dimensioni si distorcono!',gravity:'La gravità si intensifica!',magicroom:'Si crea uno spazio dove gli strumenti non hanno effetto!',wonderroom:'Si crea uno spazio dove Difesa e Dif. Sp. si scambiano!',
+  mudsport:'La potenza delle mosse Elettro si indebolisce!',watersport:'La potenza delle mosse Fuoco si indebolisce!',fairylock:'Nessuno potrà fuggire nel prossimo turno!',iondeluge:'Una pioggia di particelle elettriche si diffonde!'};
+const FIELD_END={electricterrain:"L'elettricità sparisce dal campo.",grassyterrain:"L'erba sparisce dal campo.",mistyterrain:'La nebbia sparisce dal campo.',psychicterrain:'Il campo torna normale.',
+  trickroom:'Le dimensioni tornano normali!',gravity:'La gravità torna normale!',magicroom:'Lo spazio magico svanisce: gli strumenti tornano a funzionare!',wonderroom:'Lo spazio strano svanisce: Difesa e Dif. Sp. tornano normali!',
+  mudsport:'L\'effetto di Mud Sport svanisce.',watersport:'L\'effetto di Water Sport svanisce.'};
+const W_UPKEEP={RainDance:'Continua a piovere.',PrimordialSea:'Il diluvio continua.',SunnyDay:'La luce del sole è intensa.',DesolateLand:'Il sole è rovente.',Sandstorm:'La tempesta di sabbia infuria.',Snow:'Continua a nevicare.',Snowscape:'Continua a nevicare.',Hail:'Continua a grandinare.',DeltaStream:'Le correnti misteriose continuano a soffiare.'};
+const W_END={RainDance:'Smette di piovere.',PrimordialSea:'Il diluvio cessa.',SunnyDay:'La luce del sole si affievolisce.',DesolateLand:'Il sole rovente si affievolisce.',Sandstorm:'La tempesta di sabbia si placa.',Snow:'Smette di nevicare.',Snowscape:'Smette di nevicare.',Hail:'Smette di grandinare.',DeltaStream:'Le correnti misteriose si placano.'};
+const enL=x=>typeof lab==='function'?lab(x):x, ofE=p=>enL(ofL(p));
+const EN_TX={
+ ABIL:{pressure:L=>`${L} is exerting its pressure!`,moldbreaker:L=>`${L} breaks the mold!`,turboblaze:L=>`${L} is radiating a blazing aura!`,teravolt:L=>`${L} is radiating a bursting aura!`,comatose:L=>`${L} is drowsing!`,
+  fairyaura:L=>`${L} is radiating a fairy aura!`,darkaura:L=>`${L} is radiating a dark aura!`,aurabreak:L=>`${L} reversed all other Pokémon's auras!`,airlock:()=>'The effects of the weather disappeared.',cloudnine:()=>'The effects of the weather disappeared.',
+  anticipation:L=>`${L} shuddered!`,tabletsofruin:L=>`${L}'s Tablets of Ruin weakened the Attack of all surrounding Pokémon!`,swordofruin:L=>`${L}'s Sword of Ruin weakened the Defense of all surrounding Pokémon!`,
+  vesselofruin:L=>`${L}'s Vessel of Ruin weakened the Sp. Atk of all surrounding Pokémon!`,beadsofruin:L=>`${L}'s Beads of Ruin weakened the Sp. Def of all surrounding Pokémon!`,neutralizinggas:()=>'Neutralizing gas filled the area!',
+  screencleaner:()=>"All screens on the field were cleansed!",unnerve:(L,p)=>{ const id=parseId(p[2]); return id?`${PN(other(id.side))}'s team is too nervous to eat Berries!`:''; },zerotohero:L=>`${L} underwent a heroic transformation!`,
+  curiousmedicine:L=>`${L}'s allies' stat changes were removed!`,supersweetsyrup:L=>`A supersweet aroma is wafting from the syrup covering ${L}!`},
+ ACT:{aromatherapy:()=>'A soothing aroma wafted through the area!',healbell:()=>'A bell chimed!',confusion:L=>`${L} is confused!`,mummy:(L,p)=>`${enL(label(p[4]))}'s Ability became Mummy!`,lingeringaroma:(L,p)=>`${enL(label(p[4]))}'s Ability became Lingering Aroma!`,
+  wanderingspirit:L=>`${L} swapped Abilities with its target!`,poltergeist:(L,p)=>`${L} is about to be attacked by its ${esc(p[4]||'item')}!`,skillswap:L=>`${L} swapped Abilities with its target!`,stickyweb:L=>`${L} was caught in a sticky web!`,
+  trapped:L=>`${L} can no longer escape!`,iceface:L=>`${L}'s Ice Face was broken!`,sturdy:L=>`${L} endured the hit!`,endure:L=>`${L} endured the hit!`,destinybond:L=>`${L} took its attacker down with it!`,
+  grudge:(L,p)=>`${esc(p[4]||'The move')} lost all of its PP due to the grudge!`,attract:(L,p)=>`${L} is in love with ${ofE(p)||'someone'}!`,spite:(L,p)=>`It reduced the PP of ${L}'s ${esc(p[4]||'')} by ${esc(p[5]||'')}!`,
+  trick:(L,p)=>`${L} switched items with its target!`,switcheroo:(L,p)=>`${L} switched items with its target!`,quarkdrive:L=>`The Electric Terrain activated ${L}'s Quark Drive!`,protosynthesis:L=>`The harsh sunlight activated ${L}'s Protosynthesis!`,
+  forewarn:(L,p)=>`It was alerted to ${L}'s ${esc(p[4]||'')}!`,synchronize:L=>`${L}'s Synchronize passed on its status!`,leafguard:L=>`${L} is protected by Leaf Guard!`,magiccoat:L=>`${L} bounced the move back!`,magicbounce:L=>`${L} bounced the move back!`,
+  mirrorarmor:L=>`${L}'s Mirror Armor reflected the stat drop!`,courtchange:L=>`${L} swapped the battle effects affecting each side of the field!`,bide:L=>`${L} is storing energy!`,charge:L=>`${L} began charging power!`,
+  magnitude:(L,p)=>`Magnitude ${esc(p[4]||'')}!`,healingwish:L=>`The healing wish came true for ${L}!`,lunardance:L=>`${L} became cloaked in mystical moonlight!`,costar:(L,p)=>`${L} copied ${ofE(p)||'its ally'}'s stat changes!`,
+  commander:L=>`${L} was swallowed by its ally!`,tidyup:L=>`${L} tidied up!`,disguise:L=>`Its disguise served ${L} as a decoy!`,electricterrain:L=>`${L} is protected by the Electric Terrain!`,psychicterrain:L=>`${L} is protected by the Psychic Terrain!`,mistyterrain:L=>`${L} is protected by the Misty Terrain!`,
+  ficklebeam:L=>`${L} is going all out for this attack!`,lightningrod:L=>`${L} took the attack!`,stormdrain:L=>`${L} took the attack!`,struggle:L=>`${L} has no moves left!`,
+  orichalcumpulse:L=>`${L} basked in the sunlight, sending its ancient pulse into a frenzy!`,powerconstruct:()=>'You sense the presence of many!',supremeoverlord:L=>`${L} gained strength from the fallen!`,
+  terashell:L=>`${L} made its shell gleam! It's distorting type matchups!`,terashift:L=>`${L} transformed!`,zerotohero:L=>`${L} underwent a heroic transformation!`,shedtail:L=>`${L} shed its tail to create a decoy!`,protectivepads:L=>`${L} is protected by its Protective Pads!`,safetygoggles:L=>`${L} is not affected thanks to its Safety Goggles!`,
+  abilityshield:L=>`${L}'s Ability is protected by the Ability Shield!`,clearamulet:L=>`The effects of ${L}'s Clear Amulet prevent its stats from being lowered!`},
+ END:{confusion:L=>`${L} snapped out of its confusion!`,encore:L=>`${L}'s encore ended!`,taunt:L=>`${L} shook off the taunt!`,healblock:L=>`${L}'s Heal Block wore off!`,illusion:L=>`${L}'s illusion wore off!`,
+  disable:L=>`${L}'s move is no longer disabled!`,leechseed:L=>`${L} was freed from Leech Seed!`,slowstart:L=>`${L} finally got its act together!`,torment:L=>`${L} is no longer tormented!`,embargo:L=>`${L} can use items again!`,
+  magnetrise:L=>`${L}'s electromagnetism wore off!`,attract:L=>`${L} got over its infatuation!`,stockpile:L=>`${L}'s stockpiled effect wore off!`,throatchop:L=>`${L} can use sound-based moves again!`,saltcure:L=>`${L} is no longer being salted!`,
+  syrupbomb:L=>`${L} was freed from the sticky syrup!`,futuresight:L=>`${L} took the Future Sight attack!`,doomdesire:L=>`${L} took the Doom Desire attack!`,protosynthesis:L=>`The effects of ${L}'s Protosynthesis wore off!`,quarkdrive:L=>`The effects of ${L}'s Quark Drive wore off!`,uproar:L=>`${L} calmed down.`,bide:L=>`${L} unleashed its energy!`,telekinesis:L=>`${L} was freed from the telekinesis!`,nightmare:L=>`${L} is no longer having a nightmare!`},
+ SINGLE:{followme:L=>`${L} became the center of attention!`,ragepowder:L=>`${L} became the center of attention!`,spotlight:L=>`${L} became the center of attention!`,helpinghand:(L,p)=>`${ofE(p)||'Its ally'} is ready to help ${L}!`,
+  endure:L=>`${L} braced itself!`,focuspunch:L=>`${L} is tightening its focus!`,magiccoat:L=>`${L} shrouded itself with Magic Coat!`,snatch:L=>`${L} waits for a target to make a move!`,beakblast:L=>`${L} started heating up its beak!`,
+  shelltrap:L=>`${L} set a shell trap!`,powder:L=>`${L} is covered in powder!`,electrify:L=>`${L}'s moves have been electrified!`,quash:L=>`${L}'s move was postponed!`,instruct:(L,p)=>`${L} used the move instructed by ${ofE(p)||'its ally'}!`,afteryou:L=>`${L} took the kind offer!`,celebrate:()=>'Congratulations!'},
+ FS:{electricterrain:'An electric current ran across the battlefield!',grassyterrain:'Grass grew to cover the battlefield!',mistyterrain:'Mist swirled around the battlefield!',psychicterrain:'The battlefield got weird!',trickroom:'The dimensions were twisted!',
+  gravity:'Gravity intensified!',magicroom:'It created a bizarre area in which Pokémon\'s held items lose their effects!',wonderroom:'It created a bizarre area in which Defense and Sp. Def stats are swapped!',mudsport:'Electricity\'s power was weakened!',watersport:'Fire\'s power was weakened!',
+  fairylock:'No one will be able to run away during the next turn!',iondeluge:'A deluge of ions showers the battlefield!'},
+ FE:{electricterrain:'The electricity disappeared from the battlefield.',grassyterrain:'The grass disappeared from the battlefield.',mistyterrain:'The mist disappeared from the battlefield.',psychicterrain:'The weirdness disappeared from the battlefield!',
+  trickroom:'The twisted dimensions returned to normal!',gravity:'Gravity returned to normal!',magicroom:'Magic Room wore off, and held items\' effects returned to normal!',wonderroom:'Wonder Room wore off, and Defense and Sp. Def stats returned to normal!',
+  mudsport:'The effects of Mud Sport have faded.',watersport:'The effects of Water Sport have faded.'},
+ WU:{RainDance:'Rain continues to fall.',PrimordialSea:'The heavy rain continues.',SunnyDay:'The sunlight is strong.',DesolateLand:'The extremely harsh sunlight continues.',Sandstorm:'The sandstorm is raging.',Snow:'The snow is falling.',Snowscape:'The snow is falling.',Hail:'The hail is crashing down.',DeltaStream:'The mysterious strong winds blow on.'},
+ WE:{RainDance:'The rain stopped.',PrimordialSea:'The heavy rain has lifted!',SunnyDay:'The harsh sunlight faded.',DesolateLand:'The extremely harsh sunlight faded!',Sandstorm:'The sandstorm subsided.',Snow:'The snow stopped.',Snowscape:'The snow stopped.',Hail:'The hail stopped.',DeltaStream:'The mysterious strong winds have dissipated!'}};
+// sceglie il testo nella lingua della lotta: per le funzioni il nome passa già tradotto
+const isEN=()=>!!(O&&O.lang==='en');
+const TXf=(it,en,k)=>{ if(isEN()&&en[k]) return (L,p)=>en[k](enL(L),p); return it[k]; };
+const TXs=(it,en,k)=>isEN()&&en[k]?en[k]:it[k];
+function healMsg(p,L,f){ if(isEN()) return healMsgEn(p,enL(L)); const fr=p.find(x=>x&&x.startsWith('[from] '))||'', src=fr.replace('[from] ','').replace(/^(item|ability|move): /,'');
+  if(p.includes('[silent]')) return '';
+  if(/^\[from\] drain/.test(fr)) return `${ofL(p)||'Il bersaglio'} viene prosciugato!`;
+  if(/^\[from\] item: /.test(fr)) return /Berry$/.test(src)?`${L} recupera PS con ${esc(src)}!`:`${L} recupera un po' di PS con ${esc(src)}!`;
+  if(/Wish/.test(fr)){ const w=p.find(x=>x&&x.startsWith('[wisher] ')); return `Il desiderio di ${w?esc(w.slice(9)):L} si avvera!`; }
+  if(/Grassy Terrain/.test(fr)) return `${L} recupera PS grazie al campo erboso.`;
+  if(/Aqua Ring/.test(fr)) return `Il velo d'acqua di ${L} gli fa recuperare PS!`;
+  if(/Ingrain/.test(fr)) return `${L} assorbe nutrienti con le radici!`;
+  if(/Leech Seed/.test(fr)) return '';
+  if(/^\[from\] ability: /.test(fr)) return `${L} recupera PS grazie a ${esc(src)}!`;
+  return `${L} recupera PS${src?' ('+esc(src)+')':''}.`; }
+function healMsgEn(p,L){ const fr=p.find(x=>x&&x.startsWith('[from] '))||'', src=fr.replace('[from] ','').replace(/^(item|ability|move): /,'');
+  if(p.includes('[silent]')) return '';
+  if(/^\[from\] drain/.test(fr)) return `${ofE(p)||'The target'} had its energy drained!`;
+  if(/^\[from\] item: /.test(fr)) return /Berry$/.test(src)?`${L} restored HP using its ${esc(src)}!`:`${L} restored a little HP using its ${esc(src)}!`;
+  if(/Wish/.test(fr)){ const w=p.find(x=>x&&x.startsWith('[wisher] ')); return `${w?esc(w.slice(9)):L}'s wish came true!`; }
+  if(/Grassy Terrain/.test(fr)) return `${L}'s HP was restored.`;
+  if(/Aqua Ring/.test(fr)) return `A veil of water restored ${L}'s HP!`;
+  if(/Ingrain/.test(fr)) return `${L} absorbed nutrients with its roots!`;
+  if(/Leech Seed/.test(fr)) return '';
+  if(/^\[from\] ability: /.test(fr)) return `${L} restored HP using its ${esc(src)}!`;
+  return `${L} had its HP restored.`; }
+const VOLMSG={autotomize:a=>isEN()?`${enL(a)} became nimble!`:`${a} diventa più agile!`,confusion:a=>`${a} è confuso!`,leechseed:a=>`${a} è stato colpito da Leech Seed!`,taunt:a=>`${a} cade nella provocazione!`,encore:a=>`${a} è costretto da Encore!`,yawn:a=>`${a} diventa sonnolento!`,focusenergy:a=>`${a} si concentra al massimo!`,attract:a=>`${a} si è infatuato!`,curse:a=>`${a} è maledetto!`,disable:(a,x)=>`La mossa ${esc(x||'')} di ${a} è bloccata!`,
   healblock:a=>`${a} non può curarsi!`,magnetrise:a=>`${a} levita grazie al magnetismo!`,aquaring:a=>`${a} si circonda di un velo d'acqua!`,ingrain:a=>`${a} mette radici!`,flashfire:a=>`La potenza delle mosse Fuoco di ${a} aumenta!`,slowstart:a=>`${a} non riesce a carburare!`,protosynthesis:(a,x)=>`Protosynthesis potenzia ${a}${STAT[x]?' ('+STAT[x]+')':''}!`,quarkdrive:(a,x)=>`Quark Drive potenzia ${a}${STAT[x]?' ('+STAT[x]+')':''}!`,charge:a=>`${a} si carica di elettricità!`,torment:a=>`${a} è tormentato!`,smackdown:a=>`${a} cade a terra!`,saltcure:a=>`${a} è colpito da Salt Cure!`,tarshot:a=>`${a} diventa più debole al fuoco!`,noretreat:a=>`${a} non può più fuggire!`,partiallytrapped:a=>`${a} è intrappolato!`,futuresight:a=>`${a} prevede un attacco!`,doomdesire:a=>`${a} sceglie Doom Desire come destino!`,gastroacid:a=>`L'abilità di ${a} viene annullata!`,laserfocus:a=>`${a} si concentra intensamente!`,minimize:a=>`${a} si rimpicciolisce!`};
 const TEAM_GUARDS=['Wide Guard','Quick Guard','Crafty Shield','Mat Block'];
 const PROTECTS=['Protect','Detect',"King's Shield",'Spiky Shield','Baneful Bunker','Silk Trap','Burning Bulwark','Obstruct','Max Guard'];
@@ -617,10 +729,10 @@ function shieldOn(pos){ const el=$('mon'+pos); if(!el||el.querySelector('.shield
 function shieldsOff(){ if(root) root.querySelectorAll('#lotta .shield').forEach(x=>x.remove()); }
 function drawPos(sid){ const side=sideOfPos(sid);
   const s=B.side[side], m=actMon(sid), hud=$('hud'+sid), el=$('mon'+sid); if(!hud||!el) return;
-  if(!m||m.st==='fnt'){ hud.hidden=true; if(!m&&sid!==side){ el.innerHTML=''; el.dataset.sp=''; } if(m){ el.classList.add('faint'); setTimeout(stackDbl,0); } return; }
+  if(!m||m.st==='fnt'||(m.hp===0&&m.fadedAt0)){ hud.hidden=true; if(!m&&sid!==side){ el.innerHTML=''; el.dataset.sp=''; } if(m){ el.classList.add('faint'); setTimeout(stackDbl,0); } return; }
   hud.hidden=false;
   const seeItem=setVisible(side)||m.itemSeen;
-  hud.innerHTML=`<div class="sb" data-tip="act:${sid}"><div class="sbn"><b>${esc(m.species)}</b>${m.shiny?'<i class="shy">✨</i>':''}<small>L100</small></div>
+  hud.innerHTML=`<div class="sb" data-tip="act:${sid}"><div class="sbn"><b>${esc(m.species)}</b>${m.shiny?'<i class="shy">✨</i>':''}<small>L${m.level||100}</small></div>
     <div class="sbbar"><div class="tr"><div class="fill" id="lt-fill${sid}"></div></div><span class="pct" id="lt-pct${sid}"></span></div>
     <div class="sbst">${m.st&&m.st!=='fnt'?`<span class="st ${m.st}">${m.st.toUpperCase()}</span>`:''}${m.tera?`<span class="st" style="background:${TYPE_COLORS[m.tera]||'#666'}">TERA ${(TIPI[m.tera]||m.tera).toUpperCase()}</span>`:''}${boostChips(m)}${volChips(m)}<span class="hpn" id="lt-num${sid}"></span></div></div>`;
   hpView(sid);
@@ -1001,8 +1113,13 @@ function track(p){ if(!B) return; const S=B.stats||(B.stats={p1:{used:{},moves:{
   else if(k==='-damage'&&!p.slice(4).some(x=>x&&x.startsWith('[from]'))){ const w=who(p[2]); if(w&&B.lastActor&&B.lastActor.side!==w.side){ (B.lastHit||(B.lastHit={}))[w.key]=B.lastActor; } }
   else if(k==='faint'){ const w=who(p[2]); const h=w&&B.lastHit&&B.lastHit[w.key]; if(h){ S[h.side].kos[h.sp]=(S[h.side].kos[h.sp]||0)+1; delete B.lastHit[w.key]; } }
   else if(k==='turn') B.lastActor=null; }
+// efficacia e brutto colpo in attesa del danno del loro bersaglio
+function effMsgs(pos){ const L=(B.effPend||{})[pos]; if(!L) return ''; delete B.effPend[pos]; return L.join(' '); }
+window.__lottaFeed=l=>handle(l);   // solo per le prove (controlla-messaggi.js): passa alla lotta un messaggio del simulatore alla volta
+async function flushEff(){ for(const pos of Object.keys(B.effPend||{})){ const t=effMsgs(pos); if(t){ say(t); await sleep(750); } } }
 async function handle(line){
   const p=line.split('|'); const k=p[1]; try{ track(p); }catch(e){}
+  if(B.effPend&&Object.keys(B.effPend).length&&!['-damage','-supereffective','-resisted','-crit'].includes(k)) await flushEff();
   try{ const fa=p.find(x=>x&&x.startsWith('[from] ability: ')); if(fa&&k!=='-ability'){ const of=p.find(x=>x&&x.startsWith('[of] ')); const who=parseId(of?of.slice(5):p[2]); if(who){ mon(who.side,who.nick).abilitySeen=fa.slice(16); abilBar(who.pos,fa.slice(16)); } } }catch(e){} const sideOf=id=>(parseId(id)||{}).side;
   switch(k){
     case 'switch': case 'drag': case 'replace': {
@@ -1015,15 +1132,23 @@ async function handle(line){
         if(prev){ prev.boosts={}; prev.vol={}; prev.sub=false; prev.tchange=null; }
         if(B.lastMv) delete B.lastMv[id.pos]; }
       if(s[sk]&&s[sk]!==id.nick&&s.team[s[sk]]&&s.team[s[sk]].st!=='fnt'){ el.classList.add('out'); await sleep(350); }
-      s[sk]=id.nick; cry(species); el.classList.remove('faint'); el.dataset.sp=''; draw(); el.classList.add('out'); void el.offsetWidth; el.classList.remove('out');
+      s[sk]=id.nick; cry(species); el.classList.remove('faint'); el.dataset.sp=''; draw(); stackDbl(); el.classList.add('out'); void el.offsetWidth; el.classList.remove('out');
       say(`${PN(id.side)} manda in campo <b>${esc(species)}</b>!`); return 900; }
-    case 'detailschange': case '-formechange': { const id=parseId(p[2]); const m=mon(id.side,id.nick); m.species=p[3].split(',')[0]; if(m.st==='fnt'||p.includes('[silent]')){ if(m.st!=='fnt'){ $('mon'+id.pos).dataset.sp=''; draw(); } return 0; } $('mon'+id.pos).dataset.sp=''; draw(); if(/-Mega/.test(p[3])&&k==='detailschange') return 300; say(`${label(p[2])} cambia forma!`); return 900; }
+    case 'detailschange': case '-formechange': { const id=parseId(p[2]); const m=mon(id.side,id.nick); m.species=p[3].split(',')[0]; if(m.st==='fnt'||p.includes('[silent]')){ if(m.st!=='fnt'){ $('mon'+id.pos).dataset.sp=''; draw(); } return 0; } $('mon'+id.pos).dataset.sp=''; draw(); if(/-Mega/.test(p[3])&&k==='detailschange') return 300;
+      { const sp=p[3].split(',')[0], fr=fromOf(p)||'', L=label(p[2]), en=isEN(), Le=en?enL(L):L; let t='';
+        if(/Stance Change/.test(fr)) t=/Blade/.test(sp)?(en?'Changed to Blade Forme!':'Passa alla Forma Spada!'):(en?'Changed to Shield Forme!':'Passa alla Forma Scudo!');
+        else if(/Schooling/.test(fr)) t=/School/.test(sp)?(en?`${Le} formed a school!`:`${L} forma un banco!`):(en?`${Le} stopped schooling!`:`${L} smette di stare in banco!`);
+        else if(/Shields Down/.test(fr)) t=/Meteor/.test(sp)?(en?'Shields Down deactivated!':'Shields Down si disattiva!'):(en?'Shields Down activated!':'Shields Down si attiva!');
+        else if(/Zygarde-Complete/.test(sp)) t=en?`${Le} transformed into its Complete Forme!`:`${L} si trasforma nella Forma Perfetta!`;
+        else if(p.includes('[msg]')) t=en?`${Le} transformed!`:`${L} si trasforma!`;
+        if(t){ say(t); return 900; } return 300; } }
     case 'move': { const posOf=x=>(parseId(x)||{}).pos; const a=posOf(p[2]), tg=posOf(p[4])||a; const mv=Dex.moves.get(p[3]); B.eff=null; B.effT={}; B.spread=p.some(x=>x&&x.startsWith('[spread]')); (B.lastMv=B.lastMv||{})[a]=mv.id; 
       { const id=parseId(p[2]); if(id&&!p.some(x=>x&&x.startsWith('[from]'))){ const um=mon(id.side,id.nick); um.movesSeen=um.movesSeen||[]; if(!um.movesSeen.includes(p[3])) um.movesSeen.push(p[3]); } }
       say(`${label(p[2])} usa <b>${esc(p[3])}</b>!`);
       if(p.includes('[still]')) return 700;
       const miss=p.some(x=>x&&x.startsWith('[miss]'));
-      if(await loadPS()){ await psRun('move',p[3],a,tg,miss); return 250; }
+      const spT=(()=>{ const x=p.find(y=>y&&y.startsWith('[spread]')); if(!x) return null; const l=x.slice(8).trim().split(',').filter(Boolean).map(q=>q.slice(0,2)+(q[2]==='b'?'b':'')); return l.length?l:null; })();
+      if(await loadPS()){ if(spT&&spT.length>1){ await Promise.all(spT.map(t=>psRun('move',p[3],a,t,miss))); } else await psRun('move',p[3],a,spT?spT[0]:tg,miss); return 250; }
       cls(a,'lunge',450); shot(a,tg,TYPE_COLORS[mv.type]||'#999',mv.category==='Status'); return 950; }
     case '-damage': case '-heal': case '-sethp': {
       const id=parseId(p[2]); const m=mon(id.side,id.nick); const h=parseHP(p[3]); if(!h) return 0;
@@ -1032,21 +1157,29 @@ async function handle(line){
       if(k==='-damage'&&to<was){ cls(id.pos,'hit',500); const ef=f?'weak':((B.effT&&B.effT[id.pos])||((!B.effT||!Object.keys(B.effT).length)&&B.eff)||'hit'); if(f!=='Life Orb') sfx(ef); if(B.effT) delete B.effT[id.pos]; if(!B.effT||!Object.keys(B.effT).length) B.eff=null; }
       if(k==='-heal'&&to>was) sfx('heal');
       if(k==='-heal'&&to>was) pop(id.pos,'+'+Math.round(exactHP(id.side)?to-was:(to-was)/m.max*100)+(exactHP(id.side)?' PS':'%'),'heal');
+      if(k==='-damage'&&!f){ const t=effMsgs(id.pos); if(t) say(t); }   // efficacia del singolo bersaglio, insieme al suo suono e al calo dei PS
       let pctDiff=m.max?Math.round(Math.abs(to-was)/m.max*100):0; if(pctDiff===100&&to>0) pctDiff=99; if(!pctDiff&&to!==was) pctDiff=1; const anim=animHP(id.side,m,to); m.hp=to;
-      if(k==='-heal') say(`${label(p[2])} recupera PS${f?' ('+esc(f)+')':''}.`);
+      if(k==='-heal'){ const t=healMsg(p,label(p[2]),f); if(t) say(t); }
+      else if(f&&/^pokemon: /.test(f)){}   // Disguise rotto: nessun testo (come Showdown)
+      else if(f&&/^(highjumpkick|jumpkick|High Jump Kick|Jump Kick)$/.test(f)) say(isEN()?`${enL(label(p[2]))} kept going and crashed!`:`${label(p[2])} continua la corsa e si schianta!`);
       else if(f) say(`${label(p[2])} subisce danni per ${esc(CAUSE[f]||f)}.`);
       if(pctDiff&&k==='-damage'&&to<was) logLine(`(${label(p[2])} perde il ${pctDiff}% dei PS!)`,'hp');
       else if(pctDiff&&k==='-heal'&&to>was) logLine(`(${label(p[2])} recupera il ${pctDiff}% dei PS!)`,'hp');
       await anim;
-      if(to===0&&h.st==='fnt'&&!m.fadedAt0&&actMon(id.pos)===m){ m.fadedAt0=true; sfx('faint'); $('mon'+id.pos).classList.add('faint'); }
+      if(to===0&&h.st==='fnt'&&!m.fadedAt0&&actMon(id.pos)===m){ m.fadedAt0=true; sfx('faint'); $('mon'+id.pos).classList.add('faint'); const hd=$('hud'+id.pos); if(hd){ hd.hidden=true; stackDbl(); } }
       const ps=B.pendItem&&B.pendItem[id.pos]; if(ps&&k==='-damage'){ delete B.pendItem[id.pos]; if(to>0){ say(ps); return 800; } }
       return k==='-damage'&&!f?150:500; }
     case 'faint': { const id=parseId(p[2]); const m=mon(id.side,id.nick); if(!m.fadedAt0) sfx('faint'); m.fadedAt0=true; m.hp=0; m.shown=0; m.st='fnt'; m.boosts={}; m.vol={}; m.sub=false; m.tchange=null; $('mon'+id.pos).classList.add('faint'); drawSide(id.side); say(`${label(p[2])} è esausto!`); await sleep(900); return 300; }
-    case '-supereffective': case '-resisted': { const e=k==='-supereffective'?'super':'weak', id=parseId(p[2]); B.eff=e; if(id) (B.effT=B.effT||{})[id.pos]=e; const sp=B.spread||(B.effT&&Object.keys(B.effT).length>1); say(e==='super'?(sp&&id?`È superefficace su ${label(p[2])}!`:'È superefficace!'):(sp&&id?`Non è molto efficace su ${label(p[2])}…`:'Non è molto efficace…')); return 750; }
+    case '-supereffective': case '-resisted': { const e=k==='-supereffective'?'super':'weak', id=parseId(p[2]); B.eff=e; const sp=B.spread||(B.effT&&Object.keys(B.effT).length>=1&&id&&!B.effT[id.pos]);
+      const t=e==='super'?(sp&&id?`È superefficace su ${label(p[2])}!`:'È superefficace!'):(sp&&id?`Non è molto efficace su ${label(p[2])}…`:'Non è molto efficace…');
+      if(!id){ say(t); return 750; } (B.effT=B.effT||{})[id.pos]=e; ((B.effPend=B.effPend||{})[id.pos]=B.effPend[id.pos]||[]).push(t); return 0; }
     case '-immune': { const id=parseId(p[2]); if(id) pop(id.pos,'Immune','miss'); say(`Non ha effetto su ${label(p[2])}…`); return 800; }
-    case '-crit': say('Brutto colpo!'); return 700;
+    case '-crit': { const id=parseId(p[2]); if(!id){ say('Brutto colpo!'); return 700; } const sp=B.spread; ((B.effPend=B.effPend||{})[id.pos]=B.effPend[id.pos]||[]).push(sp?`Brutto colpo su ${label(p[2])}!`:'Brutto colpo!'); return 0; }
     case '-miss': { const tg=parseId(p[3]); if(tg) pop(tg.pos,'Miss','miss'); say(`${label(p[2])} manca il bersaglio!`); return 800; }
-    case '-fail': { const id=parseId(p[2]); if(id) pop(id.pos,'Fail','miss'); say('Ma non ha effetto!'); return 700; }
+    case '-fail': { const id=parseId(p[2]); if(id) pop(id.pos,'Fail','miss'); const st=p[3]; if(id&&STATUS_ALREADY[st]){ say(`${label(p[2])} ${STATUS_ALREADY[st]}`); return 800; }
+      if(id&&/Substitute/.test(st||'')){ say(p.includes('[weak]')?(isEN()?'But it does not have enough HP left to make a substitute!':'Ma non ha abbastanza PS per creare un sostituto!'):(isEN()?`${enL(label(p[2]))} already has a substitute!`:`${label(p[2])} ha già un sostituto!`)); return 800; }
+      if(id&&st==='heal'){ say(`I PS di ${label(p[2])} sono già al massimo!`); return 800; }
+      if(id&&st==='unboost'){ say(p[4]&&STAT[p[4]]?`${STAT[p[4]]} di ${label(p[2])} non diminuisce!`:`Le statistiche di ${label(p[2])} non diminuiscono!`); return 800; } say('Ma non ha effetto!'); return 700; }
     case '-status': { const id=parseId(p[2]); mon(id.side,id.nick).st=p[3]; drawSide(id.side); if(window.PSAnimData&&window.PSAnimData.BattleStatusAnims[p[3]]) psRun('status',p[3],id.pos,null); say(`${label(p[2])} ${STATUS[p[3]]||esc(p[3])}!`); return 900; }
     case '-curestatus': { const id=parseId(p[2]); if(id){ const was=p[3]; mon(id.side,id.nick).st=''; drawSide(id.side); drawTrainers(); say(`${label(p[2])} ${({slp:'si sveglia!',par:'non è più paralizzato!',brn:'guarisce dalla scottatura!',psn:'non è più avvelenato!',tox:'non è più avvelenato!',frz:'si scongela!'})[was]||'è guarito.'}`); return 700; } return 0; }
     case 'cant': { const r={par:'è paralizzato! Non riesce a muoversi!',slp:'dorme profondamente.',frz:'è congelato!',flinch:'tentenna e non attacca!',recharge:'deve riprendersi.',attract:'è infatuato e non attacca!',truant:'sta oziando.','ability: Truant':'sta oziando.',focuspunch:'perde la concentrazione e non attacca!','Focus Punch':'perde la concentrazione e non attacca!','move: Taunt':'non può usare la mossa per la provocazione!',Taunt:'non può usare la mossa per la provocazione!','move: Disable':'non può usare la mossa bloccata!','move: Imprison':'non può usare la mossa sigillata!','move: Heal Block':'non può curarsi!','move: Throat Chop':'non può usare mosse sonore!','move: Gravity':'non può usare la mossa per la gravità!',nopp:'non ha più PP per questa mossa!',Dynamax:'non può usare la mossa.'}[p[3]]||'non può muoversi.'; say(`${label(p[2])} ${r}`); return 900; }
@@ -1054,25 +1187,31 @@ async function handle(line){
       m.boosts[p[3]]=Math.max(-6,Math.min(6,(m.boosts[p[3]]||0)+n)); drawSide(id.side);
       if(n) pop(id.pos,`${STAT[p[3]]||p[3]} ${n>0?'↑'.repeat(Math.min(3,n)):'↓'.repeat(Math.min(3,-n))}`,n>0?'up':'down');
       const q=Math.abs(n)>=3?' tantissimo':Math.abs(n)===2?' molto':''; say(n?`${STAT[p[3]]||esc(p[3])} di ${label(p[2])} ${n>0?'aumenta':'diminuisce'}${q}!`:`${STAT[p[3]]||esc(p[3])} di ${label(p[2])} non può cambiare oltre!`); return 900; }
-    case '-setboost': { const id=parseId(p[2]); mon(id.side,id.nick).boosts[p[3]]=+p[4]; drawSide(id.side); pop(id.pos,`${STAT[p[3]]||p[3]} al massimo!`,'up'); return 800; }
+    case '-setboost': { const id=parseId(p[2]); mon(id.side,id.nick).boosts[p[3]]=+p[4]; drawSide(id.side); pop(id.pos,`${STAT[p[3]]||p[3]} al massimo!`,'up'); sfx('up'); const fr=fromOf(p)||'';
+      say(/Belly Drum/.test(fr)?`${label(p[2])} si toglie metà dei PS e porta al massimo l'Attacco!`:/Anger Point/.test(fr)?`${label(p[2])} si arrabbia e porta al massimo l'Attacco!`:`${STAT[p[3]]||esc(p[3])} di ${label(p[2])} sale al massimo!`); return 900; }
     case '-clearallboost': for(const s of ['p1','p2']) for(const m of Object.values(B.side[s].team)) m.boosts={}; draw(); say('Tutte le modifiche alle statistiche spariscono!'); return 700;
-    case '-clearboost': case '-clearnegativeboost': { const id=parseId(p[2]); if(id){ const m=mon(id.side,id.nick); if(k==='-clearboost') m.boosts={}; else for(const s in m.boosts) if(m.boosts[s]<0) m.boosts[s]=0; drawSide(id.side); } return 0; }
-    case '-weather': { if(p[2]==='none'){ const was=B.weather; B.weather=null; drawField(); if(was){ say('Il tempo torna normale.'); return 700; } return 0; }
-      if(p.includes('[upkeep]')) return 0; B.weather=p[2]; B.start['w']=[B.turn,!!fromOf(p)]; drawField(); say(WSTART[p[2]]||esc(p[2])); return 1000; }
-    case '-fieldstart': { const n=p[2].replace('move: ',''); B.field[toID(n)]=n; B.start['f'+toID(n)]=[B.turn]; drawField(); say(`${esc(n)}!`); return 900; }
-    case '-fieldend': { const n=p[2].replace('move: ',''); delete B.field[toID(n)]; drawField(); say(`${esc(n)} svanisce.`); return 700; }
+    case '-clearboost': case '-clearnegativeboost': { const id=parseId(p[2]); if(id){ const m=mon(id.side,id.nick); if(k==='-clearboost') m.boosts={}; else for(const s in m.boosts) if(m.boosts[s]<0) m.boosts[s]=0; drawSide(id.side); if(p.includes('[silent]')) return 0;
+        say(k==='-clearboost'?(isEN()?`${enL(label(p[2]))}'s stat changes were removed!`:`Le modifiche alle statistiche di ${label(p[2])} spariscono!`):(isEN()?`${enL(label(p[2]))}'s lowered stats were restored!`:`Le statistiche diminuite di ${label(p[2])} tornano normali!`)); return 800; } return 0; }
+    case '-weather': { if(p[2]==='none'){ const was=B.weather; B.weather=null; drawField(); if(was){ say(TXs(W_END,EN_TX.WE,was)||'Il tempo torna normale.'); return 700; } return 0; }
+      if(p.includes('[upkeep]')){ if(W_UPKEEP[p[2]]){ say(TXs(W_UPKEEP,EN_TX.WU,p[2])); return 600; } return 0; } B.weather=p[2]; B.start['w']=[B.turn,!!fromOf(p)]; drawField(); say(WSTART[p[2]]||esc(p[2])); return 1000; }
+    case '-fieldstart': { const n=p[2].replace('move: ',''); B.field[toID(n)]=n; B.start['f'+toID(n)]=[B.turn]; drawField(); { const fr=fromOf(p)||''; say(/Hadron Engine/.test(fr)?`${ofL(p)} crea un campo elettrico che alimenta il suo motore futuristico!`:toID(n)==='trickroom'&&ofL(p)?`${ofL(p)} distorce le dimensioni!`:(TXs(FIELD_START,EN_TX.FS,toID(n))||`${esc(n)}!`)); } return 900; }
+    case '-fieldend': { const n=p[2].replace('move: ',''); delete B.field[toID(n)]; drawField(); say(TXs(FIELD_END,EN_TX.FE,toID(n))||`${esc(n)} svanisce.`); return 700; }
     case '-sidestart': case '-sideend': { const sid=p[2].slice(0,2); const n=p[3].replace('move: ',''); const id=toID(n); const c=B.cond[sid];
       if(k==='-sidestart'){ B.start[sid+id]=[B.turn]; c[id]=(id==='spikes'||id==='toxicspikes')?Math.min(id==='spikes'?3:2,(c[id]||0)+1):1; drawField(); say(SIDECOND[id]?`${SIDECOND[id][1]} ${PN(sid)}!`:`${esc(n)}: ${PN(sid)}.`); return 1000; }
       delete c[id]; drawField(); say(`${SIDECOND[id]?SIDECOND[id][0]:esc(n)} sparisce dalla parte di ${PN(sid)}.`); return 700; }
     case '-terastallize': { const id=parseId(p[2]); mon(id.side,id.nick).tera=p[3]; drawSide(id.side); shot(id.pos,id.pos,TYPE_COLORS[p[3]]||'#fff',true); say(`${label(p[2])} si teracristallizza: tipo ${TIPI[p[3]]||esc(p[3])}!`); return 1100; }
-    case '-ability': { const id=parseId(p[2]); if(id){ mon(id.side,id.nick).abilitySeen=p[3]; abilBar(id.pos,p[3]); } }
-      say(`[Abilità di ${label(p[2])}: ${esc(p[3])}]`); return 800;
+    case '-ability': { const id=parseId(p[2]); if(id){ mon(id.side,id.nick).abilitySeen=p[3]; abilBar(id.pos,p[3]); }
+      if(p.includes('[silent]')) return 0;
+      const fr=fromOf(p)||''; if(/Trace/.test(fr)){ say(`${label(p[2])} copia ${esc(p[3])} di ${ofL(p)||'un avversario'}!`); return 900; }
+      const f=TXf(ABIL_START,EN_TX.ABIL,toID(p[3])), t=f&&f(label(p[2]),p); if(t){ say(t); return 900; }
+      say(`[Abilità di ${label(p[2])}: ${esc(p[3])}]`); return 800; }
     case '-item': { const id=parseId(p[2]); const m=mon(id.side,id.nick); m.item=p[3]; m.itemSeen=true; m.itemGone=null; drawSide(id.side); const fr=p.find(x=>x&&x.startsWith('[from] ability: ')); if(fr){ say(`${label(p[2])} tiene ${esc(p[3])} (rivelato da ${esc(fr.slice(16))}).`); return 800; } say(`${label(p[2])} ottiene ${esc(p[3])}.`); return 800; }
-    case '-enditem': { const id=parseId(p[2]); const m=mon(id.side,id.nick); m.item=null; m.itemSeen=true; const it=esc(p[3]), fr=fromOf(p)||'', L=label(p[2]);
+    case '-enditem': { const id=parseId(p[2]); const m=mon(id.side,id.nick); m.item=null; m.itemSeen=true; if(p.includes('[silent]')){ drawSide(id.side); return 0; } const it=esc(p[3]), fr=fromOf(p)||'', L=label(p[2]);
       m.itemGone={name:p[3],how:p.some(x=>x&&x.startsWith('[eat]'))?'eat':/Knock Off/i.test(fr)?'knock':/Incinerate/i.test(fr)?'burn':/Bug Bite|Pluck/i.test(fr)?'stolen':/Fling/i.test(fr)?'fling':/Trick|Switcheroo|Thief|Covet|Magician|Pickpocket/i.test(fr)?'taken':p[3]==='Air Balloon'?'pop':'used'}; drawSide(id.side);
       if(p.some(x=>x&&x.startsWith('[eat]'))){ say(`${L} mangia ${it}!`); return 800; }
       if(/Knock Off/i.test(fr)){ pop(id.pos,'Knock Off','miss'); say(`Lo strumento ${it} di ${L} è stato tolto!`); return 800; }
       if(/Incinerate/i.test(fr)){ say(`Lo strumento ${it} di ${L} è bruciato!`); return 800; }
+      if(/stealeat/i.test(fr)){ say(`${ofL(p)||'Il bersaglio'} ruba e mangia ${it} di ${L}!`); return 800; }
       if(/Bug Bite|Pluck/i.test(fr)){ say(`Lo strumento ${it} di ${L} è stato rubato e mangiato!`); return 800; }
       if(/Fling/i.test(fr)){ say(`${L} lancia ${it}!`); return 600; }
       if(!fr&&/^(Focus Sash|Focus Band)$/.test(p[3])){ (B.pendItem=B.pendItem||{})[id.pos]=`${L} resiste grazie a ${it}!`; return 0; }   // il messaggio arriva dopo il danno (resta a 1 PS)
@@ -1086,15 +1225,20 @@ async function handle(line){
       if(VOLMSG[toID(n)]){ say(VOLMSG[toID(n)](label(p[2]),p[4])); return 800; }
       if(n==='Substitute'){ mon(id.side,id.nick).sub=true; drawSide(id.side); say(`${label(p[2])} crea un sostituto!`); return 900; }
       if(n==='confusion'){ say(`${label(p[2])} è confuso!`); return 800; }
+      if(p.includes('[silent]')) return 0;
       say(`${label(p[2])}: ${esc(n)}.`); return 700; }
-    case '-end': { const id=parseId(p[2]); const n=p[3].replace(/^(move|ability|item): /,''); { const mm=mon(id.side,id.nick); if(mm.vol&&p.includes('[partiallytrapped]')&&mm.vol.partiallytrapped){ delete mm.vol.partiallytrapped; drawSide(id.side); } if(mm.vol){ const kk=/^stockpile/.test(toID(n))?'stockpile':/^(protosynthesis|quarkdrive)/.test(toID(n))?toID(n).replace(/(atk|def|spa|spd|spe)$/,''):toID(n); if(mm.vol[kk]){ delete mm.vol[kk]; drawSide(id.side); } } if(toID(n)==='typechange'){ mm.tchange=null; drawSide(id.side); } } if(n==='Substitute'){ mon(id.side,id.nick).sub=false; drawSide(id.side); say(`Il sostituto di ${label(p[2])} svanisce!`); return 800; } return 0; }
+    case '-end': { const id=parseId(p[2]); const n=p[3].replace(/^(move|ability|item): /,''); { const mm=mon(id.side,id.nick); if(mm.vol&&p.includes('[partiallytrapped]')&&mm.vol.partiallytrapped){ delete mm.vol.partiallytrapped; drawSide(id.side); } if(mm.vol){ const kk=/^stockpile/.test(toID(n))?'stockpile':/^(protosynthesis|quarkdrive)/.test(toID(n))?toID(n).replace(/(atk|def|spa|spd|spe)$/,''):toID(n); if(mm.vol[kk]){ delete mm.vol[kk]; drawSide(id.side); } } if(toID(n)==='typechange'){ mm.tchange=null; drawSide(id.side); } } if(n==='Substitute'){ mon(id.side,id.nick).sub=false; drawSide(id.side); say(`Il sostituto di ${label(p[2])} svanisce!`); return 800; }
+      if(p.includes('[silent]')) return 0; if(p.includes('[partiallytrapped]')){ say(`${label(p[2])} si libera da ${esc(n)}!`); return 700; }
+      { const f=TXf(END_MSG,EN_TX.END,toID(n)), t=f&&f(label(p[2]),p); if(t){ say(t); return 750; } } return 0; }
     case '-activate': { const n=(p[3]||'').replace('move: ','');
+      if(n==='Orichalcum Pulse'&&p.includes('[source]')){ const id=parseId(p[2]); if(id) abilBar(id.pos,n); say(isEN()?`${enL(label(p[2]))} turned the sunlight harsh, sending its ancient pulse into a frenzy!`:`${label(p[2])} rende il sole intenso e il suo battito antico si scatena!`); return 900; }
       if(['Bind','Wrap','Fire Spin','Whirlpool','Sand Tomb','Magma Storm','Infestation','Clamp','Snap Trap','Thunder Cage'].includes(n)){ const id=parseId(p[2]); if(id){ const mm=mon(id.side,id.nick); (mm.vol=mm.vol||{}).partiallytrapped='Intrappolato'; drawSide(id.side); say(`${label(p[2])} è intrappolato da ${esc(n)}!`); return 800; } } if(PROTECTS.includes(n)){ const id=parseId(p[2]); if(id){ shieldOn(id.pos); pop(id.pos,n,'miss'); } say(`${label(p[2])} si protegge!`); return 800; } if(TEAM_GUARDS.includes(n)){ const id=parseId(p[2]); if(id){ shieldOn(id.pos); pop(id.pos,n,'miss'); } say(`${label(p[2])} è protetto da ${esc(n)}!`); return 800; }
-      if(/^ability: /.test(p[3]||'')){ const id=parseId(p[2]); if(id){ const ab=p[3].slice(9); mon(id.side,id.nick).abilitySeen=ab; abilBar(id.pos,ab); if(p.includes('[fromitem]')) say(`${label(p[2])} usa Booster Energy!`); } return 700; } if(n==='Substitute'){ say('Il sostituto incassa il colpo!'); return 800; }
+      if(/^ability: /.test(p[3]||'')){ const id=parseId(p[2]); if(id){ const ab=p[3].slice(9); mon(id.side,id.nick).abilitySeen=ab; abilBar(id.pos,ab); if(p.includes('[fromitem]')) say(`${label(p[2])} usa Booster Energy!`); else { const f=TXf(ACT_MSG,EN_TX.ACT,toID(ab)), t=f&&f(label(p[2]),p); if(t){ say(t); return 900; } } } return 700; } if(n==='Substitute'){ say('Il sostituto incassa il colpo!'); return 800; }
       if(['Feint','Shadow Force','Phantom Force','Hyperspace Fury','Hyperspace Hole'].includes(n)||p.includes('[broken]')){ shieldsOff(); say(`La protezione di ${label(p[2])} è stata spezzata!`); return 800; }
       if(n==='Brick Break'||n==='Psychic Fangs'||n==='Raging Bull'){ const sd=(parseId(p[2])||{}).side; if(sd){ delete B.cond[sd].reflect; delete B.cond[sd].lightscreen; delete B.cond[sd].auroraveil; drawField(); say(`Gli schermi della squadra di ${PN(sd)} vanno in frantumi!`); return 800; } }
+      { const id=parseId(p[2]), f=TXf(ACT_MSG,EN_TX.ACT,toID(n)); if(id&&f){ if(toID(n)==='attract'){ const mm=mon(id.side,id.nick); (mm.vol=mm.vol||{}).attract=mm.vol.attract||'Infatuato'; } const t=f(label(p[2]),p); if(t){ say(t); return 800; } } }
       return 0; }
-    case '-singleturn': { const n=(p[3]||'').replace('move: ',''); if(TEAM_GUARDS.includes(n)){ const id=parseId(p[2]); if(id){ for(const q of [id.side,id.side+'b']) if(actMon(q)&&actMon(q).st!=='fnt') shieldOn(q); say(`${esc(n)} protegge la squadra di ${PN(id.side)}!`); return 800; } return 0; } if(PROTECTS.includes(n)){ const id=parseId(p[2]); if(id) shieldOn(id.pos); say(`${label(p[2])} si protegge!`); return 800; } return 0; }
+    case '-singleturn': { const n=(p[3]||'').replace('move: ',''); if(TEAM_GUARDS.includes(n)){ const id=parseId(p[2]); if(id){ for(const q of [id.side,id.side+'b']) if(actMon(q)&&actMon(q).st!=='fnt') shieldOn(q); say(`${esc(n)} protegge la squadra di ${PN(id.side)}!`); return 800; } return 0; } if(PROTECTS.includes(n)){ const id=parseId(p[2]); if(id) shieldOn(id.pos); say(`${label(p[2])} si protegge!`); return 800; } { const f=TXf(SINGLE_MSG,EN_TX.SINGLE,toID(n)), t=f&&parseId(p[2])&&f(label(p[2]),p); if(t){ say(t); return 800; } } return 0; }
     case '-block': { const id=parseId(p[2]); const n=(p[3]||'').replace(/^(move|ability|item): /,''); if(id) pop(id.pos,n,'miss'); say(`${label(p[2])} è protetto da ${esc(n)}!`); return 800; }
     case '-clearpositiveboost': { const id=parseId(p[2]); if(id){ const m=mon(id.side,id.nick); for(const k2 in m.boosts) if(m.boosts[k2]>0) m.boosts[k2]=0; drawSide(id.side); say(`Gli aumenti delle statistiche di ${label(p[2])} spariscono!`); return 800; } return 0; }
     case '-swapboost': { const a=parseId(p[2]), b=parseId(p[3]); if(a&&b){ const ma=mon(a.side,a.nick), mb=mon(b.side,b.nick); const st=(p[4]&&!p[4].startsWith('[')?p[4].split(', '):['atk','def','spa','spd','spe','accuracy','evasion']); for(const x of st){ const t=ma.boosts[x]; ma.boosts[x]=mb.boosts[x]; mb.boosts[x]=t; if(!ma.boosts[x]) delete ma.boosts[x]; if(!mb.boosts[x]) delete mb.boosts[x]; } draw(); say(`${label(p[2])} scambia le modifiche alle statistiche con ${label(p[3])}!`); return 800; } return 0; }
@@ -1112,11 +1256,16 @@ async function handle(line){
     case '-combine': say('Le mosse si uniscono!'); return 700;
     case '-waiting': say(`${label(p[2])} aspetta la mossa del compagno…`); return 700;
     case '-singlemove': { const n=(p[3]||'').replace('move: ',''); if(n==='Destiny Bond'){ say(`${label(p[2])} vuole trascinare con sé l'avversario!`); return 800; } if(n==='Grudge'){ say(`${label(p[2])} vuole vendicarsi!`); return 800; } return 0; }
-    case '-fieldactivate': { const n=(p[2]||'').replace('move: ',''); if(n==='Perish Song'){ say('Tutti i Pokémon che sentono il canto andranno KO tra 3 turni!'); return 900; } return 0; }
+    case '-fieldactivate': { const n=(p[2]||'').replace('move: ',''); if(n==='Ion Deluge'){ say(isEN()?'A deluge of ions showers the battlefield!':'Una pioggia di particelle elettriche si diffonde!'); return 800; } if(n==='Delta Stream'){ say(isEN()?'The mysterious strong winds weakened the attack!':"Le correnti misteriose indeboliscono l'attacco!"); return 800; }
+      if(n==='Perish Song'){ say('Tutti i Pokémon che sentono il canto andranno KO tra 3 turni!'); return 900; } return 0; }
     case '-swapsideconditions': { const t=B.cond.p1; B.cond.p1=B.cond.p2; B.cond.p2=t; drawField(); say('Gli effetti dei due lati del campo si scambiano!'); return 900; }
     case '-primal': say(`${label(p[2])} torna alla sua forma archeologica!`); return 1000;
     case '-message': say(esc(p[2]||'')); return 800;
-    case '-hint': return 0;
+    case '-anim': { const a=(parseId(p[2])||{}).pos, t=(parseId(p[4])||{}).pos||a; if(a&&p[3]&&await loadPS()) await psRun('move',p[3],a,t,false); return 200; }
+    case '-hint': { const h=String(p[2]||''); let t=HINT_IT[h]?(isEN()?h:HINT_IT[h]):null; let m;
+      if(!t&&(m=/^Normal-type moves become Electric-type after using (.+)\.$/.exec(h))) t=isEN()?h:`Dopo ${esc(m[1])} le mosse di tipo Normale diventano di tipo Elettro.`;
+      if(!t&&(m=/^(.+) did not hit because the target is (fainted|the user)\.$/.exec(h))) t=isEN()?h:`${esc(m[1])} non colpisce perché il bersaglio ${m[2]==='fainted'?'è esausto':'è chi la usa'}.`;
+      if(!t&&(m=/^(.+)'s BP doubled on grounded target\.$/.exec(h))) t=isEN()?h:`La potenza di ${esc(m[1])} raddoppia contro un bersaglio a terra.`; if(t){ logLine(`(${t})`,'hp'); return 300; } return 0; }
     case 'swap': { const id=parseId(p[2]); if(id&&isDbl()){ const sd=B.side[id.side]; const a=slotK(id.side), b=slotK(id.side+'b'); const t=sd[a]; sd[a]=sd[b]; sd[b]=t; for(const q of [id.side,id.side+'b']){ const el=$('mon'+q); el.dataset.sp=''; el.classList.remove('faint'); } draw(); say(`${label(p[2])} cambia posto con il compagno!`); return 900; } return 0; }
     case '-mega': say(`${label(p[2])} megaevolve!`); return 1000;
     case 'turn': { shieldsOff(); B.turn=+p[2]||0; const tb=$('turn'); tb.hidden=false; tb.textContent='Turno '+p[2]; say(`Turno ${esc(p[2])}`,'turn'); return 350; }
@@ -2019,6 +2168,16 @@ const EN_STAT={Attacco:'Attack',Difesa:'Defense','Att. Sp.':'Sp. Atk','Dif. Sp.'
 const CANT_EN={'è infatuato e non attacca!':'is immobilized by love!','sta oziando.':'is loafing around!','perde la concentrazione e non attacca!':'lost its focus and couldn\'t move!','non può usare la mossa per la provocazione!':'can\'t use that move after the taunt!','non può usare la mossa bloccata!':'can\'t use its disabled move!','non può usare la mossa sigillata!':'can\'t use its sealed move!','non può usare mosse sonore!':'can\'t use sound-based moves!','non può usare la mossa per la gravità!':'can\'t use that move because of gravity!','non ha più PP per questa mossa!':'has no PP left for this move!','non può usare la mossa.':'can\'t use the move.'};
 const CURE_EN={'si sveglia!':'woke up!','non è più paralizzato!':'was cured of paralysis!','guarisce dalla scottatura!':'was healed of its burn!','non è più avvelenato!':'was cured of its poisoning!','si scongela!':'thawed out!'};
 const EN_RX=[
+  [/^(.+?) copia (.+?) di (.+)!$/,(m,a,b,c)=>`${lab(a)} traced ${lab(c)}'s ${b}!`],
+  [/^(.+?) crea un campo elettrico che alimenta il suo motore futuristico!$/,(m,a)=>`${lab(a)} turned the ground into Electric Terrain, energizing its futuristic engine!`],
+  [/^(.+?) distorce le dimensioni!$/,(m,a)=>`${lab(a)} twisted the dimensions!`],
+  [/^I PS di (.+) sono già al massimo!$/,(m,a)=>`${lab(a)}'s HP is full!`],
+  [/^(Attacco|Difesa|Att\. Sp\.|Dif\. Sp\.|Velocità|Precisione|Elusione) di (.+) non diminuisce!$/,(m,a,b)=>`${lab(b)}'s ${STAT_EN[a]||a} was not lowered!`],[/^Le statistiche di (.+) non diminuiscono!$/,(m,a)=>`${lab(a)}'s stats were not lowered!`],
+  [/^(.+?) si toglie metà dei PS e porta al massimo l'Attacco!$/,(m,a)=>`${lab(a)} cut its own HP and maximized its Attack!`],[/^(.+?) si arrabbia e porta al massimo l'Attacco!$/,(m,a)=>`${lab(a)} maxed its Attack!`],
+  [/^(Attacco|Difesa|Att\. Sp\.|Dif\. Sp\.|Velocità) di (.+) sale al massimo!$/,(m,a,b)=>`${lab(b)}'s ${STAT_EN[a]||a} was maximized!`],
+  [/^(.+?) ruba e mangia (.+?) di (.+)!$/,(m,a,b,c)=>`${lab(a)} stole and ate ${lab(c)}'s ${b}!`],
+  [/^(.+?) si libera da (.+)!$/,(m,a,b)=>`${lab(a)} was freed from ${b}!`],
+  [/^Brutto colpo su (.+)!$/,(m,a)=>`A critical hit on ${lab(a)}!`],[/^(.+?) è già (paralizzato|scottato|avvelenato|congelato)!$/,(m,a,b)=>`${lab(a)} is already ${({paralizzato:'paralyzed',scottato:'burned',avvelenato:'poisoned',congelato:'frozen'})[b]}!`],[/^(.+?) sta già dormendo!$/,(m,a)=>`${lab(a)} is already asleep!`],
   [/^(.+?) (è infatuato e non attacca!|sta oziando\.|perde la concentrazione e non attacca!|non può usare la mossa per la provocazione!|non può usare la mossa bloccata!|non può usare la mossa sigillata!|non può usare mosse sonore!|non può usare la mossa per la gravità!|non ha più PP per questa mossa!|non può usare la mossa\.)$/,(m,a,b)=>`${lab(a)} ${CANT_EN[b]}`],
   [/^(.+?) (si sveglia!|non è più paralizzato!|guarisce dalla scottatura!|non è più avvelenato!|si scongela!)$/,(m,a,b)=>`${lab(a)} ${CURE_EN[b]}`],
   [/^Gli aumenti delle statistiche di (.+) spariscono!$/,(m,a)=>`${lab(a)}'s stat boosts were removed!`],
