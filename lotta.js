@@ -35,6 +35,7 @@ const CSS=`#lotta{position:fixed;inset:0;z-index:60;overflow:auto;background:#F6
 /* HUD: riquadro nome/PS + cerchio dello strumento + finestrella delle statistiche */
 #lotta .hud{position:absolute;display:flex;gap:6px;align-items:flex-start;z-index:5;max-width:56%}
 #lotta .hud[hidden]{display:none!important}
+#lotta [hidden]{display:none!important}   /* ogni elemento nascosto resta nascosto, anche se una regola gli dà display:flex (es. il contatore della chat) */
 #lotta .hud.p2{left:3%;top:5%} #lotta .hud.p1{right:3%;bottom:15%;flex-direction:row-reverse}
 #lotta .hudcol{display:flex;flex-direction:column;gap:4px;min-width:0}
 #lotta .hpbox{background:#FFFBEA;border:3px solid var(--line);border-radius:12px;padding:5px 10px 7px;min-width:210px;box-shadow:0 4px 0 var(--line);cursor:help}
